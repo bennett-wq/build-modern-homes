@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Home, Palette, MapPin, CheckCircle } from "lucide-react";
-import home1 from "@/assets/homes/home1.png";
-import home2 from "@/assets/homes/home2.png";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
@@ -90,11 +88,12 @@ const Index = () => {
               className="relative"
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-charcoal-light shadow-2xl">
-                <img 
-                  src={home1} 
-                  alt="Modern CrossMod home with attached garage" 
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-full h-full bg-gradient-to-br from-charcoal-light to-charcoal flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <Home className="w-20 h-20 text-wood mx-auto mb-4" />
+                    <p className="text-white/60 text-sm">Home exterior render placeholder</p>
+                  </div>
+                </div>
               </div>
               {/* Decorative elements */}
               <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-wood/20 rounded-2xl -z-10" />
@@ -186,11 +185,12 @@ const Index = () => {
             transition={{ duration: 0.6 }}
             className="aspect-[4/3] rounded-2xl overflow-hidden bg-charcoal-light"
           >
-            <img 
-              src={home2} 
-              alt="Modern green siding CrossMod home" 
-              className="w-full h-full object-cover"
-            />
+            <div className="w-full h-full bg-gradient-to-br from-charcoal-light to-charcoal-dark flex items-center justify-center">
+              <div className="text-center p-8">
+                <Home className="w-16 h-16 text-wood mx-auto mb-4" />
+                <p className="text-white/60 text-sm">Home gallery placeholder</p>
+              </div>
+            </div>
           </motion.div>
         </div>
       </Section>

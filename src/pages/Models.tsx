@@ -1,12 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, BedDouble, Bath, Maximize, Home } from "lucide-react";
+import { ArrowRight, Home, BedDouble, Bath, Maximize } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import home1 from "@/assets/homes/home1.png";
-import home2 from "@/assets/homes/home2.png";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -22,9 +20,6 @@ const staggerContainer = {
   }
 };
 
-// Image assignments for the models (cycling through available images)
-const modelImages = [home1, home2, home1, home2, home1, home2];
-
 export const homeModels = [
   {
     id: "aspen",
@@ -33,8 +28,7 @@ export const homeModels = [
     beds: 3,
     baths: 2,
     price: 285000,
-    description: "A thoughtfully designed 3-bedroom home with an open-concept living area and spacious primary suite.",
-    image: modelImages[0]
+    description: "A thoughtfully designed 3-bedroom home with an open-concept living area and spacious primary suite."
   },
   {
     id: "belmont",
@@ -43,8 +37,7 @@ export const homeModels = [
     beds: 4,
     baths: 2.5,
     price: 325000,
-    description: "Our largest model featuring 4 bedrooms, a dedicated home office, and generous living spaces.",
-    image: modelImages[1]
+    description: "Our largest model featuring 4 bedrooms, a dedicated home office, and generous living spaces."
   },
   {
     id: "cedar",
@@ -53,8 +46,7 @@ export const homeModels = [
     beds: 3,
     baths: 2,
     price: 265000,
-    description: "An efficient floor plan that maximizes every square foot with smart design choices.",
-    image: modelImages[2]
+    description: "An efficient floor plan that maximizes every square foot with smart design choices."
   },
   {
     id: "hawthorn",
@@ -63,8 +55,7 @@ export const homeModels = [
     beds: 2,
     baths: 2,
     price: 245000,
-    description: "Perfect for downsizers or first-time buyers, offering comfort in a compact footprint.",
-    image: modelImages[3]
+    description: "Perfect for downsizers or first-time buyers, offering comfort in a compact footprint."
   },
   {
     id: "maple",
@@ -73,8 +64,7 @@ export const homeModels = [
     beds: 3,
     baths: 2.5,
     price: 305000,
-    description: "Features an expansive kitchen, covered porch, and flexible bonus room.",
-    image: modelImages[4]
+    description: "Features an expansive kitchen, covered porch, and flexible bonus room."
   },
   {
     id: "birch",
@@ -83,8 +73,7 @@ export const homeModels = [
     beds: 3,
     baths: 2,
     price: 275000,
-    description: "A balanced design with split-bedroom layout and open entertaining spaces.",
-    image: modelImages[5]
+    description: "A balanced design with split-bedroom layout and open entertaining spaces."
   }
 ];
 
@@ -131,12 +120,11 @@ export default function Models() {
           {homeModels.map((model, index) => (
             <motion.div key={model.id} variants={fadeInUp}>
               <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-card group h-full flex flex-col">
-                <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                  <img 
-                    src={model.image} 
-                    alt={`The ${model.name} - ${model.sqft} sq ft home`}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
+                  <div className="text-center text-muted-foreground">
+                    <Home size={48} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-xs">Exterior Image</p>
+                  </div>
                   <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300" />
                 </div>
                 <CardContent className="p-6 flex flex-col flex-1">
