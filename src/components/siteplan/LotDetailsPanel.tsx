@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, ArrowRight } from 'lucide-react';
+import { X, MapPin, ArrowRight, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,7 @@ export function LotDetailsPanel({
 
   const statusInfo = STATUS_VARIANTS[lot.status];
   const contactUrl = `/contact?development=${developmentSlug}&lot=${lot.id}`;
+  const modelsUrl = `/models?development=${developmentSlug}&lot=${lot.id}`;
 
   const panelContent = (
     <div className="p-6 h-full flex flex-col">
@@ -99,17 +100,23 @@ export function LotDetailsPanel({
         )}
       </div>
 
-      {/* CTA */}
+      {/* CTAs */}
       {lot.status !== 'sold' && (
-        <div className="pt-6 border-t border-border mt-auto">
+        <div className="pt-6 border-t border-border mt-auto space-y-3">
           <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
             <Link to={contactUrl}>
               Request This Lot
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
+          <Button asChild variant="outline" className="w-full">
+            <Link to={modelsUrl}>
+              <Home className="mr-2 h-4 w-4" />
+              Explore Home Models
+            </Link>
+          </Button>
           {lot.status === 'reserved' && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
+            <p className="text-xs text-muted-foreground text-center">
               This lot is currently reserved. Submit a request to join the waitlist.
             </p>
           )}
@@ -132,7 +139,7 @@ export function LotDetailsPanel({
     </div>
   );
 
-  // Mobile: Bottom sheet
+  // Mobile: Bottom sheet overlay
   if (isMobile) {
     return (
       <AnimatePresence>
@@ -154,7 +161,7 @@ export function LotDetailsPanel({
     );
   }
 
-  // Desktop: Side panel
+  // Desktop: Overlay side panel (absolute positioned, doesn't shift layout)
   return (
     <AnimatePresence>
       <motion.div
