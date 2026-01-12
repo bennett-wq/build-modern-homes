@@ -92,7 +92,7 @@ export default function Development() {
       <Section>
         <SectionHeader
           title="Community Site Plan"
-          subtitle="Click on any lot to view details and request information. Zoom and pan to explore."
+          subtitle="Click on any lot to view details and request information."
         />
         
         <InteractiveSitePlan developmentSlug="grand-haven" />

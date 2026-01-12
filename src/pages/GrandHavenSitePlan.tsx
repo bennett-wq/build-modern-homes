@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Maximize2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { SitePlanViewer } from '@/components/siteplan/SitePlanViewer';
-import { SitePlanEditor } from '@/components/siteplan/SitePlanEditor';
+import { FixedSitePlanViewer } from '@/components/siteplan/FixedSitePlanViewer';
+import { FixedSitePlanEditor } from '@/components/siteplan/FixedSitePlanEditor';
+import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { LotDetailsPanel } from '@/components/siteplan/LotDetailsPanel';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots, Lot } from '@/data/lots/grand-haven';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 export default function GrandHavenSitePlan() {
   const [searchParams] = useSearchParams();
@@ -17,11 +19,16 @@ export default function GrandHavenSitePlan() {
   const isMobile = useIsMobile();
   
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
+  const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
   const [lots, setLots] = useState<Lot[]>(grandHavenLots);
 
   const development = getDevelopmentBySlug('grand-haven');
 
   const handleSelectLot = (lot: Lot | null) => {
+    setSelectedLot(lot);
+  };
+
+  const handleListSelectLot = (lot: Lot) => {
     setSelectedLot(lot);
   };
 
@@ -35,7 +42,7 @@ export default function GrandHavenSitePlan() {
     );
   }
 
-  // Editor Mode
+  // Editor Mode - Full screen, fixed map (no zoom/pan)
   if (isEditMode) {
     return (
       <div className="h-screen flex flex-col bg-background">
@@ -47,7 +54,7 @@ export default function GrandHavenSitePlan() {
             </Link>
             <div>
               <h1 className="font-semibold text-foreground">Site Plan Editor</h1>
-              <p className="text-sm text-muted-foreground">Grand Haven Development</p>
+              <p className="text-sm text-muted-foreground">Grand Haven Development — Click to add polygon points</p>
             </div>
           </div>
           <Button variant="outline" size="sm" asChild>
@@ -55,8 +62,8 @@ export default function GrandHavenSitePlan() {
           </Button>
         </div>
         
-        {/* Editor Content */}
-        <SitePlanEditor
+        {/* Editor Content - Fixed map, no zoom/pan */}
+        <FixedSitePlanEditor
           sitePlanImagePath={development.sitePlanImagePath}
           initialLots={lots}
           onLotsChange={setLots}
@@ -66,11 +73,11 @@ export default function GrandHavenSitePlan() {
     );
   }
 
-  // Normal Viewing Mode
+  // Normal Viewing Mode - Full screen experience
   return (
     <Layout>
       {/* Header */}
-      <section className="bg-secondary py-8">
+      <section className="bg-secondary py-6">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -85,7 +92,7 @@ export default function GrandHavenSitePlan() {
                 {development.name} Site Plan
               </h1>
               <p className="text-muted-foreground mt-1">
-                Click on a lot to view details and request information
+                Click on a lot to view details • Map is fixed for precise selection
               </p>
             </div>
             <Button variant="outline" size="sm" asChild>
@@ -99,29 +106,70 @@ export default function GrandHavenSitePlan() {
 
       {/* Site Plan Viewer */}
       <section className="relative">
-        <div className="container mx-auto px-4 lg:px-8 py-8">
+        <div className="container mx-auto px-4 lg:px-8 py-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative bg-card rounded-xl border border-border overflow-hidden"
-            style={{ height: isMobile ? '60vh' : '75vh' }}
+            className="bg-card rounded-xl border border-border overflow-hidden"
           >
-            <SitePlanViewer
-              sitePlanImagePath={development.sitePlanImagePath}
-              lots={lots}
-              onSelectLot={handleSelectLot}
-              selectedLotId={selectedLot?.id ?? null}
-              className="h-full"
-            />
-            
-            {/* Details Panel */}
-            {selectedLot && (
-              <LotDetailsPanel
-                lot={selectedLot}
-                developmentSlug={development.slug}
-                onClose={() => setSelectedLot(null)}
-                isMobile={isMobile}
+            <div className={cn(
+              'flex',
+              isMobile ? 'flex-col' : 'flex-row'
+            )}>
+              {/* Fixed Site Plan Viewer */}
+              <div 
+                className={cn(
+                  'relative',
+                  isMobile ? 'w-full' : 'flex-1'
+                )}
+                style={{ height: isMobile ? '60vh' : '75vh' }}
+              >
+                <FixedSitePlanViewer
+                  sitePlanImagePath={development.sitePlanImagePath}
+                  lots={lots}
+                  onSelectLot={handleSelectLot}
+                  selectedLotId={selectedLot?.id ?? null}
+                  hoveredLotId={hoveredLotId}
+                  onHoverLot={setHoveredLotId}
+                  className="h-full"
+                />
+                
+                {/* Details Panel (overlay - doesn't shift layout) */}
+                {selectedLot && (
+                  <LotDetailsPanel
+                    lot={selectedLot}
+                    developmentSlug={development.slug}
+                    onClose={() => setSelectedLot(null)}
+                    isMobile={isMobile}
+                  />
+                )}
+              </div>
+
+              {/* Lot List Panel - Desktop */}
+              {!isMobile && (
+                <LotListPanel
+                  lots={lots}
+                  selectedLotId={selectedLot?.id ?? null}
+                  hoveredLotId={hoveredLotId}
+                  onSelectLot={handleListSelectLot}
+                  onHoverLot={setHoveredLotId}
+                  className="w-72 xl:w-80"
+                  style={{ height: '75vh' }}
+                />
+              )}
+            </div>
+
+            {/* Mobile Lot List */}
+            {isMobile && (
+              <LotListPanel
+                lots={lots}
+                selectedLotId={selectedLot?.id ?? null}
+                hoveredLotId={hoveredLotId}
+                onSelectLot={handleListSelectLot}
+                onHoverLot={setHoveredLotId}
+                className="border-l-0 border-t"
+                style={{ height: '40vh' }}
               />
             )}
           </motion.div>
