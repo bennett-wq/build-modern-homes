@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, FileText, Check } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
+import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { cn } from '@/lib/utils';
 
 interface Step2ModelProps {
@@ -15,6 +16,9 @@ interface Step2ModelProps {
   onNext: () => void;
   onBack: () => void;
   isMobile: boolean;
+  // For financing modal
+  developmentSlug?: string;
+  lotId?: number | null;
 }
 
 export function Step2Model({
@@ -23,8 +27,11 @@ export function Step2Model({
   onNext,
   onBack,
   isMobile,
+  developmentSlug,
+  lotId,
 }: Step2ModelProps) {
   const selectedModel = homeModels.find(m => m.slug === selectedModelSlug);
+  const [showFinancingModal, setShowFinancingModal] = useState(false);
 
   const handleSelect = useCallback((slug: string) => {
     onSelectModel(slug);
@@ -74,6 +81,13 @@ export function Step2Model({
             </motion.div>
           ))}
         </div>
+        
+        {/* Financing Module - shown on desktop */}
+        {!isMobile && (
+          <div className="mt-6 pt-6 border-t border-border">
+            <FinancingSidebarModule onOpenModal={() => setShowFinancingModal(true)} />
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -120,6 +134,15 @@ export function Step2Model({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Financing Modal */}
+      <FinancingModal
+        open={showFinancingModal}
+        onOpenChange={setShowFinancingModal}
+        developmentSlug={developmentSlug}
+        lotId={lotId}
+        modelSlug={selectedModelSlug}
+      />
     </div>
   );
 }

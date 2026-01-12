@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { InteractiveSitePlan } from '@/components/siteplan/InteractiveSitePlan';
+import { FinancingBadge } from '@/components/financing/FinancingBadge';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { useState } from 'react';
 
@@ -238,9 +239,12 @@ function ActiveDevelopmentContent({ development }: { development: NonNullable<Re
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
               {development.name},<br />{development.state}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-4">
               {development.description}
             </p>
+            
+            {/* Financing Trust Signal - Above the fold */}
+            <FinancingBadge variant="compact" className="inline-flex" />
           </motion.div>
         </div>
       </section>

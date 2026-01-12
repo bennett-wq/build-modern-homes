@@ -1,5 +1,5 @@
 // Step 4: Review + Get Started - final summary with CTAs
-// Premium polish with proper Dialog handling
+// Premium polish with proper Dialog handling and financing integration
 import { useState, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -22,12 +22,15 @@ import {
   Copy,
   Check,
   Phone,
-  CheckCircle
+  CheckCircle,
+  DollarSign,
+  ShieldCheck
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
 import { HomeModel } from '@/data/models';
 import { ExteriorPackage, GarageDoor } from '@/data/packages';
+import { FinancingModal } from '@/components/financing/FinancingModal';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -57,6 +60,7 @@ export function Step4Review({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showFinancingModal, setShowFinancingModal] = useState(false);
 
   const handleCopyLink = async () => {
     try {
@@ -234,30 +238,47 @@ export function Step4Review({
             transition={{ delay: 0.1, duration: 0.2 }}
             className="space-y-3 pt-2"
           >
-            <Button
-              size="lg"
-              className="w-full h-14 text-base font-semibold"
-              onClick={() => setShowScheduleModal(true)}
-            >
-              <Calendar className="mr-2 h-5 w-5" />
-              Schedule a 10-Minute Call
-            </Button>
+            {/* Two equal primary CTAs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button
+                size="lg"
+                className="h-14 text-base font-semibold"
+                onClick={() => setShowScheduleModal(true)}
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                Schedule a Call
+              </Button>
 
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full h-12 font-medium"
-              asChild
-            >
-              <Link to={contactUrl}>
-                <Phone className="mr-2 h-4 w-4" />
-                Request This Lot + Model
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="h-14 text-base font-semibold"
+                onClick={() => setShowFinancingModal(true)}
+              >
+                <DollarSign className="mr-2 h-5 w-5" />
+                Check Financing
+              </Button>
+            </div>
+
+            {/* Financing trust badge */}
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
+              <ShieldCheck className="h-3.5 w-3.5 text-accent" />
+              <span>Conventional financing available — MH Advantage® & CHOICEHome® eligible</span>
+            </div>
           </motion.div>
         </div>
       </div>
+
+      {/* Financing Modal */}
+      <FinancingModal
+        open={showFinancingModal}
+        onOpenChange={setShowFinancingModal}
+        developmentSlug={development.slug}
+        lotId={lot?.id}
+        modelSlug={model?.slug}
+        packageId={package_?.id}
+        garageDoorId={garageDoor?.id}
+      />
 
       {/* Schedule Modal */}
       <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>

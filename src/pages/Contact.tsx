@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, Phone, Mail, MapPin, CheckCircle, Home, MapPinned, Palette, DoorOpen } from "lucide-react";
+import { Send, Phone, Mail, MapPin, CheckCircle, Home, MapPinned, Palette, DoorOpen, ShieldCheck, Calendar, DollarSign } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
@@ -51,8 +51,14 @@ export default function Contact() {
     garage: searchParams.get('garage'),
   };
 
+  // Financing interest params
+  const financingInterest = searchParams.get('financing_interest') === 'true';
+  const intendedUse = searchParams.get('intended_use');
+  const creditRange = searchParams.get('credit_range');
+  const timeframe = searchParams.get('timeframe');
+
   // Check if we have any selections to display
-  const hasSelections = Object.values(selections).some(v => v !== null);
+  const hasSelections = Object.values(selections).some(v => v !== null) || financingInterest;
 
   // Resolve display names for selections
   const displayNames = useMemo(() => {
@@ -243,6 +249,13 @@ export default function Contact() {
                           <DoorOpen className="h-4 w-4 text-accent flex-shrink-0" />
                           <span className="text-muted-foreground">Garage:</span>
                           <span className="font-medium text-foreground">{displayNames.garage}</span>
+                        </div>
+                      )}
+                      {financingInterest && (
+                        <div className="flex items-center gap-2 text-sm col-span-full pt-2 border-t border-border/50">
+                          <ShieldCheck className="h-4 w-4 text-accent flex-shrink-0" />
+                          <span className="text-muted-foreground">Financing Interest:</span>
+                          <span className="font-medium text-foreground">Yes — Conventional financing inquiry</span>
                         </div>
                       )}
                     </div>

@@ -4,6 +4,7 @@ import { ArrowRight, Home, Palette, MapPin, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
+import { FinancingBadge } from "@/components/financing/FinancingBadge";
 import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
 
 const features = [
@@ -62,10 +63,16 @@ const Index = () => {
                 <br />
                 Grand Haven.
               </h1>
-              <p className="text-lg text-white/80 mb-8 max-w-lg">
+              <p className="text-lg text-white/80 mb-6 max-w-lg">
                 BaseMod Homes are factory-built CrossMod® homes with site-built garages and porches, 
                 delivering quality, efficiency, and modern design at attainable prices.
               </p>
+              
+              {/* Financing Trust Signal */}
+              <div className="mb-8">
+                <FinancingBadge variant="inline" className="text-white/70 hover:text-white" />
+              </div>
+              
               <div className="flex flex-wrap gap-4">
                 <Button asChild size="lg">
                   <Link to="/models">
