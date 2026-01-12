@@ -4,9 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Developments from "./pages/Developments";
-import DevelopmentDetail from "./pages/DevelopmentDetail";
-import SitePlan from "./pages/SitePlan";
+import Development from "./pages/Development";
 import Models from "./pages/Models";
 import ModelDetail from "./pages/ModelDetail";
 import Pricing from "./pages/Pricing";
@@ -25,9 +23,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/developments" element={<Developments />} />
-          <Route path="/developments/:slug" element={<DevelopmentDetail />} />
-          <Route path="/developments/:slug/site-plan" element={<SitePlan />} />
+          <Route path="/development" element={<Development />} />
           <Route path="/models" element={<Models />} />
           <Route path="/models/:modelId" element={<ModelDetail />} />
           <Route path="/pricing" element={<Pricing />} />
