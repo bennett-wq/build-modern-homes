@@ -19,8 +19,8 @@ const features = [
   },
   {
     icon: MapPin,
-    title: "Grand Haven Location",
-    description: "A walkable, thoughtfully planned community in beautiful Grand Haven, Michigan."
+    title: "Growing Communities",
+    description: "Thoughtfully planned developments across the country, from Michigan to Florida."
   }
 ];
 
@@ -53,28 +53,28 @@ const Index = () => {
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
               <span className="inline-block text-wood font-medium tracking-wider uppercase text-sm mb-4">
-                BaseMod Developments • Grand Haven, MI
+                Modern Living, Attainable Pricing
               </span>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
                 Modern Homes.
                 <br />
                 <span className="text-wood">Thoughtfully Built.</span>
                 <br />
-                Grand Haven.
+                Nationwide.
               </h1>
               <p className="text-lg text-white/80 mb-8 max-w-lg">
-                BaseMod Homes are factory-built CrossMod® homes with site-built garages and porches, 
-                delivering quality, efficiency, and modern design at attainable prices.
+                BaseMod Developments creates thoughtfully planned communities featuring CrossMod® homes 
+                with site-built garages and porches—quality, efficiency, and modern design at attainable prices.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button asChild size="lg" className="bg-wood hover:bg-wood-dark text-white">
-                  <Link to="/models">
-                    View Floor Plans
+                  <Link to="/developments">
+                    Explore Communities
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
-                  <Link to="/pricing">Explore Pricing</Link>
+                  <Link to="/models">View Home Models</Link>
                 </Button>
                 <Button asChild size="lg" variant="ghost" className="text-wood hover:text-wood-dark hover:bg-wood/10">
                   <Link to="/design-studio">Design Your Exterior</Link>
