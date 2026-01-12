@@ -4,6 +4,7 @@ import { ArrowRight, Home, Palette, MapPin, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
+import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
 
 const features = [
   {
@@ -88,12 +89,11 @@ const Index = () => {
               className="relative"
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-charcoal-light shadow-2xl">
-                <div className="w-full h-full bg-gradient-to-br from-charcoal-light to-charcoal flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <Home className="w-20 h-20 text-wood mx-auto mb-4" />
-                    <p className="text-white/60 text-sm">Home exterior render placeholder</p>
-                  </div>
-                </div>
+                <img 
+                  src={hawthornHomepage} 
+                  alt="BaseMod Hawthorn home exterior featuring cedar accents and modern design" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               {/* Decorative elements */}
               <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-wood/20 rounded-2xl -z-10" />
