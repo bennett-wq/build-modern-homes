@@ -7,6 +7,7 @@ import { Section, SectionHeader } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { FinancingBadge } from '@/components/financing/FinancingBadge';
 import { developments, Development } from '@/data/developments';
 import { cn } from '@/lib/utils';
 
@@ -134,10 +135,13 @@ export default function Developments() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
               BaseMod<br />Developments
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-4">
               Explore our carefully planned residential communities across the Midwest. 
               Each development features improved lots ready for your custom BaseMod home.
             </p>
+            
+            {/* Financing Trust Signal */}
+            <FinancingBadge variant="inline" className="text-muted-foreground" />
           </motion.div>
         </div>
       </section>

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye } from 'lucide-react';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
+import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { cn } from '@/lib/utils';
 
 interface Step3DesignProps {
@@ -16,6 +17,10 @@ interface Step3DesignProps {
   onNext: () => void;
   onBack: () => void;
   isMobile: boolean;
+  // For financing modal
+  developmentSlug?: string;
+  lotId?: number | null;
+  modelSlug?: string | null;
 }
 
 export function Step3Design({
@@ -26,12 +31,16 @@ export function Step3Design({
   onNext,
   onBack,
   isMobile,
+  developmentSlug,
+  lotId,
+  modelSlug,
 }: Step3DesignProps) {
   const selectedPackage = exteriorPackages.find(p => p.id === selectedPackageId);
   const selectedDoor = garageDoors.find(d => d.id === selectedGarageDoorId);
   const canProceed = selectedPackageId && selectedGarageDoorId;
 
   const [activeTab, setActiveTab] = useState<string>('package');
+  const [showFinancingModal, setShowFinancingModal] = useState(false);
 
   // Auto-switch to garage tab when package is selected
   const handleSelectPackage = useCallback((id: string) => {
@@ -138,6 +147,13 @@ export function Step3Design({
                 ))}
               </div>
             </TabsContent>
+            
+            {/* Financing Module - in sidebar on desktop */}
+            {!isMobile && (
+              <div className="p-4 pt-0">
+                <FinancingSidebarModule onOpenModal={() => setShowFinancingModal(true)} />
+              </div>
+            )}
           </Tabs>
         </div>
       </div>
@@ -203,6 +219,17 @@ export function Step3Design({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Financing Modal */}
+      <FinancingModal
+        open={showFinancingModal}
+        onOpenChange={setShowFinancingModal}
+        developmentSlug={developmentSlug}
+        lotId={lotId}
+        modelSlug={modelSlug}
+        packageId={selectedPackageId}
+        garageDoorId={selectedGarageDoorId}
+      />
     </div>
   );
 }

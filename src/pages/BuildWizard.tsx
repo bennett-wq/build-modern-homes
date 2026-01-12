@@ -233,6 +233,8 @@ export default function BuildWizard() {
                 onNext={() => setCurrentStep(3)}
                 onBack={() => setCurrentStep(1)}
                 isMobile={isMobile}
+                developmentSlug={slug}
+                lotId={selection.lotId}
               />
             </motion.div>
           )}
@@ -255,6 +257,9 @@ export default function BuildWizard() {
                 onNext={() => setCurrentStep(4)}
                 onBack={() => setCurrentStep(2)}
                 isMobile={isMobile}
+                developmentSlug={slug}
+                lotId={selection.lotId}
+                modelSlug={selection.modelSlug}
               />
             </motion.div>
           )}
