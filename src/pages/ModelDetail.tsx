@@ -12,7 +12,11 @@ import { homeModels } from "./Models";
 import aspenHero from "@/assets/homes/aspen-hero.png";
 import aspenExterior01 from "@/assets/homes/aspen-exterior-01.png";
 
-// Aspen gallery (using available images, duplicated for 6-image gallery)
+// Belmont model images
+import belmontHero from "@/assets/homes/belmont-hero.png";
+import belmontExterior01 from "@/assets/homes/belmont-exterior-01.png";
+
+// Galleries (using available images, duplicated for 6-image gallery)
 const aspenGallery = [
   aspenHero,
   aspenExterior01,
@@ -20,6 +24,15 @@ const aspenGallery = [
   aspenExterior01,
   aspenHero,
   aspenExterior01,
+];
+
+const belmontGallery = [
+  belmontHero,
+  belmontExterior01,
+  belmontHero,
+  belmontExterior01,
+  belmontHero,
+  belmontExterior01,
 ];
 
 const features = [
@@ -36,9 +49,18 @@ export default function ModelDetail() {
   const model = homeModels.find(m => m.id === modelId);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
-  // Get gallery for specific models
-  const gallery = modelId === "aspen" ? aspenGallery : null;
-  const heroImage = modelId === "aspen" ? aspenHero : null;
+  // Get gallery and hero for specific models
+  const getModelAssets = () => {
+    switch (modelId) {
+      case "aspen":
+        return { gallery: aspenGallery, heroImage: aspenHero };
+      case "belmont":
+        return { gallery: belmontGallery, heroImage: belmontHero };
+      default:
+        return { gallery: null, heroImage: null };
+    }
+  };
+  const { gallery, heroImage } = getModelAssets();
 
   if (!model) {
     return (
