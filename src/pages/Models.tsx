@@ -6,6 +6,8 @@ import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+// Aspen model images
+import aspenExterior01 from "@/assets/homes/aspen-exterior-01.png";
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -28,7 +30,8 @@ export const homeModels = [
     beds: 3,
     baths: 2,
     price: 285000,
-    description: "A thoughtfully designed 3-bedroom home with an open-concept living area and spacious primary suite."
+    description: "A thoughtfully designed 3-bedroom home with an open-concept living area and spacious primary suite.",
+    image: aspenExterior01
   },
   {
     id: "belmont",
@@ -121,10 +124,18 @@ export default function Models() {
             <motion.div key={model.id} variants={fadeInUp}>
               <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-card group h-full flex flex-col">
                 <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
-                  <div className="text-center text-muted-foreground">
-                    <Home size={48} className="mx-auto mb-2 opacity-50" />
-                    <p className="text-xs">Exterior Image</p>
-                  </div>
+                  {model.image ? (
+                    <img 
+                      src={model.image} 
+                      alt={`The ${model.name} exterior`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <Home size={48} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-xs">Exterior Image</p>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300" />
                 </div>
                 <CardContent className="p-6 flex flex-col flex-1">
