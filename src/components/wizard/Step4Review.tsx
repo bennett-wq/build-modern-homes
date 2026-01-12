@@ -24,13 +24,15 @@ import {
   Phone,
   CheckCircle,
   DollarSign,
-  ShieldCheck
+  ShieldCheck,
+  ClipboardCheck
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
 import { HomeModel } from '@/data/models';
 import { ExteriorPackage, GarageDoor } from '@/data/packages';
 import { FinancingModal } from '@/components/financing/FinancingModal';
+import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -88,9 +90,13 @@ export function Step4Review({
           <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
             Review Your Plan
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Here's a summary of your selections
-          </p>
+          <div className="flex items-center gap-3 mt-0.5">
+            <p className="text-sm text-muted-foreground">
+              Here's a summary of your selections
+            </p>
+            <span className="text-muted-foreground/30">•</span>
+            <AppraisalInfoLink />
+          </div>
         </div>
         <Button 
           variant="ghost" 
@@ -173,6 +179,14 @@ export function Step4Review({
                     <p className="text-xs text-muted-foreground mt-2">
                       * Final pricing determined during consultation
                     </p>
+                    
+                    {/* Appraisal Reassurance */}
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/50">
+                      <ClipboardCheck className="h-4 w-4 text-accent shrink-0" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        This home is designed to support conventional appraisal and financing pathways.
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardContent>

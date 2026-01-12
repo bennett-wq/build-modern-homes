@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye } from 'lucide-react';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
+import { AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
 
 interface Step3DesignProps {
@@ -148,10 +149,11 @@ export function Step3Design({
               </div>
             </TabsContent>
             
-            {/* Financing Module - in sidebar on desktop */}
+            {/* Sidebar Modules - in sidebar on desktop */}
             {!isMobile && (
-              <div className="p-4 pt-0">
+              <div className="p-4 pt-0 space-y-4">
                 <FinancingSidebarModule onOpenModal={() => setShowFinancingModal(true)} />
+                <AppraisalSidebarModule />
               </div>
             )}
           </Tabs>

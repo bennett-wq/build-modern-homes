@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { FinancingBadge } from "@/components/financing/FinancingBadge";
+import { AppraisalBadge } from "@/components/appraisal/AppraisalBadge";
 import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
 
 const features = [
@@ -68,9 +69,11 @@ const Index = () => {
                 delivering quality, efficiency, and modern design at attainable prices.
               </p>
               
-              {/* Financing Trust Signal */}
-              <div className="mb-8">
+              {/* Trust Signals */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-8">
                 <FinancingBadge variant="inline" className="text-white/70 hover:text-white" />
+                <span className="hidden sm:inline text-white/30">•</span>
+                <AppraisalBadge variant="inline" className="text-white/70 hover:text-white" />
               </div>
               
               <div className="flex flex-wrap gap-4">

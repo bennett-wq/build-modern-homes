@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, FileText, Check } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
+import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
 
 interface Step2ModelProps {
@@ -45,9 +46,13 @@ export function Step2Model({
           <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
             Pick Your Model
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Choose from our CrossMod® home collection
-          </p>
+          <div className="flex items-center gap-3 mt-0.5">
+            <p className="text-sm text-muted-foreground">
+              Choose from our CrossMod® home collection
+            </p>
+            <span className="text-muted-foreground/30">•</span>
+            <AppraisalInfoLink />
+          </div>
         </div>
         <Button 
           variant="ghost" 
@@ -82,10 +87,11 @@ export function Step2Model({
           ))}
         </div>
         
-        {/* Financing Module - shown on desktop */}
+        {/* Sidebar Modules - shown on desktop */}
         {!isMobile && (
-          <div className="mt-6 pt-6 border-t border-border">
+          <div className="mt-6 pt-6 border-t border-border space-y-4">
             <FinancingSidebarModule onOpenModal={() => setShowFinancingModal(true)} />
+            <AppraisalSidebarModule />
           </div>
         )}
       </div>

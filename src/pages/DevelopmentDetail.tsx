@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { InteractiveSitePlan } from '@/components/siteplan/InteractiveSitePlan';
 import { FinancingBadge } from '@/components/financing/FinancingBadge';
+import { AppraisalBadge } from '@/components/appraisal/AppraisalBadge';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { useState } from 'react';
 
@@ -243,8 +244,11 @@ function ActiveDevelopmentContent({ development }: { development: NonNullable<Re
               {development.description}
             </p>
             
-            {/* Financing Trust Signal - Above the fold */}
-            <FinancingBadge variant="compact" className="inline-flex" />
+            {/* Trust Signals - Above the fold */}
+            <div className="flex flex-wrap gap-3">
+              <FinancingBadge variant="compact" className="inline-flex" />
+              <AppraisalBadge variant="compact" className="inline-flex" />
+            </div>
           </motion.div>
         </div>
       </section>
