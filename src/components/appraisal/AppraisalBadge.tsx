@@ -1,15 +1,10 @@
 // AppraisalBadge - Trust signal component for appraisal-ready homes
-// Displays a subtle badge with tooltip modal explaining construction types and appraisal standards
+// Displays a subtle badge with drawer explaining construction types and appraisal standards
+// Uses InfoDrawer for proper overlay pattern (right slide-over on desktop, bottom sheet on mobile)
 import { useState } from 'react';
 import { Info, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { InfoDrawer } from '@/components/ui/info-drawer';
 import { cn } from '@/lib/utils';
 
 interface AppraisalBadgeProps {
@@ -39,7 +34,7 @@ export function AppraisalBadge({
           <span>Appraisal-Ready Homes</span>
           <Info className="h-3.5 w-3.5 opacity-50" />
         </button>
-        <AppraisalInfoModal open={isOpen} onOpenChange={setIsOpen} />
+        <AppraisalInfoDrawer open={isOpen} onOpenChange={setIsOpen} />
       </>
     );
   }
@@ -60,7 +55,7 @@ export function AppraisalBadge({
           <span className="font-medium">Appraisal-Ready</span>
           <Info className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
-        <AppraisalInfoModal open={isOpen} onOpenChange={setIsOpen} />
+        <AppraisalInfoDrawer open={isOpen} onOpenChange={setIsOpen} />
       </>
     );
   }
@@ -90,104 +85,102 @@ export function AppraisalBadge({
         </div>
         <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
       </button>
-      <AppraisalInfoModal open={isOpen} onOpenChange={setIsOpen} />
+      <AppraisalInfoDrawer open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }
 
-interface AppraisalInfoModalProps {
+interface AppraisalInfoDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AppraisalInfoModal({ open, onOpenChange }: AppraisalInfoModalProps) {
+export function AppraisalInfoDrawer({ open, onOpenChange }: AppraisalInfoDrawerProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <ClipboardCheck className="h-5 w-5 text-accent" />
-            Appraisals & Home Construction Types
-          </DialogTitle>
-          <DialogDescription>
-            Understanding how BaseMod homes are built and appraised
-          </DialogDescription>
-        </DialogHeader>
+    <InfoDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <span className="flex items-center gap-2">
+          <ClipboardCheck className="h-5 w-5 text-accent" />
+          Appraisals & Home Construction Types
+        </span>
+      }
+      description="Understanding how BaseMod homes are built and appraised"
+    >
+      <div className="space-y-5">
+        {/* Introduction */}
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          BaseMod homes are offered using two construction methods, each designed to 
+          support conventional appraisal and financing pathways.
+        </p>
 
-        <div className="space-y-5 py-2">
-          {/* Introduction */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            BaseMod homes are offered using two construction methods, each designed to 
-            support conventional appraisal and financing pathways.
-          </p>
-
-          {/* Construction Types */}
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-secondary border border-border">
-              <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">1</span>
-                IRC Modular Homes
-              </h4>
-              <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
-                  <span>Built to International Residential Code (IRC)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
-                  <span>Permanently installed on foundation</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
-                  <span>Appraised using standard site-built comparables (subject to lender/appraiser)</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="p-4 rounded-lg bg-secondary border border-border">
-              <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">2</span>
-                CrossMod® Homes
-              </h4>
-              <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
-                  <span>HUD-built with additional features required by Fannie Mae MH Advantage® and Freddie Mac CHOICEHome®</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
-                  <span>Designed to appraise as real property using conventional methodologies</span>
-                </li>
-              </ul>
-            </div>
+        {/* Construction Types */}
+        <div className="space-y-4">
+          <div className="p-4 rounded-lg bg-secondary border border-border">
+            <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">1</span>
+              IRC Modular Homes
+            </h4>
+            <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
+                <span>Built to International Residential Code (IRC)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
+                <span>Permanently installed on foundation</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
+                <span>Appraised using standard site-built comparables (subject to lender/appraiser)</span>
+              </li>
+            </ul>
           </div>
 
-          {/* Key Takeaway */}
-          <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
-            <p className="text-sm text-foreground font-medium leading-relaxed">
-              Both construction types are designed to support conventional appraisal 
-              and financing pathways, providing buyers with more options and flexibility.
-            </p>
+          <div className="p-4 rounded-lg bg-secondary border border-border">
+            <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">2</span>
+              CrossMod® Homes
+            </h4>
+            <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
+                <span>HUD-built with additional features required by Fannie Mae MH Advantage® and Freddie Mac CHOICEHome®</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
+                <span>Designed to appraise as real property using conventional methodologies</span>
+              </li>
+            </ul>
           </div>
+        </div>
 
-          {/* Disclaimer */}
-          <p className="text-xs text-muted-foreground/80 leading-relaxed pt-2 border-t border-border">
-            Appraisals are completed by independent licensed appraisers. Final valuation 
-            depends on market comparables, site improvements, and lender requirements.
+        {/* Key Takeaway */}
+        <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+          <p className="text-sm text-foreground font-medium leading-relaxed">
+            Both construction types are designed to support conventional appraisal 
+            and financing pathways, providing buyers with more options and flexibility.
           </p>
         </div>
+
+        {/* Disclaimer */}
+        <p className="text-xs text-muted-foreground/80 leading-relaxed pt-2 border-t border-border">
+          Appraisals are completed by independent licensed appraisers. Final valuation 
+          depends on market comparables, site improvements, and lender requirements.
+        </p>
 
         <div className="flex justify-end pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Got it
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </InfoDrawer>
   );
 }
 
-// Link component for opening modal from wizard steps
+// Link component for opening drawer from wizard steps
 interface AppraisalInfoLinkProps {
   className?: string;
 }
@@ -207,7 +200,7 @@ export function AppraisalInfoLink({ className }: AppraisalInfoLinkProps) {
         <Info className="h-3.5 w-3.5" />
         <span>Appraisals & Construction</span>
       </button>
-      <AppraisalInfoModal open={isOpen} onOpenChange={setIsOpen} />
+      <AppraisalInfoDrawer open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }
@@ -244,7 +237,7 @@ export function AppraisalSidebarModule({ className }: AppraisalSidebarModuleProp
           </div>
         </div>
       </div>
-      <AppraisalInfoModal open={isOpen} onOpenChange={setIsOpen} />
+      <AppraisalInfoDrawer open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }
