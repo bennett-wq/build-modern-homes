@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -14,6 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 export default function GrandHavenSitePlan() {
+  const { slug = 'grand-haven' } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const isEditMode = searchParams.get('edit') === '1';
   const isMobile = useIsMobile();
@@ -22,7 +23,7 @@ export default function GrandHavenSitePlan() {
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
   const [lots, setLots] = useState<Lot[]>(grandHavenLots);
 
-  const development = getDevelopmentBySlug('grand-haven');
+  const development = getDevelopmentBySlug(slug);
 
   const handleSelectLot = (lot: Lot | null) => {
     setSelectedLot(lot);
@@ -49,16 +50,16 @@ export default function GrandHavenSitePlan() {
         {/* Editor Header */}
         <div className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/developments/grand-haven/site-plan" className="text-muted-foreground hover:text-foreground">
+            <Link to={`/developments/${slug}/site-plan`} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
               <h1 className="font-semibold text-foreground">Site Plan Editor</h1>
-              <p className="text-sm text-muted-foreground">Grand Haven Development — Click to add polygon points</p>
+              <p className="text-sm text-muted-foreground">{development.name} — Click to add polygon points</p>
             </div>
           </div>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/developments/grand-haven/site-plan">Exit Editor</Link>
+            <Link to={`/developments/${slug}/site-plan`}>Exit Editor</Link>
           </Button>
         </div>
         
@@ -82,11 +83,11 @@ export default function GrandHavenSitePlan() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <Link
-                to="/development"
+                to={`/developments/${slug}`}
                 className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-2 text-sm"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Development
+                Back to {development.name}
               </Link>
               <h1 className="text-2xl lg:text-3xl font-semibold text-foreground">
                 {development.name} Site Plan
@@ -96,7 +97,7 @@ export default function GrandHavenSitePlan() {
               </p>
             </div>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/developments/grand-haven/site-plan?edit=1">
+              <Link to={`/developments/${slug}/site-plan?edit=1`}>
                 Open Editor
               </Link>
             </Button>
