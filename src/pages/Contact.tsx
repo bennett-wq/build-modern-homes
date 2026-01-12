@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, Phone, Mail, MapPin, CheckCircle } from "lucide-react";
+import { Send, Phone, Mail, MapPin, CheckCircle, Home, MapPinned, Palette, DoorOpen } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,23 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { homeModels } from "./Models";
+import { homeModels as modelsData } from "@/data/models";
+import { exteriorPackages, garageDoors } from "@/data/packages";
+import { developments } from "@/data/developments";
+
+// Helper to format slug to display name
+const formatSlug = (slug: string | null): string => {
+  if (!slug) return '';
+  return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
+
+interface SelectionSummary {
+  development: string | null;
+  lot: string | null;
+  model: string | null;
+  package: string | null;
+  garage: string | null;
+}
 
 export default function Contact() {
   const { toast } = useToast();
@@ -25,9 +42,33 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   
-  // Get query params for pre-fill
-  const developmentParam = searchParams.get('development');
-  const lotParam = searchParams.get('lot');
+  // Get all query params for pre-fill
+  const selections: SelectionSummary = {
+    development: searchParams.get('development'),
+    lot: searchParams.get('lot'),
+    model: searchParams.get('model'),
+    package: searchParams.get('package'),
+    garage: searchParams.get('garage'),
+  };
+
+  // Check if we have any selections to display
+  const hasSelections = Object.values(selections).some(v => v !== null);
+
+  // Resolve display names for selections
+  const displayNames = useMemo(() => {
+    const dev = developments.find(d => d.slug === selections.development);
+    const model = modelsData.find(m => m.slug === selections.model);
+    const pkg = exteriorPackages.find(p => p.id === selections.package);
+    const garage = garageDoors.find(g => g.id === selections.garage);
+
+    return {
+      development: dev?.name || formatSlug(selections.development),
+      lot: selections.lot ? `Lot ${selections.lot}` : null,
+      model: model?.name || formatSlug(selections.model),
+      package: pkg?.name || formatSlug(selections.package),
+      garage: garage?.name || formatSlug(selections.garage),
+    };
+  }, [selections.development, selections.lot, selections.model, selections.package, selections.garage]);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -37,22 +78,36 @@ export default function Contact() {
     message: ""
   });
 
-  // Pre-fill message when lot params exist
+  // Pre-fill message when selection params exist
   useEffect(() => {
-    if (developmentParam && lotParam) {
-      const devName = developmentParam.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      setFormData(prev => ({
-        ...prev,
-        message: `I'm interested in Lot ${lotParam} at the ${devName} development. Please contact me with more information.`
-      }));
-    } else if (developmentParam) {
-      const devName = developmentParam.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      setFormData(prev => ({
-        ...prev,
-        message: `I'm interested in learning more about the ${devName} development.`
-      }));
+    if (hasSelections) {
+      const parts: string[] = [];
+      
+      if (displayNames.development) {
+        parts.push(`the ${displayNames.development} development`);
+      }
+      if (displayNames.lot) {
+        parts.push(displayNames.lot);
+      }
+      if (displayNames.model) {
+        parts.push(`The ${displayNames.model} model`);
+      }
+      if (displayNames.package) {
+        parts.push(`${displayNames.package} exterior package`);
+      }
+      if (displayNames.garage) {
+        parts.push(`${displayNames.garage} garage door`);
+      }
+
+      if (parts.length > 0) {
+        const summary = parts.join(', ');
+        setFormData(prev => ({
+          ...prev,
+          message: `I'm interested in: ${summary}. Please contact me with more information and next steps.`
+        }));
+      }
     }
-  }, [developmentParam, lotParam]);
+  }, [hasSelections, displayNames.development, displayNames.lot, displayNames.model, displayNames.package, displayNames.garage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,8 +202,71 @@ export default function Contact() {
                 <h2 className="text-2xl font-semibold mb-6 text-foreground">
                   Schedule a Design & Pricing Call
                 </h2>
+
+                {/* Your Selections Summary Block */}
+                {hasSelections && (
+                  <div className="mb-8 p-4 bg-secondary rounded-lg border border-border">
+                    <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
+                      Your Selections
+                    </h3>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {displayNames.development && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPinned className="h-4 w-4 text-accent flex-shrink-0" />
+                          <span className="text-muted-foreground">Development:</span>
+                          <span className="font-medium text-foreground">{displayNames.development}</span>
+                        </div>
+                      )}
+                      {displayNames.lot && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-accent flex-shrink-0" />
+                          <span className="text-muted-foreground">Lot:</span>
+                          <span className="font-medium text-foreground">{displayNames.lot}</span>
+                        </div>
+                      )}
+                      {displayNames.model && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Home className="h-4 w-4 text-accent flex-shrink-0" />
+                          <span className="text-muted-foreground">Model:</span>
+                          <span className="font-medium text-foreground">The {displayNames.model}</span>
+                        </div>
+                      )}
+                      {displayNames.package && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Palette className="h-4 w-4 text-accent flex-shrink-0" />
+                          <span className="text-muted-foreground">Package:</span>
+                          <span className="font-medium text-foreground">{displayNames.package}</span>
+                        </div>
+                      )}
+                      {displayNames.garage && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <DoorOpen className="h-4 w-4 text-accent flex-shrink-0" />
+                          <span className="text-muted-foreground">Garage:</span>
+                          <span className="font-medium text-foreground">{displayNames.garage}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Hidden fields for selections */}
+                  {selections.development && (
+                    <input type="hidden" name="development" value={selections.development} />
+                  )}
+                  {selections.lot && (
+                    <input type="hidden" name="lot" value={selections.lot} />
+                  )}
+                  {selections.model && (
+                    <input type="hidden" name="model_selection" value={selections.model} />
+                  )}
+                  {selections.package && (
+                    <input type="hidden" name="package" value={selections.package} />
+                  )}
+                  {selections.garage && (
+                    <input type="hidden" name="garage" value={selections.garage} />
+                  )}
+
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name *</Label>
@@ -184,25 +302,28 @@ export default function Contact() {
                         placeholder="(123) 456-7890"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="model">Interested Model</Label>
-                      <Select
-                        value={formData.model}
-                        onValueChange={(value) => handleChange("model", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a model..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="undecided">Not sure yet</SelectItem>
-                          {homeModels.map(model => (
-                            <SelectItem key={model.id} value={model.id}>
-                              The {model.name} ({model.sqft.toLocaleString()} sq ft)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* Only show model selector if no model was pre-selected */}
+                    {!selections.model && (
+                      <div className="space-y-2">
+                        <Label htmlFor="model">Interested Model</Label>
+                        <Select
+                          value={formData.model}
+                          onValueChange={(value) => handleChange("model", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a model..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="undecided">Not sure yet</SelectItem>
+                            {homeModels.map(model => (
+                              <SelectItem key={model.id} value={model.id}>
+                                The {model.name} ({model.sqft.toLocaleString()} sq ft)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
