@@ -151,4 +151,51 @@
   .shadow-elegant {
     box-shadow: var(--shadow-elegant);
   }
+
+  /* Premium focus states */
+  .focus-ring {
+    @apply outline-none ring-2 ring-ring/20 ring-offset-2 ring-offset-background transition-shadow duration-200;
+  }
+
+  /* Smooth transitions */
+  .transition-premium {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-200 ease-out hover:shadow-md hover:border-accent/30 hover:-translate-y-0.5;
+  }
+
+  /* Selection highlight */
+  .selection-ring {
+    @apply ring-2 ring-accent ring-offset-1 ring-offset-background;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Mobile bottom sheet styles */
+  .bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-background border-t border-border shadow-xl;
+    touch-action: pan-y;
+  }
+
+  .bottom-sheet-handle {
+    @apply w-12 h-1.5 rounded-full bg-muted-foreground/20 mx-auto my-3;
+  }
+
+  /* Image skeleton */
+  .skeleton-shimmer {
+    @apply animate-pulse bg-gradient-to-r from-muted via-muted-foreground/5 to-muted;
+    background-size: 200% 100%;
+  }
 }

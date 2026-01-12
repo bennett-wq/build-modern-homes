@@ -1,8 +1,9 @@
 // Build Wizard Page - Lot → Model → Design → Review flow
-import { useState, useMemo, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+// Premium proptech-grade wizard with smooth transitions
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots } from '@/data/lots/grand-haven';
 import { getModelBySlug } from '@/data/models';
@@ -13,14 +14,27 @@ import { Step1Lot } from '@/components/wizard/Step1Lot';
 import { Step2Model } from '@/components/wizard/Step2Model';
 import { Step3Design } from '@/components/wizard/Step3Design';
 import { Step4Review } from '@/components/wizard/Step4Review';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
-  { id: 1, name: 'Pick a Lot' },
-  { id: 2, name: 'Pick a Model' },
-  { id: 3, name: 'Design Exterior' },
-  { id: 4, name: 'Review' },
+  { id: 1, name: 'Pick a Lot', shortName: 'Lot', icon: MapPin },
+  { id: 2, name: 'Pick a Model', shortName: 'Model', icon: Home },
+  { id: 3, name: 'Design Exterior', shortName: 'Design', icon: Palette },
+  { id: 4, name: 'Review', shortName: 'Review', icon: ClipboardCheck },
 ];
+
+// Prevent layout shift during step transitions
+const stepVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const stepTransition = {
+  duration: 0.2,
+  ease: 'easeOut' as const,
+};
 
 export default function BuildWizard() {
   const { slug = 'grand-haven' } = useParams<{ slug: string }>();
@@ -35,12 +49,13 @@ export default function BuildWizard() {
     setGarageDoor,
     getShareableUrl,
     getContactUrl,
+    justSaved,
   } = useBuildSelection({ developmentSlug: slug });
 
   // Determine current step based on selections
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Auto-advance to appropriate step based on URL params
+  // Auto-advance to appropriate step based on URL params (only on mount)
   useEffect(() => {
     if (selection.garageDoorId && selection.packageId && selection.modelSlug && selection.lotId) {
       setCurrentStep(4);
@@ -63,66 +78,133 @@ export default function BuildWizard() {
   const selectedPackage = selection.packageId ? getPackageById(selection.packageId) || null : null;
   const selectedGarageDoor = selection.garageDoorId ? getGarageDoorById(selection.garageDoorId) || null : null;
 
+  const goToStep = useCallback((step: number) => {
+    if (step < currentStep || step === currentStep) {
+      setCurrentStep(step);
+    }
+  }, [currentStep]);
+
   if (!development) {
-    return <div className="min-h-screen flex items-center justify-center">Development not found</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-foreground mb-2">Development not found</h1>
+          <Button asChild variant="outline">
+            <Link to="/developments">Browse Developments</Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Progress Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-40">
+      {/* Progress Header - sticky and stable */}
+      <header className="border-b border-border bg-card/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="font-semibold text-foreground">Build at {development.name}</h1>
+          {/* Top row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                asChild
+                className="text-muted-foreground hover:text-foreground -ml-2"
+              >
+                <Link to={`/developments/${slug}`}>
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  {isMobile ? 'Back' : development.name}
+                </Link>
+              </Button>
+            </div>
+            
+            {/* Save indicator */}
+            <AnimatePresence mode="wait">
+              {justSaved && (
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-1.5 text-sm text-green-600"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="font-medium">Saved</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           
-          {/* Step Indicators */}
-          <div className="flex items-center gap-2">
-            {STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <button
-                  onClick={() => {
-                    if (step.id < currentStep) setCurrentStep(step.id);
-                  }}
-                  disabled={step.id > currentStep}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all',
-                    currentStep === step.id && 'bg-accent text-accent-foreground',
-                    currentStep > step.id && 'bg-green-500/10 text-green-600 cursor-pointer hover:bg-green-500/20',
-                    currentStep < step.id && 'bg-muted text-muted-foreground cursor-not-allowed'
-                  )}
-                >
-                  {currentStep > step.id ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
-                      {step.id}
+          {/* Step Indicators - consistent sizing */}
+          <nav className="flex items-center gap-1 sm:gap-2" aria-label="Wizard progress">
+            {STEPS.map((step, index) => {
+              const StepIcon = step.icon;
+              const isActive = currentStep === step.id;
+              const isComplete = currentStep > step.id;
+              const isClickable = step.id <= currentStep;
+              
+              return (
+                <div key={step.id} className="flex items-center">
+                  <button
+                    onClick={() => goToStep(step.id)}
+                    disabled={!isClickable}
+                    aria-current={isActive ? 'step' : undefined}
+                    aria-label={`Step ${step.id}: ${step.name}${isComplete ? ' (completed)' : ''}`}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                      isActive && 'bg-accent text-accent-foreground shadow-sm',
+                      isComplete && 'bg-green-500/10 text-green-600 hover:bg-green-500/15 cursor-pointer',
+                      !isActive && !isComplete && 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                    )}
+                  >
+                    {isComplete ? (
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                    ) : (
+                      <StepIcon className={cn(
+                        'h-4 w-4',
+                        isActive ? 'text-accent-foreground' : 'text-current'
+                      )} />
+                    )}
+                    <span className={cn(
+                      'hidden sm:inline',
+                      isMobile && 'sm:hidden'
+                    )}>
+                      {isMobile ? step.shortName : step.name}
                     </span>
+                    {isMobile && (
+                      <span className="sm:hidden text-xs">{step.shortName}</span>
+                    )}
+                  </button>
+                  
+                  {/* Connector line */}
+                  {index < STEPS.length - 1 && (
+                    <div className={cn(
+                      'w-4 sm:w-8 h-0.5 mx-0.5 sm:mx-1 rounded-full transition-colors duration-200',
+                      currentStep > step.id ? 'bg-green-500' : 'bg-border'
+                    )} />
                   )}
-                  {!isMobile && <span>{step.name}</span>}
-                </button>
-                {index < STEPS.length - 1 && (
-                  <div className={cn(
-                    'w-8 h-0.5 mx-1',
-                    currentStep > step.id ? 'bg-green-500' : 'bg-border'
-                  )} />
-                )}
-              </div>
-            ))}
-          </div>
+                </div>
+              );
+            })}
+          </nav>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        <AnimatePresence mode="wait">
+      {/* Main Content - fixed height prevents layout shift */}
+      <main className="flex-1 overflow-hidden relative">
+        <AnimatePresence mode="wait" initial={false}>
           {currentStep === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="h-full"
+              variants={stepVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={stepTransition}
+              className="absolute inset-0"
             >
               <Step1Lot
                 lots={lots}
@@ -138,10 +220,12 @@ export default function BuildWizard() {
           {currentStep === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="h-full"
+              variants={stepVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={stepTransition}
+              className="absolute inset-0"
             >
               <Step2Model
                 selectedModelSlug={selection.modelSlug}
@@ -156,10 +240,12 @@ export default function BuildWizard() {
           {currentStep === 3 && (
             <motion.div
               key="step3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="h-full"
+              variants={stepVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={stepTransition}
+              className="absolute inset-0"
             >
               <Step3Design
                 selectedPackageId={selection.packageId}
@@ -176,10 +262,12 @@ export default function BuildWizard() {
           {currentStep === 4 && (
             <motion.div
               key="step4"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="h-full"
+              variants={stepVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={stepTransition}
+              className="absolute inset-0"
             >
               <Step4Review
                 development={development}

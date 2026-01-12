@@ -1,7 +1,7 @@
 // BuildSelection state management hook
 // Persists to URL params and localStorage for shareable links and return visits
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 export interface BuildSelection {
@@ -20,6 +20,8 @@ interface UseBuildSelectionOptions {
 
 export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [justSaved, setJustSaved] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize from URL params first, then localStorage
   const initialSelection = useMemo((): BuildSelection => {
@@ -51,6 +53,26 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
 
   const [selection, setSelectionState] = useState<BuildSelection>(initialSelection);
 
+  // Show "Saved" indicator when selection changes
+  const triggerSaveIndicator = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    setJustSaved(true);
+    saveTimeoutRef.current = setTimeout(() => {
+      setJustSaved(false);
+    }, 1500);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Sync to localStorage and URL when selection changes
   useEffect(() => {
     // Save to localStorage
@@ -68,19 +90,23 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
 
   const setLot = useCallback((lotId: number | null) => {
     setSelectionState(prev => ({ ...prev, lotId }));
-  }, []);
+    triggerSaveIndicator();
+  }, [triggerSaveIndicator]);
 
   const setModel = useCallback((modelSlug: string | null) => {
     setSelectionState(prev => ({ ...prev, modelSlug }));
-  }, []);
+    triggerSaveIndicator();
+  }, [triggerSaveIndicator]);
 
   const setPackage = useCallback((packageId: string | null) => {
     setSelectionState(prev => ({ ...prev, packageId }));
-  }, []);
+    triggerSaveIndicator();
+  }, [triggerSaveIndicator]);
 
   const setGarageDoor = useCallback((garageDoorId: string | null) => {
     setSelectionState(prev => ({ ...prev, garageDoorId }));
-  }, []);
+    triggerSaveIndicator();
+  }, [triggerSaveIndicator]);
 
   const clearSelection = useCallback(() => {
     setSelectionState({
@@ -134,5 +160,6 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     getShareableUrl,
     getContactUrl,
     isComplete,
+    justSaved,
   };
 }
