@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FinancingBadge } from '@/components/financing/FinancingBadge';
+import { AppraisalBadge } from '@/components/appraisal/AppraisalBadge';
 import { developments, Development } from '@/data/developments';
 import { cn } from '@/lib/utils';
 
@@ -140,8 +141,12 @@ export default function Developments() {
               Each development features improved lots ready for your custom BaseMod home.
             </p>
             
-            {/* Financing Trust Signal */}
-            <FinancingBadge variant="inline" className="text-muted-foreground" />
+            {/* Trust Signals */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <FinancingBadge variant="inline" className="text-muted-foreground" />
+              <span className="hidden sm:inline text-muted-foreground/50">•</span>
+              <AppraisalBadge variant="inline" className="text-muted-foreground" />
+            </div>
           </motion.div>
         </div>
       </section>
