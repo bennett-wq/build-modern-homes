@@ -89,7 +89,7 @@ function DevelopmentCard({ development }: { development: Development }) {
             
             <div className="pt-2">
               {isActive ? (
-                <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Button asChild className="w-full">
                   <Link to={`/developments/${development.slug}`}>
                     Choose a Lot
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -221,7 +221,7 @@ export default function Developments() {
               Our team can help you explore available lots and find the perfect location 
               for your new home. Schedule a consultation to discuss your options.
             </p>
-            <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Button asChild size="lg">
               <Link to="/contact">
                 Schedule a Consultation
                 <ArrowRight className="ml-2 h-4 w-4" />

@@ -104,7 +104,7 @@ export function LotDetailsPanel({
       {/* CTAs */}
       {lot.status !== 'sold' && (
         <div className="pt-6 border-t border-border mt-auto space-y-3">
-          <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Button asChild className="w-full">
             <Link to={buildUrl}>
               <Home className="mr-2 h-4 w-4" />
               Build on This Lot

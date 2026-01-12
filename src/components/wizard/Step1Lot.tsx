@@ -210,7 +210,7 @@ export function Step1Lot({
               {canProceed ? (
                 <Button 
                   onClick={onNext} 
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0 shadow-sm"
+                  className="shrink-0"
                   size="default"
                 >
                   Continue

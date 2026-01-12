@@ -4,22 +4,82 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * BaseMod Button System
+ * 
+ * Hierarchy:
+ * - default (primary): Solid accent fill, main CTAs
+ * - secondary: Solid muted fill, supportive actions
+ * - outline: Border with transparent background, secondary actions
+ * - ghost: Minimal, text-only appearance, tertiary actions
+ * - link: Text with underline, inline links
+ * - destructive: Error/danger actions
+ * 
+ * All buttons:
+ * - Text always visible (no hover-reveal)
+ * - Consistent 150ms ease-out transitions
+ * - Same border radius, font weight, icon spacing
+ * - Accessible focus states
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  // Base styles - consistent across all variants
+  [
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap",
+    "rounded-md text-sm font-medium",
+    // Consistent transition for all states
+    "transition-all duration-150 ease-out",
+    // Focus ring - high contrast, accessible
+    "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    // Disabled state
+    "disabled:pointer-events-none disabled:opacity-50",
+    // Icon sizing
+    "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+    // Active/pressed state - slight scale for tactile feel
+    "active:scale-[0.98]",
+  ].join(" "),
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        // Primary - Main CTAs (Get Started, Build on This Lot, Schedule Call)
+        default: [
+          "bg-accent text-accent-foreground",
+          "hover:bg-accent/90 hover:shadow-md",
+        ].join(" "),
+        
+        // Secondary - Supportive actions (View Models, Browse)  
+        secondary: [
+          "bg-secondary text-secondary-foreground",
+          "hover:bg-secondary/80 hover:shadow-sm",
+        ].join(" "),
+        
+        // Outline - Secondary actions with border
+        outline: [
+          "border border-input bg-background text-foreground",
+          "hover:bg-muted hover:border-muted-foreground/30",
+        ].join(" "),
+        
+        // Ghost - Tertiary/minimal actions (Learn More, Back)
+        ghost: [
+          "text-foreground",
+          "hover:bg-muted hover:text-foreground",
+        ].join(" "),
+        
+        // Link - Inline text links
+        link: [
+          "text-accent underline-offset-4",
+          "hover:underline",
+        ].join(" "),
+        
+        // Destructive - Error/danger actions
+        destructive: [
+          "bg-destructive text-destructive-foreground",
+          "hover:bg-destructive/90 hover:shadow-md",
+        ].join(" "),
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        sm: "h-9 rounded-md px-3 text-xs",
+        lg: "h-12 rounded-md px-6 text-base",
         icon: "h-10 w-10",
       },
     },

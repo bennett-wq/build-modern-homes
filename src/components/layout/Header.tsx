@@ -49,7 +49,7 @@ export function Header() {
 
           {/* CTA Button */}
           <div className="hidden lg:block">
-            <Button asChild className="bg-primary hover:bg-charcoal-light text-primary-foreground">
+            <Button asChild>
               <Link to="/contact">Get Started</Link>
             </Button>
           </div>
@@ -92,7 +92,7 @@ export function Header() {
                 </Link>
               ))}
               <div className="pt-2 mt-2 border-t border-border">
-                <Button asChild className="w-full bg-primary hover:bg-charcoal-light text-primary-foreground">
+                <Button asChild className="w-full">
                   <Link to="/contact" onClick={() => setIsOpen(false)}>
                     Get Started
                   </Link>

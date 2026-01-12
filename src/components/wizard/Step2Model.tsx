@@ -101,7 +101,7 @@ export function Step2Model({
               </div>
               <Button 
                 onClick={onNext} 
-                className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0 shadow-sm"
+                className="shrink-0"
               >
                 Continue
                 <ArrowRight className="ml-2 h-4 w-4" />

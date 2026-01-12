@@ -190,7 +190,7 @@ export default function GrandHavenSitePlan() {
               BaseMod home.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Button asChild>
                 <Link to="/contact?development=grand-haven">Schedule a Site Visit</Link>
               </Button>
               <Button asChild variant="outline">

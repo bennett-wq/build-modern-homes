@@ -67,16 +67,16 @@ const Index = () => {
                 delivering quality, efficiency, and modern design at attainable prices.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button asChild size="lg" className="bg-wood hover:bg-wood-dark text-white">
+                <Button asChild size="lg">
                   <Link to="/models">
                     View Floor Plans
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/5 text-white hover:bg-white/15 hover:border-white/60">
                   <Link to="/pricing">Explore Pricing</Link>
                 </Button>
-                <Button asChild size="lg" variant="ghost" className="text-wood hover:text-wood-dark hover:bg-wood/10">
+                <Button asChild size="lg" variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10">
                   <Link to="/design-studio">Design Your Exterior</Link>
                 </Button>
               </div>
@@ -212,13 +212,13 @@ const Index = () => {
             with our interactive Design Studio.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button asChild size="lg" className="bg-charcoal hover:bg-charcoal-dark text-white">
+            <Button asChild size="lg">
               <Link to="/models">
                 Browse Models
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-charcoal text-charcoal hover:bg-charcoal hover:text-white">
+            <Button asChild size="lg" variant="outline">
               <Link to="/contact">Schedule a Call</Link>
             </Button>
           </div>

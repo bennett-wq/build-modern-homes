@@ -340,7 +340,7 @@ export default function Contact() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full sm:w-auto bg-primary hover:bg-charcoal-light text-primary-foreground"
+                    className="w-full sm:w-auto"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
