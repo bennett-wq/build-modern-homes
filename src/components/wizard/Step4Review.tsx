@@ -236,7 +236,7 @@ export function Step4Review({
           >
             <Button
               size="lg"
-              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-14 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="w-full h-14 text-base font-semibold"
               onClick={() => setShowScheduleModal(true)}
             >
               <Calendar className="mr-2 h-5 w-5" />

@@ -143,7 +143,7 @@ function ComingSoonContent({ development }: { development: ReturnType<typeof get
                         required
                         className="flex-1"
                       />
-                      <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground whitespace-nowrap">
+                      <Button type="submit" className="whitespace-nowrap">
                         <Bell className="mr-2 h-4 w-4" />
                         Join Interest List
                       </Button>
@@ -198,7 +198,7 @@ function ComingSoonContent({ development }: { development: ReturnType<typeof get
             Check out our active developments with lots available today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Button asChild size="lg">
               <Link to="/developments">
                 View All Developments
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -361,13 +361,13 @@ function ActiveDevelopmentContent({ development }: { development: NonNullable<Re
               complete, streamlining the building process and ensuring a cohesive community appearance.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+              <Button asChild size="lg" variant="outline" className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/60">
                 <Link to="/models">
                   Browse Home Models
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Button asChild size="lg">
                 <Link to={`/contact?development=${development.slug}`}>
                   Inquire About Lots
                 </Link>
