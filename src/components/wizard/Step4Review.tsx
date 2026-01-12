@@ -1,6 +1,7 @@
 // Step 4: Review + Get Started - final summary with CTAs
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+// Premium polish with proper Dialog handling
+import { useState, forwardRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +21,8 @@ import {
   ArrowRight,
   Copy,
   Check,
-  Phone
+  Phone,
+  CheckCircle
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
@@ -77,35 +79,43 @@ export function Step4Review({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Review Your Plan</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+            Review Your Plan
+          </h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Here's a summary of your selections
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onBack}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
           Back
         </Button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <div className={cn(
-          'max-w-2xl mx-auto space-y-6',
-          isMobile ? '' : ''
-        )}>
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
+        <div className="max-w-2xl mx-auto space-y-5">
           {/* Summary Card */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <Card className="border-accent/20 bg-gradient-to-br from-card to-accent/5">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Your Home Plan</h3>
+            <Card className="border-accent/20 bg-gradient-to-br from-card to-accent/5 shadow-lg overflow-hidden">
+              <CardContent className="p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <CheckCircle className="h-5 w-5 text-accent" />
+                  <h3 className="text-lg font-semibold text-foreground">Your Home Plan</h3>
+                </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-1">
                   {/* Development */}
                   <SummaryRow
                     icon={<MapPin className="h-4 w-4" />}
@@ -149,14 +159,14 @@ export function Step4Review({
 
                 {/* Price Estimate */}
                 {model && (
-                  <div className="mt-6 pt-4 border-t border-border">
+                  <div className="mt-6 pt-5 border-t border-border">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Est. Starting Price</span>
-                      <span className="text-2xl font-semibold text-accent">
+                      <span className="text-muted-foreground font-medium">Est. Starting Price</span>
+                      <span className="text-2xl font-bold text-accent">
                         ${model.price.toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-2">
                       * Final pricing determined during consultation
                     </p>
                   </div>
@@ -167,26 +177,50 @@ export function Step4Review({
 
           {/* Share Link */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.05, duration: 0.2 }}
           >
-            <Card>
+            <Card className="shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Share2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Share2 className="h-4 w-4 text-muted-foreground shrink-0" />
                   <input
                     type="text"
                     value={shareableUrl}
                     readOnly
+                    aria-label="Shareable link"
                     className="flex-1 text-sm bg-transparent border-none outline-none text-muted-foreground truncate"
                   />
-                  <Button variant="outline" size="sm" onClick={handleCopyLink}>
-                    {copied ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleCopyLink}
+                    className="shrink-0 transition-colors"
+                  >
+                    <AnimatePresence mode="wait">
+                      {copied ? (
+                        <motion.div
+                          key="check"
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.5, opacity: 0 }}
+                          transition={{ duration: 0.1 }}
+                        >
+                          <Check className="h-4 w-4 text-green-600" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="copy"
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.5, opacity: 0 }}
+                          transition={{ duration: 0.1 }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </Button>
                 </div>
               </CardContent>
@@ -195,14 +229,14 @@ export function Step4Review({
 
           {/* CTA Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-3"
+            transition={{ delay: 0.1, duration: 0.2 }}
+            className="space-y-3 pt-2"
           >
             <Button
               size="lg"
-              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-14 text-lg"
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-14 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
               onClick={() => setShowScheduleModal(true)}
             >
               <Calendar className="mr-2 h-5 w-5" />
@@ -212,7 +246,7 @@ export function Step4Review({
             <Button
               variant="outline"
               size="lg"
-              className="w-full h-12"
+              className="w-full h-12 font-medium"
               asChild
             >
               <Link to={contactUrl}>
@@ -226,16 +260,28 @@ export function Step4Review({
       </div>
 
       {/* Schedule Modal */}
-      <ScheduleModal
-        open={showScheduleModal}
-        onOpenChange={setShowScheduleModal}
-        development={development}
-        lot={lot}
-        model={model}
-        package_={package_}
-        garageDoor={garageDoor}
-        contactUrl={contactUrl}
-      />
+      <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Calendar className="h-5 w-5 text-accent" />
+              Schedule Your Call
+            </DialogTitle>
+            <DialogDescription>
+              We'll discuss your home plan and answer any questions
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScheduleForm
+            development={development}
+            lot={lot}
+            model={model}
+            package_={package_}
+            garageDoor={garageDoor}
+            onSuccess={() => setShowScheduleModal(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -250,49 +296,45 @@ interface SummaryRowProps {
 
 function SummaryRow({ icon, label, value, subValue, colorSwatch }: SummaryRowProps) {
   return (
-    <div className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 text-accent">
+    <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+      <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 text-accent">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
-        <div className="flex items-center gap-2">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
+        <div className="flex items-center gap-2 mt-0.5">
           {colorSwatch && (
             <div 
-              className="w-4 h-4 rounded border border-border flex-shrink-0"
+              className="w-4 h-4 rounded-sm border border-border shadow-sm shrink-0"
               style={{ backgroundColor: colorSwatch }}
             />
           )}
-          <p className="font-medium text-foreground">{value}</p>
+          <p className="font-semibold text-foreground">{value}</p>
         </div>
-        {subValue && <p className="text-xs text-muted-foreground">{subValue}</p>}
+        {subValue && <p className="text-xs text-muted-foreground mt-0.5">{subValue}</p>}
       </div>
     </div>
   );
 }
 
-// Schedule Modal Component
-interface ScheduleModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+// Schedule Form Component - extracted to avoid forwardRef issues
+interface ScheduleFormProps {
   development: Development;
   lot: Lot | null;
   model: HomeModel | null;
   package_: ExteriorPackage | null;
   garageDoor: GarageDoor | null;
-  contactUrl: string;
+  onSuccess: () => void;
 }
 
-function ScheduleModal({
-  open,
-  onOpenChange,
+function ScheduleForm({
   development,
   lot,
   model,
   package_,
   garageDoor,
-  contactUrl,
-}: ScheduleModalProps) {
+  onSuccess,
+}: ScheduleFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -312,7 +354,7 @@ function ScheduleModal({
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     setIsSubmitting(false);
-    onOpenChange(false);
+    onSuccess();
     toast({
       title: "Scheduling request sent!",
       description: "We'll confirm your call within 1 business day.",
@@ -320,122 +362,114 @@ function ScheduleModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-accent" />
-            Schedule Your Call
-          </DialogTitle>
-          <DialogDescription>
-            We'll discuss your home plan and answer any questions
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      {/* Summary */}
+      <div className="bg-muted rounded-xl p-4 text-sm space-y-1.5">
+        <p><span className="font-medium">Development:</span> {development.name}</p>
+        {lot && <p><span className="font-medium">Lot:</span> {lot.label}</p>}
+        {model && <p><span className="font-medium">Model:</span> The {model.name}</p>}
+        {package_ && <p><span className="font-medium">Package:</span> {package_.name}</p>}
+        {garageDoor && <p><span className="font-medium">Garage:</span> {garageDoor.name}</p>}
+      </div>
 
-        {/* Summary */}
-        <div className="bg-muted rounded-lg p-4 text-sm space-y-1">
-          <p><strong>Development:</strong> {development.name}</p>
-          {lot && <p><strong>Lot:</strong> {lot.label}</p>}
-          {model && <p><strong>Model:</strong> The {model.name}</p>}
-          {package_ && <p><strong>Package:</strong> {package_.name}</p>}
-          {garageDoor && <p><strong>Garage:</strong> {garageDoor.name}</p>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="schedule-name">Full Name *</Label>
+            <Input
+              id="schedule-name"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="John Smith"
+              className="transition-shadow focus:shadow-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="schedule-phone">Phone *</Label>
+            <Input
+              id="schedule-phone"
+              type="tel"
+              required
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              placeholder="(123) 456-7890"
+              className="transition-shadow focus:shadow-sm"
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="schedule-name">Full Name *</Label>
-              <Input
-                id="schedule-name"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="John Smith"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="schedule-phone">Phone *</Label>
-              <Input
-                id="schedule-phone"
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="(123) 456-7890"
-              />
-            </div>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="schedule-email">Email *</Label>
+          <Input
+            id="schedule-email"
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            placeholder="john@example.com"
+            className="transition-shadow focus:shadow-sm"
+          />
+        </div>
 
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="schedule-email">Email *</Label>
+            <Label htmlFor="schedule-date">Preferred Date</Label>
             <Input
-              id="schedule-email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              placeholder="john@example.com"
+              id="schedule-date"
+              type="date"
+              value={formData.preferredDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, preferredDate: e.target.value }))}
+              className="transition-shadow focus:shadow-sm"
             />
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="schedule-date">Preferred Date</Label>
-              <Input
-                id="schedule-date"
-                type="date"
-                value={formData.preferredDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, preferredDate: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="schedule-time">Preferred Time</Label>
-              <Select
-                value={formData.preferredTime}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, preferredTime: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select time" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="morning">Morning (9am - 12pm)</SelectItem>
-                  <SelectItem value="afternoon">Afternoon (12pm - 5pm)</SelectItem>
-                  <SelectItem value="evening">Evening (5pm - 7pm)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <Label htmlFor="schedule-notes">Notes (optional)</Label>
-            <Textarea
-              id="schedule-notes"
-              rows={2}
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Any questions or specific topics you'd like to discuss?"
-            />
+            <Label htmlFor="schedule-time">Preferred Time</Label>
+            <Select
+              value={formData.preferredTime}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, preferredTime: value }))}
+            >
+              <SelectTrigger className="transition-shadow focus:shadow-sm">
+                <SelectValue placeholder="Select time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="morning">Morning (9am - 12pm)</SelectItem>
+                <SelectItem value="afternoon">Afternoon (12pm - 5pm)</SelectItem>
+                <SelectItem value="evening">Evening (5pm - 7pm)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+        </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Submitting...' : 'Request Call'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="space-y-2">
+          <Label htmlFor="schedule-notes">Notes (optional)</Label>
+          <Textarea
+            id="schedule-notes"
+            rows={2}
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Any questions or specific topics you'd like to discuss?"
+            className="transition-shadow focus:shadow-sm resize-none"
+          />
+        </div>
+
+        <div className="flex gap-3 pt-3">
+          <Button
+            type="submit"
+            className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Submitting...
+              </span>
+            ) : (
+              'Request Call'
+            )}
+          </Button>
+        </div>
+      </form>
+    </>
   );
 }

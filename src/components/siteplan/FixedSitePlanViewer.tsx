@@ -1,4 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+// Fixed Site Plan Viewer - premium proptech map experience
+// No zoom/pan - stable, centered, clickable polygons
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { Lot, LotPolygonPoint, LotStatus } from '@/data/lots/grand-haven';
@@ -13,21 +15,24 @@ interface FixedSitePlanViewerProps {
   className?: string;
 }
 
-const STATUS_COLORS: Record<LotStatus, { fill: string; stroke: string; hoverFill: string }> = {
+const STATUS_COLORS: Record<LotStatus, { fill: string; stroke: string; hoverFill: string; selectedFill: string }> = {
   available: {
-    fill: 'rgba(34, 197, 94, 0.15)',
+    fill: 'rgba(34, 197, 94, 0.12)',
     stroke: 'rgb(34, 197, 94)',
-    hoverFill: 'rgba(34, 197, 94, 0.35)',
+    hoverFill: 'rgba(34, 197, 94, 0.28)',
+    selectedFill: 'rgba(34, 197, 94, 0.35)',
   },
   reserved: {
-    fill: 'rgba(245, 158, 11, 0.15)',
+    fill: 'rgba(245, 158, 11, 0.12)',
     stroke: 'rgb(245, 158, 11)',
-    hoverFill: 'rgba(245, 158, 11, 0.35)',
+    hoverFill: 'rgba(245, 158, 11, 0.28)',
+    selectedFill: 'rgba(245, 158, 11, 0.35)',
   },
   sold: {
-    fill: 'rgba(156, 163, 175, 0.1)',
+    fill: 'rgba(156, 163, 175, 0.08)',
     stroke: 'rgb(156, 163, 175)',
-    hoverFill: 'rgba(156, 163, 175, 0.2)',
+    hoverFill: 'rgba(156, 163, 175, 0.15)',
+    selectedFill: 'rgba(156, 163, 175, 0.2)',
   },
 };
 
@@ -54,7 +59,7 @@ export function FixedSitePlanViewer({
   // Use external hover state if provided, otherwise internal
   const hoveredLotId = externalHoveredId !== undefined ? externalHoveredId : internalHoveredLotId;
 
-  const hoveredLot = lots.find(l => l.id === hoveredLotId);
+  const hoveredLot = useMemo(() => lots.find(l => l.id === hoveredLotId), [lots, hoveredLotId]);
 
   const getPolygonPoints = useCallback((polygon: LotPolygonPoint[]) => {
     if (polygon.length < 3) return '';
@@ -117,6 +122,12 @@ export function FixedSitePlanViewer({
     };
   }, []);
 
+  // Respect reduced motion preference
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -125,24 +136,37 @@ export function FixedSitePlanViewer({
         className
       )}
       onMouseMove={handleMouseMove}
+      role="img"
+      aria-label="Interactive site plan map. Click on a lot to select it."
     >
       {/* Fixed aspect ratio container */}
       <div className="absolute inset-0 flex items-center justify-center">
         {/* Image wrapper with preserved aspect ratio */}
         <div className="relative w-full h-full flex items-center justify-center">
-          {/* Skeleton loader */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
-            </div>
-          )}
+          {/* Skeleton loader with blur-up effect */}
+          <AnimatePresence>
+            {!imageLoaded && (
+              <motion.div 
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 flex items-center justify-center bg-muted"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 border-3 border-accent/30 border-t-accent rounded-full animate-spin" />
+                  <span className="text-sm text-muted-foreground">Loading site plan...</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Site Plan Image */}
           <img
             src={sitePlanImagePath}
             alt="Site Plan"
             className={cn(
-              'max-w-full max-h-full object-contain transition-opacity duration-300',
+              'max-w-full max-h-full object-contain',
+              prefersReducedMotion ? '' : 'transition-opacity duration-300',
               imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
             onLoad={() => setImageLoaded(true)}
@@ -163,6 +187,7 @@ export function FixedSitePlanViewer({
                 width: '100%',
                 height: '100%',
               }}
+              aria-hidden="true"
             >
               {lots.map(lot => {
                 if (lot.polygon.length < 3) return null;
@@ -172,20 +197,30 @@ export function FixedSitePlanViewer({
                 const isHovered = lot.id === hoveredLotId;
                 const isDisabled = lot.status === 'sold';
 
+                const fill = isSelected 
+                  ? colors.selectedFill 
+                  : isHovered 
+                    ? colors.hoverFill 
+                    : colors.fill;
+
                 return (
                   <polygon
                     key={lot.id}
                     points={getPolygonPoints(lot.polygon)}
-                    fill={isSelected || isHovered ? colors.hoverFill : colors.fill}
+                    fill={fill}
                     stroke={colors.stroke}
                     strokeWidth={isSelected ? 0.4 : isHovered ? 0.3 : 0.15}
                     className={cn(
-                      'pointer-events-auto transition-all duration-200',
-                      isDisabled ? 'cursor-default' : 'cursor-pointer'
+                      'pointer-events-auto',
+                      prefersReducedMotion ? '' : 'transition-all duration-150',
+                      isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
                     )}
                     onClick={() => handleLotClick(lot)}
                     onMouseEnter={(e) => handleLotHover(lot.id, e)}
                     onMouseLeave={() => handleLotHover(null)}
+                    style={{
+                      filter: isSelected ? 'drop-shadow(0 0 2px rgba(0,0,0,0.2))' : undefined
+                    }}
                   />
                 );
               })}
@@ -198,21 +233,22 @@ export function FixedSitePlanViewer({
       <AnimatePresence>
         {hoveredLot && tooltipPosition && (
           <motion.div
-            initial={{ opacity: 0, y: 5 }}
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 5 }}
-            transition={{ duration: 0.15 }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 5 }}
+            transition={{ duration: 0.12 }}
             className="absolute z-20 pointer-events-none"
             style={{
               left: tooltipPosition.x,
               top: tooltipPosition.y,
               transform: 'translate(-50%, -100%)',
             }}
+            role="tooltip"
           >
             <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
-              <p className="text-sm font-medium text-foreground">{hoveredLot.label}</p>
+              <p className="text-sm font-semibold text-foreground">{hoveredLot.label}</p>
               <p className={cn(
-                'text-xs',
+                'text-xs font-medium',
                 hoveredLot.status === 'available' && 'text-green-600',
                 hoveredLot.status === 'reserved' && 'text-amber-600',
                 hoveredLot.status === 'sold' && 'text-muted-foreground'

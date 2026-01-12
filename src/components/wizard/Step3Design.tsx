@@ -1,5 +1,5 @@
 // Step 3: Design Your Exterior - package and garage door selection with live preview
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,18 +31,35 @@ export function Step3Design({
   const selectedDoor = garageDoors.find(d => d.id === selectedGarageDoorId);
   const canProceed = selectedPackageId && selectedGarageDoorId;
 
+  const [activeTab, setActiveTab] = useState<string>('package');
+
+  // Auto-switch to garage tab when package is selected
+  const handleSelectPackage = useCallback((id: string) => {
+    onSelectPackage(id);
+    if (!selectedGarageDoorId) {
+      setTimeout(() => setActiveTab('garage'), 150);
+    }
+  }, [onSelectPackage, selectedGarageDoorId]);
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Design Your Exterior</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Choose your exterior package and garage door style
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+            Design Your Exterior
+          </h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Choose your package and garage door style
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onBack}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
           Back
         </Button>
       </div>
@@ -54,8 +71,8 @@ export function Step3Design({
       )}>
         {/* Live Preview */}
         <div className={cn(
-          'bg-muted flex items-center justify-center p-8',
-          isMobile ? 'h-64' : 'flex-1'
+          'bg-gradient-to-b from-muted to-muted/50 flex items-center justify-center p-6 sm:p-8',
+          isMobile ? 'h-56 shrink-0' : 'flex-1'
         )}>
           <ExteriorPreview 
             package_={selectedPackage} 
@@ -65,18 +82,34 @@ export function Step3Design({
 
         {/* Selection Panel */}
         <div className={cn(
-          'bg-background border-l border-border overflow-auto',
-          isMobile ? 'flex-1' : 'w-96'
+          'bg-background border-l border-border overflow-hidden flex flex-col',
+          isMobile ? 'flex-1' : 'w-96 shrink-0'
         )}>
-          <Tabs defaultValue="package" className="h-full flex flex-col">
-            <TabsList className="grid grid-cols-2 mx-4 mt-4">
-              <TabsTrigger value="package" className="flex items-center gap-2">
+          <Tabs 
+            value={activeTab} 
+            onValueChange={setActiveTab} 
+            className="h-full flex flex-col"
+          >
+            <TabsList className="grid grid-cols-2 mx-4 mt-4 shrink-0">
+              <TabsTrigger 
+                value="package" 
+                className="flex items-center gap-2 data-[state=active]:shadow-sm"
+              >
                 <Palette className="h-4 w-4" />
-                Package
+                <span>Package</span>
+                {selectedPackageId && (
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                )}
               </TabsTrigger>
-              <TabsTrigger value="garage" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="garage" 
+                className="flex items-center gap-2 data-[state=active]:shadow-sm"
+              >
                 <DoorOpen className="h-4 w-4" />
-                Garage
+                <span>Garage</span>
+                {selectedGarageDoorId && (
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                )}
               </TabsTrigger>
             </TabsList>
 
@@ -87,7 +120,7 @@ export function Step3Design({
                     key={pkg.id}
                     package_={pkg}
                     isSelected={pkg.id === selectedPackageId}
-                    onSelect={() => onSelectPackage(pkg.id)}
+                    onSelect={() => handleSelectPackage(pkg.id)}
                   />
                 ))}
               </div>
@@ -110,53 +143,71 @@ export function Step3Design({
       </div>
 
       {/* Footer */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="px-6 py-4 border-t border-border bg-card"
-      >
-        {canProceed ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {selectedPackage && (
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-4 h-4 rounded border border-border"
-                    style={{ backgroundColor: selectedPackage.sidingColor }}
-                  />
-                  <span className="text-sm text-foreground">{selectedPackage.name}</span>
-                </div>
-              )}
-              {selectedDoor && (
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-4 h-4 rounded border border-border"
-                    style={{ backgroundColor: selectedDoor.color }}
-                  />
-                  <span className="text-sm text-foreground">{selectedDoor.name}</span>
-                </div>
-              )}
-            </div>
-            <Button onClick={onNext} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              Review Plan
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="text-center py-2">
-            <p className="text-muted-foreground text-sm">
-              Select {!selectedPackageId && 'an exterior package'}
-              {!selectedPackageId && !selectedGarageDoorId && ' and '}
-              {!selectedGarageDoorId && 'a garage door'}
-            </p>
-          </div>
-        )}
-      </motion.div>
+      <div className="px-4 sm:px-6 py-4 border-t border-border bg-card shrink-0">
+        <AnimatePresence mode="wait">
+          {canProceed ? (
+            <motion.div
+              key="proceed"
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                {selectedPackage && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                    <div 
+                      className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                      style={{ backgroundColor: selectedPackage.sidingColor }}
+                    />
+                    <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                      {selectedPackage.name}
+                    </span>
+                  </div>
+                )}
+                {selectedDoor && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                    <div 
+                      className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                      style={{ backgroundColor: selectedDoor.color }}
+                    />
+                    <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                      {selectedDoor.name}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Button 
+                onClick={onNext} 
+                className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0 shadow-sm"
+              >
+                Review Plan
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="incomplete"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-2"
+            >
+              <p className="text-muted-foreground text-sm">
+                Select {!selectedPackageId && 'an exterior package'}
+                {!selectedPackageId && !selectedGarageDoorId && ' and '}
+                {!selectedGarageDoorId && 'a garage door'}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-// Live exterior preview SVG
+// Live exterior preview SVG - now with smoother transitions
 interface ExteriorPreviewProps {
   package_?: ExteriorPackage;
   garageDoor?: GarageDoor;
@@ -168,70 +219,184 @@ function ExteriorPreview({ package_, garageDoor }: ExteriorPreviewProps) {
   const roof = package_?.roofColor || 'hsl(0, 0%, 40%)';
   const garage = garageDoor?.color || 'hsl(0, 0%, 50%)';
 
+  // Memoize the key to prevent unnecessary re-renders
+  const previewKey = useMemo(() => 
+    `${package_?.id || 'none'}-${garageDoor?.id || 'none'}`,
+    [package_?.id, garageDoor?.id]
+  );
+
   return (
     <motion.div
-      key={`${package_?.id}-${garageDoor?.id}`}
-      initial={{ opacity: 0, scale: 0.98 }}
+      key={previewKey}
+      initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className="w-full max-w-md"
     >
-      <svg viewBox="0 0 400 280" className="w-full h-auto drop-shadow-xl">
+      <svg 
+        viewBox="0 0 400 280" 
+        className="w-full h-auto filter drop-shadow-lg"
+        role="img"
+        aria-label="Home exterior preview showing selected colors"
+      >
         {/* Sky/Background */}
         <rect x="0" y="0" width="400" height="280" fill="hsl(200, 30%, 95%)" />
         
         {/* Ground */}
         <rect x="0" y="230" width="400" height="50" fill="hsl(120, 20%, 65%)" />
         
-        {/* Main House Body */}
-        <rect x="60" y="120" width="200" height="110" fill={siding} />
+        {/* Main House Body - smooth color transition */}
+        <motion.rect 
+          x="60" y="120" width="200" height="110" 
+          initial={false}
+          animate={{ fill: siding }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Garage Extension */}
-        <rect x="260" y="140" width="80" height="90" fill={siding} />
+        <motion.rect 
+          x="260" y="140" width="80" height="90" 
+          initial={false}
+          animate={{ fill: siding }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Main Roof */}
-        <polygon points="50,120 160,50 270,120" fill={roof} />
+        <motion.polygon 
+          points="50,120 160,50 270,120" 
+          initial={false}
+          animate={{ fill: roof }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Garage Roof */}
-        <polygon points="250,140 300,100 350,140" fill={roof} />
+        <motion.polygon 
+          points="250,140 300,100 350,140" 
+          initial={false}
+          animate={{ fill: roof }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Trim - Main */}
-        <rect x="58" y="118" width="204" height="4" fill={trim} />
-        <rect x="58" y="226" width="204" height="4" fill={trim} />
+        <motion.rect 
+          x="58" y="118" width="204" height="4" 
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
+        <motion.rect 
+          x="58" y="226" width="204" height="4" 
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Trim - Garage */}
-        <rect x="258" y="138" width="84" height="4" fill={trim} />
-        <rect x="258" y="226" width="84" height="4" fill={trim} />
+        <motion.rect 
+          x="258" y="138" width="84" height="4" 
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
+        <motion.rect 
+          x="258" y="226" width="84" height="4" 
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Front Door */}
-        <rect x="140" y="170" width="40" height="60" fill={trim} />
+        <motion.rect 
+          x="140" y="170" width="40" height="60" 
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
         <rect x="145" y="175" width="30" height="50" fill="hsl(25, 40%, 35%)" />
         <circle cx="170" cy="200" r="3" fill="hsl(45, 80%, 50%)" />
         
         {/* Windows - Main */}
-        <rect x="80" y="145" width="40" height="50" fill={trim} rx="2" />
+        <motion.rect 
+          x="80" y="145" width="40" height="50" rx="2"
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
         <rect x="84" y="149" width="32" height="42" fill="hsl(200, 30%, 80%)" />
-        <line x1="100" y1="149" x2="100" y2="191" stroke={trim} strokeWidth="2" />
+        <motion.line 
+          x1="100" y1="149" x2="100" y2="191" 
+          strokeWidth="2"
+          initial={false}
+          animate={{ stroke: trim }}
+          transition={{ duration: 0.2 }}
+        />
         
-        <rect x="200" y="145" width="40" height="50" fill={trim} rx="2" />
+        <motion.rect 
+          x="200" y="145" width="40" height="50" rx="2"
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
         <rect x="204" y="149" width="32" height="42" fill="hsl(200, 30%, 80%)" />
-        <line x1="220" y1="149" x2="220" y2="191" stroke={trim} strokeWidth="2" />
+        <motion.line 
+          x1="220" y1="149" x2="220" y2="191" 
+          strokeWidth="2"
+          initial={false}
+          animate={{ stroke: trim }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Windows - Upper */}
-        <rect x="125" y="75" width="30" height="35" fill={trim} rx="2" />
+        <motion.rect 
+          x="125" y="75" width="30" height="35" rx="2"
+          initial={false}
+          animate={{ fill: trim }}
+          transition={{ duration: 0.2 }}
+        />
         <rect x="128" y="78" width="24" height="29" fill="hsl(200, 30%, 80%)" />
-        <line x1="140" y1="78" x2="140" y2="107" stroke={trim} strokeWidth="2" />
+        <motion.line 
+          x1="140" y1="78" x2="140" y2="107" 
+          strokeWidth="2"
+          initial={false}
+          animate={{ stroke: trim }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Garage Door */}
-        <rect x="275" y="165" width="50" height="65" fill={garage} rx="2" />
+        <motion.rect 
+          x="275" y="165" width="50" height="65" rx="2"
+          initial={false}
+          animate={{ fill: garage }}
+          transition={{ duration: 0.2 }}
+        />
         
         {/* Garage Door Details based on style */}
         {garageDoor?.style === 'carriage' && (
           <>
-            <rect x="278" y="170" width="20" height="25" fill="none" stroke={trim} strokeWidth="1" opacity="0.6" />
-            <rect x="302" y="170" width="20" height="25" fill="none" stroke={trim} strokeWidth="1" opacity="0.6" />
-            <line x1="288" y1="205" x2="288" y2="225" stroke={trim} strokeWidth="1" opacity="0.4" />
-            <line x1="312" y1="205" x2="312" y2="225" stroke={trim} strokeWidth="1" opacity="0.4" />
+            <motion.rect 
+              x="278" y="170" width="20" height="25" fill="none" strokeWidth="1" opacity="0.6"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.rect 
+              x="302" y="170" width="20" height="25" fill="none" strokeWidth="1" opacity="0.6"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.line 
+              x1="288" y1="205" x2="288" y2="225" strokeWidth="1" opacity="0.4"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.line 
+              x1="312" y1="205" x2="312" y2="225" strokeWidth="1" opacity="0.4"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
           </>
         )}
         {garageDoor?.style === 'modern' && (
@@ -245,15 +410,40 @@ function ExteriorPreview({ package_, garageDoor }: ExteriorPreviewProps) {
           <>
             <rect x="280" y="168" width="14" height="18" fill="hsl(200, 30%, 80%)" />
             <rect x="298" y="168" width="14" height="18" fill="hsl(200, 30%, 80%)" />
-            <line x1="275" y1="192" x2="325" y2="192" stroke={trim} strokeWidth="1" opacity="0.3" />
-            <line x1="275" y1="210" x2="325" y2="210" stroke={trim} strokeWidth="1" opacity="0.3" />
+            <motion.line 
+              x1="275" y1="192" x2="325" y2="192" strokeWidth="1" opacity="0.3"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.line 
+              x1="275" y1="210" x2="325" y2="210" strokeWidth="1" opacity="0.3"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
           </>
         )}
         {garageDoor?.style === 'traditional' && (
           <>
-            <line x1="275" y1="185" x2="325" y2="185" stroke={trim} strokeWidth="1" opacity="0.3" />
-            <line x1="275" y1="205" x2="325" y2="205" stroke={trim} strokeWidth="1" opacity="0.3" />
-            <rect x="280" y="168" width="40" height="12" fill="none" stroke={trim} strokeWidth="1" opacity="0.2" />
+            <motion.line 
+              x1="275" y1="185" x2="325" y2="185" strokeWidth="1" opacity="0.3"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.line 
+              x1="275" y1="205" x2="325" y2="205" strokeWidth="1" opacity="0.3"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.rect 
+              x="280" y="168" width="40" height="12" fill="none" strokeWidth="1" opacity="0.2"
+              initial={false}
+              animate={{ stroke: trim }}
+              transition={{ duration: 0.2 }}
+            />
           </>
         )}
         
@@ -264,12 +454,22 @@ function ExteriorPreview({ package_, garageDoor }: ExteriorPreviewProps) {
         <rect x="152" y="230" width="16" height="50" fill="hsl(0, 0%, 75%)" />
         
         {/* Chimney */}
-        <rect x="200" y="60" width="20" height="40" fill={siding} />
-        <rect x="198" y="55" width="24" height="8" fill={roof} />
+        <motion.rect 
+          x="200" y="60" width="20" height="40"
+          initial={false}
+          animate={{ fill: siding }}
+          transition={{ duration: 0.2 }}
+        />
+        <motion.rect 
+          x="198" y="55" width="24" height="8"
+          initial={false}
+          animate={{ fill: roof }}
+          transition={{ duration: 0.2 }}
+        />
       </svg>
       
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
-        <Eye className="h-3 w-3" />
+        <Eye className="h-3.5 w-3.5" />
         <span>Live Preview</span>
       </div>
     </motion.div>
@@ -287,27 +487,38 @@ function PackageCard({ package_, isSelected, onSelect }: PackageCardProps) {
     <Card
       className={cn(
         'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
         isSelected 
-          ? 'ring-2 ring-accent border-accent' 
-          : 'hover:border-accent/50'
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
       )}
       onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={isSelected}
+      aria-label={`Select ${package_.name} exterior package`}
     >
       <CardContent className="p-3 flex items-center gap-3">
         {/* Color swatches */}
         <div className="flex gap-1">
           <div 
-            className="w-8 h-8 rounded border border-border"
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
             style={{ backgroundColor: package_.sidingColor }}
             title="Siding"
           />
           <div 
-            className="w-8 h-8 rounded border border-border"
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
             style={{ backgroundColor: package_.trimColor }}
             title="Trim"
           />
           <div 
-            className="w-8 h-8 rounded border border-border"
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
             style={{ backgroundColor: package_.roofColor }}
             title="Roof"
           />
@@ -318,11 +529,19 @@ function PackageCard({ package_, isSelected, onSelect }: PackageCardProps) {
           <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
         </div>
         
-        {isSelected && (
-          <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
-            <Check className="h-4 w-4 text-accent-foreground" />
-          </div>
-        )}
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </CardContent>
     </Card>
   );
@@ -339,16 +558,27 @@ function GarageDoorCard({ door, isSelected, onSelect }: GarageDoorCardProps) {
     <Card
       className={cn(
         'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
         isSelected 
-          ? 'ring-2 ring-accent border-accent' 
-          : 'hover:border-accent/50'
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
       )}
       onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={isSelected}
+      aria-label={`Select ${door.name} garage door`}
     >
       <CardContent className="p-3 flex items-center gap-3">
         {/* Door preview */}
         <div 
-          className="w-12 h-10 rounded border border-border flex items-center justify-center"
+          className="w-12 h-10 rounded-md border border-border flex items-center justify-center shadow-sm"
           style={{ backgroundColor: door.color }}
         >
           <DoorOpen className="h-5 w-5 text-white/60" />
@@ -359,11 +589,19 @@ function GarageDoorCard({ door, isSelected, onSelect }: GarageDoorCardProps) {
           <p className="text-xs text-muted-foreground truncate">{door.description}</p>
         </div>
         
-        {isSelected && (
-          <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
-            <Check className="h-4 w-4 text-accent-foreground" />
-          </div>
-        )}
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </CardContent>
     </Card>
   );
