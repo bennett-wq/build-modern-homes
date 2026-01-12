@@ -5,7 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
+import { InteractiveSitePlan } from "@/components/siteplan/InteractiveSitePlan";
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -88,26 +88,14 @@ export default function Development() {
         </div>
       </section>
 
-      {/* Site Plan Placeholder */}
+      {/* Interactive Site Plan */}
       <Section>
         <SectionHeader
           title="Community Site Plan"
-          subtitle="Explore the layout of our Grand Haven development."
+          subtitle="Click on any lot to view details and request information. Zoom and pan to explore."
         />
         
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center border border-border"
-        >
-          <div className="text-center text-muted-foreground">
-            <MapPin size={80} className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium mb-2">Interactive Site Plan Coming Soon</p>
-            <p className="text-sm">Lot selection and availability will be displayed here.</p>
-          </div>
-        </motion.div>
+        <InteractiveSitePlan developmentSlug="grand-haven" />
       </Section>
 
       {/* Development Features */}

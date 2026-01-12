@@ -11,6 +11,7 @@ import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import DesignStudio from "./pages/DesignStudio";
+import GrandHavenSitePlan from "./pages/GrandHavenSitePlan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/development" element={<Development />} />
+          <Route path="/developments/grand-haven/site-plan" element={<GrandHavenSitePlan />} />
           <Route path="/models" element={<Models />} />
           <Route path="/models/:modelId" element={<ModelDetail />} />
           <Route path="/pricing" element={<Pricing />} />

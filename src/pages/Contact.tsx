@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Send, Phone, Mail, MapPin, CheckCircle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
@@ -20,8 +21,14 @@ import { homeModels } from "./Models";
 
 export default function Contact() {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  
+  // Get query params for pre-fill
+  const developmentParam = searchParams.get('development');
+  const lotParam = searchParams.get('lot');
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,6 +36,23 @@ export default function Contact() {
     model: "",
     message: ""
   });
+
+  // Pre-fill message when lot params exist
+  useEffect(() => {
+    if (developmentParam && lotParam) {
+      const devName = developmentParam.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      setFormData(prev => ({
+        ...prev,
+        message: `I'm interested in Lot ${lotParam} at the ${devName} development. Please contact me with more information.`
+      }));
+    } else if (developmentParam) {
+      const devName = developmentParam.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      setFormData(prev => ({
+        ...prev,
+        message: `I'm interested in learning more about the ${devName} development.`
+      }));
+    }
+  }, [developmentParam, lotParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
