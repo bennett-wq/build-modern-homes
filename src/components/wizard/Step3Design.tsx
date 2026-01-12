@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
-import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
-import { AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
+import { FinancingModal } from '@/components/financing/FinancingModal';
+import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
 
 interface Step3DesignProps {
@@ -42,6 +42,7 @@ export function Step3Design({
 
   const [activeTab, setActiveTab] = useState<string>('package');
   const [showFinancingModal, setShowFinancingModal] = useState(false);
+  const [showAppraisalDrawer, setShowAppraisalDrawer] = useState(false);
 
   // Auto-switch to garage tab when package is selected
   const handleSelectPackage = useCallback((id: string) => {
@@ -54,24 +55,31 @@ export function Step3Design({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card flex items-center justify-between shrink-0">
-        <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
-            Design Your Exterior
-          </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Choose your package and garage door style
-          </p>
+      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+              Design Your Exterior
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Choose your package and garage door style
+            </p>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Back
+          </Button>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onBack}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Back
-        </Button>
+        {/* Trust & Financing compact strip */}
+        <TrustFinancingStrip 
+          onOpenFinancing={() => setShowFinancingModal(true)}
+          onOpenAppraisal={() => setShowAppraisalDrawer(true)}
+        />
       </div>
 
       {/* Content */}
@@ -148,14 +156,6 @@ export function Step3Design({
                 ))}
               </div>
             </TabsContent>
-            
-            {/* Sidebar Modules - in sidebar on desktop */}
-            {!isMobile && (
-              <div className="p-4 pt-0 space-y-4">
-                <FinancingSidebarModule onOpenModal={() => setShowFinancingModal(true)} />
-                <AppraisalSidebarModule />
-              </div>
-            )}
           </Tabs>
         </div>
       </div>
@@ -232,6 +232,50 @@ export function Step3Design({
         packageId={selectedPackageId}
         garageDoorId={selectedGarageDoorId}
       />
+
+      {/* Appraisal Drawer */}
+      <AppraisalInfoDrawer
+        open={showAppraisalDrawer}
+        onOpenChange={setShowAppraisalDrawer}
+      />
+    </div>
+  );
+}
+
+// Compact Trust & Financing strip with pill buttons
+interface TrustFinancingStripProps {
+  onOpenFinancing: () => void;
+  onOpenAppraisal: () => void;
+}
+
+function TrustFinancingStrip({ onOpenFinancing, onOpenAppraisal }: TrustFinancingStripProps) {
+  return (
+    <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-border/50">
+      <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">Trust & Support:</span>
+      <button
+        onClick={onOpenFinancing}
+        className={cn(
+          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium',
+          'bg-secondary border border-border text-foreground',
+          'hover:bg-secondary/80 hover:border-border/80 transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+        )}
+      >
+        <ShieldCheck className="h-3.5 w-3.5 text-accent" />
+        Financing
+      </button>
+      <button
+        onClick={onOpenAppraisal}
+        className={cn(
+          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium',
+          'bg-secondary border border-border text-foreground',
+          'hover:bg-secondary/80 hover:border-border/80 transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+        )}
+      >
+        <ClipboardCheck className="h-3.5 w-3.5 text-accent" />
+        Appraisals
+      </button>
     </div>
   );
 }
