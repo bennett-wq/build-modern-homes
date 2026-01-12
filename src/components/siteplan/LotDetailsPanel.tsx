@@ -31,6 +31,7 @@ export function LotDetailsPanel({
 
   const statusInfo = STATUS_VARIANTS[lot.status];
   const contactUrl = `/contact?development=${developmentSlug}&lot=${lot.id}`;
+  const buildUrl = `/developments/${developmentSlug}/build?lot=${lot.id}`;
   const modelsUrl = `/models?development=${developmentSlug}&lot=${lot.id}`;
 
   const panelContent = (
@@ -104,15 +105,15 @@ export function LotDetailsPanel({
       {lot.status !== 'sold' && (
         <div className="pt-6 border-t border-border mt-auto space-y-3">
           <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-            <Link to={contactUrl}>
-              Request This Lot
+            <Link to={buildUrl}>
+              <Home className="mr-2 h-4 w-4" />
+              Build on This Lot
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
           <Button asChild variant="outline" className="w-full">
-            <Link to={modelsUrl}>
-              <Home className="mr-2 h-4 w-4" />
-              Explore Home Models
+            <Link to={contactUrl}>
+              Request This Lot
             </Link>
           </Button>
           {lot.status === 'reserved' && (
