@@ -6,8 +6,10 @@ import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-// Aspen model images
+// Home model images
 import aspenExterior01 from "@/assets/homes/aspen-exterior-01.png";
+import belmontExterior01 from "@/assets/homes/belmont-exterior-01.png";
+
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -40,7 +42,8 @@ export const homeModels = [
     beds: 4,
     baths: 2.5,
     price: 325000,
-    description: "Our largest model featuring 4 bedrooms, a dedicated home office, and generous living spaces."
+    description: "Our largest model featuring 4 bedrooms, a dedicated home office, and generous living spaces.",
+    image: belmontExterior01
   },
   {
     id: "cedar",
