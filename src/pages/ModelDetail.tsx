@@ -1,11 +1,26 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, CheckCircle, PencilRuler } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, CheckCircle, PencilRuler, ChevronLeft, ChevronRight } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { homeModels } from "./Models";
+
+// Aspen model images
+import aspenHero from "@/assets/homes/aspen-hero.png";
+import aspenExterior01 from "@/assets/homes/aspen-exterior-01.png";
+
+// Aspen gallery (using available images, duplicated for 6-image gallery)
+const aspenGallery = [
+  aspenHero,
+  aspenExterior01,
+  aspenHero,
+  aspenExterior01,
+  aspenHero,
+  aspenExterior01,
+];
 
 const features = [
   "Factory-built CrossMod® construction",
@@ -19,6 +34,11 @@ const features = [
 export default function ModelDetail() {
   const { modelId } = useParams<{ modelId: string }>();
   const model = homeModels.find(m => m.id === modelId);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  
+  // Get gallery for specific models
+  const gallery = modelId === "aspen" ? aspenGallery : null;
+  const heroImage = modelId === "aspen" ? aspenHero : null;
 
   if (!model) {
     return (
@@ -44,8 +64,18 @@ export default function ModelDetail() {
   return (
     <Layout>
       {/* Hero / Overview */}
-      <section className="relative py-24 lg:py-32 bg-secondary">
-        <div className="container mx-auto px-4 lg:px-8">
+      <section className="relative py-24 lg:py-32 bg-secondary overflow-hidden">
+        {heroImage && (
+          <div className="absolute inset-0 z-0">
+            <img 
+              src={heroImage} 
+              alt={`The ${model.name}`}
+              className="w-full h-full object-cover opacity-20"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-secondary via-secondary/95 to-secondary/80" />
+          </div>
+        )}
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,6 +113,74 @@ export default function ModelDetail() {
           </motion.div>
         </div>
       </section>
+
+      {/* Image Gallery - Only for Aspen */}
+      {gallery && (
+        <Section>
+          <div className="max-w-5xl mx-auto">
+            {/* Main Image */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="relative aspect-[16/10] mb-4 rounded-lg overflow-hidden bg-muted"
+            >
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={selectedImageIndex}
+                  src={gallery[selectedImageIndex]}
+                  alt={`The ${model.name} - View ${selectedImageIndex + 1}`}
+                  className="w-full h-full object-cover"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </AnimatePresence>
+              
+              {/* Navigation arrows */}
+              <button
+                onClick={() => setSelectedImageIndex((prev) => (prev === 0 ? gallery.length - 1 : prev - 1))}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full transition-colors"
+              >
+                <ChevronLeft className="h-6 w-6 text-foreground" />
+              </button>
+              <button
+                onClick={() => setSelectedImageIndex((prev) => (prev === gallery.length - 1 ? 0 : prev + 1))}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full transition-colors"
+              >
+                <ChevronRight className="h-6 w-6 text-foreground" />
+              </button>
+              
+              {/* Image counter */}
+              <div className="absolute bottom-4 right-4 bg-background/80 px-3 py-1 rounded-full text-sm text-foreground">
+                {selectedImageIndex + 1} / {gallery.length}
+              </div>
+            </motion.div>
+            
+            {/* Thumbnail Grid */}
+            <div className="grid grid-cols-6 gap-2">
+              {gallery.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={`aspect-[4/3] rounded-md overflow-hidden transition-all ${
+                    selectedImageIndex === index 
+                      ? "ring-2 ring-accent ring-offset-2 ring-offset-background" 
+                      : "opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  <img 
+                    src={img} 
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
 
       {/* Floor Plan & Details */}
       <Section>
