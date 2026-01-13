@@ -1,34 +1,29 @@
-import { forwardRef, ReactNode, HTMLAttributes } from "react";
+import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-interface SectionProps extends HTMLAttributes<HTMLElement> {
+interface SectionProps {
   children: ReactNode;
   className?: string;
   dark?: boolean;
   id?: string;
 }
 
-export const Section = forwardRef<HTMLElement, SectionProps>(
-  ({ children, className, dark = false, id, ...props }, ref) => {
-    return (
-      <section
-        ref={ref}
-        id={id}
-        className={cn(
-          "py-16 lg:py-24",
-          dark ? "bg-primary text-primary-foreground" : "bg-background",
-          className
-        )}
-        {...props}
-      >
-        <div className="container mx-auto px-4 lg:px-8">
-          {children}
-        </div>
-      </section>
-    );
-  }
-);
-Section.displayName = "Section";
+export function Section({ children, className, dark = false, id }: SectionProps) {
+  return (
+    <section
+      id={id}
+      className={cn(
+        "py-16 lg:py-24",
+        dark ? "bg-primary text-primary-foreground" : "bg-background",
+        className
+      )}
+    >
+      <div className="container mx-auto px-4 lg:px-8">
+        {children}
+      </div>
+    </section>
+  );
+}
 
 interface SectionHeaderProps {
   title: string;

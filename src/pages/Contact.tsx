@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { homeModels } from "@/data/models";
+import { homeModels } from "./Models";
+import { homeModels as modelsData } from "@/data/models";
 import { exteriorPackages, garageDoors } from "@/data/packages";
 import { developments } from "@/data/developments";
 
@@ -62,7 +63,7 @@ export default function Contact() {
   // Resolve display names for selections
   const displayNames = useMemo(() => {
     const dev = developments.find(d => d.slug === selections.development);
-    const model = homeModels.find(m => m.slug === selections.model);
+    const model = modelsData.find(m => m.slug === selections.model);
     const pkg = exteriorPackages.find(p => p.id === selections.package);
     const garage = garageDoors.find(g => g.id === selections.garage);
 
@@ -328,7 +329,7 @@ export default function Contact() {
                           <SelectContent>
                             <SelectItem value="undecided">Not sure yet</SelectItem>
                             {homeModels.map(model => (
-                              <SelectItem key={model.slug} value={model.slug}>
+                              <SelectItem key={model.id} value={model.id}>
                                 The {model.name} ({model.sqft.toLocaleString()} sq ft)
                               </SelectItem>
                             ))}
