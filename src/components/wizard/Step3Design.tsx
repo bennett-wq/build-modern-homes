@@ -343,6 +343,8 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
   const [imageSrc, setImageSrc] = useState<string>(getHawthorneHeroImage());
   const [isLoading, setIsLoading] = useState(false);
   const [fallbackLevel, setFallbackLevel] = useState(0);
+  const [usedFallback, setUsedFallback] = useState(false);
+  const isDev = import.meta.env.DEV;
 
   // Compute target image based on selections
   const targetImage = useMemo(() => {
@@ -371,6 +373,7 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
     if (targetImage !== imageSrc) {
       setIsLoading(true);
       setFallbackLevel(0);
+      setUsedFallback(false);
       setImageSrc(targetImage);
     }
   }, [targetImage]);
@@ -380,18 +383,29 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
   }, []);
 
   const handleImageError = useCallback(() => {
+    const currentSrc = imageSrc;
+    
+    // Log failed image path for debugging
+    console.warn(`[Hawthorne Preview] Image failed to load: ${currentSrc}`);
+    
     // Fallback chain: exact combo → package+standard → hero
     if (fallbackLevel === 0 && packageId) {
+      const fallback1 = getHawthorneFallbackImage(packageId);
+      console.log(`[Hawthorne Preview] Trying fallback 1: ${fallback1}`);
       setFallbackLevel(1);
-      setImageSrc(getHawthorneFallbackImage(packageId));
+      setImageSrc(fallback1);
     } else if (fallbackLevel === 1) {
+      const heroFallback = getHawthorneHeroImage();
+      console.log(`[Hawthorne Preview] Trying hero fallback: ${heroFallback}`);
       setFallbackLevel(2);
-      setImageSrc(getHawthorneHeroImage());
+      setUsedFallback(true);
+      setImageSrc(heroFallback);
     } else {
       // Final fallback loaded or failed
+      console.error(`[Hawthorne Preview] All fallbacks failed`);
       setIsLoading(false);
     }
-  }, [fallbackLevel, packageId]);
+  }, [fallbackLevel, packageId, imageSrc]);
 
   const previewKey = `${packageId || 'none'}-${garageId || 'none'}`;
 
@@ -433,6 +447,13 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
           animate={{ opacity: isLoading ? 0 : 1 }}
           transition={{ duration: 0.2 }}
         />
+        
+        {/* Dev-only fallback indicator */}
+        {isDev && usedFallback && !isLoading && (
+          <div className="absolute bottom-2 left-2 px-2 py-1 bg-amber-500/90 text-white text-[10px] font-mono rounded">
+            Fallback: hero.webp
+          </div>
+        )}
       </div>
       
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
