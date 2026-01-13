@@ -1,5 +1,5 @@
 // Step 3: Design Your Exterior - package and garage door selection with live preview
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -333,19 +333,51 @@ function TrustFinancingStrip({ onOpenFinancing, onOpenAppraisal }: TrustFinancin
   );
 }
 
-// Photo-based preview for Hawthorne model
+// In-memory image cache - persists across re-renders
+const imageCache = new Map<string, 'loading' | 'loaded' | 'failed'>();
+const failedImages = new Set<string>();
+
+// Preload an image and update cache
+function preloadImage(src: string): Promise<boolean> {
+  if (imageCache.get(src) === 'loaded') return Promise.resolve(true);
+  if (failedImages.has(src)) return Promise.resolve(false);
+  
+  return new Promise((resolve) => {
+    const img = new Image();
+    imageCache.set(src, 'loading');
+    
+    img.onload = () => {
+      imageCache.set(src, 'loaded');
+      resolve(true);
+    };
+    img.onerror = () => {
+      imageCache.set(src, 'failed');
+      failedImages.add(src);
+      resolve(false);
+    };
+    img.src = src;
+  });
+}
+
+// Photo-based preview for Hawthorne model with caching, debouncing, and stale-while-revalidate
 interface HawthornePhotoPreviewProps {
   packageId: string | null;
   garageId: string | null;
 }
 
 function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewProps) {
-  const [imageSrc, setImageSrc] = useState<string>(getHawthorneHeroImage());
-  const [isLoading, setIsLoading] = useState(false);
-  const [fallbackLevel, setFallbackLevel] = useState(0);
-  const [usedFallback, setUsedFallback] = useState(false);
   const isDev = import.meta.env.DEV;
-
+  
+  // Stale-while-revalidate: keep showing last good image
+  const [displayedSrc, setDisplayedSrc] = useState<string>(getHawthorneHeroImage());
+  const [pendingSrc, setPendingSrc] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [usedFallback, setUsedFallback] = useState(false);
+  
+  // Refs for debouncing and abort control
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const loadingAbortRef = useRef<boolean>(false);
+  
   // Compute target image based on selections
   const targetImage = useMemo(() => {
     if (!packageId) return getHawthorneHeroImage();
@@ -353,65 +385,163 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
     return getHawthorneExteriorImage(packageId, garageId);
   }, [packageId, garageId]);
 
-  // Preload next likely images
+  // Get all package IDs for preloading adjacent
+  const packageIds = useMemo(() => hawthornePackages.map(p => p.id), []);
+  
+  // Preload strategy: current package both garages + adjacent packages
   useEffect(() => {
-    if (packageId) {
-      // Preload both garage variants for the selected package
-      const preloadImages = [
-        getHawthorneExteriorImage(packageId, 'standard'),
-        getHawthorneExteriorImage(packageId, 'black-industrial'),
-      ];
-      preloadImages.forEach(src => {
-        const img = new Image();
-        img.src = src;
-      });
+    if (!packageId) return;
+    
+    const toPreload: string[] = [];
+    
+    // Both garage variants for current package
+    toPreload.push(getHawthorneExteriorImage(packageId, 'standard'));
+    toPreload.push(getHawthorneExteriorImage(packageId, 'black-industrial'));
+    
+    // Adjacent packages (prev/next) with current garage
+    const currentIdx = packageIds.indexOf(packageId);
+    if (currentIdx > 0) {
+      const prevPkg = packageIds[currentIdx - 1];
+      toPreload.push(getHawthorneExteriorImage(prevPkg, garageId || 'standard'));
     }
-  }, [packageId]);
+    if (currentIdx < packageIds.length - 1) {
+      const nextPkg = packageIds[currentIdx + 1];
+      toPreload.push(getHawthorneExteriorImage(nextPkg, garageId || 'standard'));
+    }
+    
+    // Also preload hero as ultimate fallback
+    toPreload.push(getHawthorneHeroImage());
+    
+    // Preload all without blocking
+    toPreload.forEach(src => {
+      if (!imageCache.has(src)) {
+        preloadImage(src);
+      }
+    });
+  }, [packageId, garageId, packageIds]);
 
-  // Update image when target changes
+  // Debounced image loading with fast fallback
   useEffect(() => {
-    if (targetImage !== imageSrc) {
-      setIsLoading(true);
-      setFallbackLevel(0);
+    // Clear any pending debounce
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Abort any in-progress load
+    loadingAbortRef.current = true;
+    
+    // If target is already cached and loaded, swap instantly
+    if (imageCache.get(targetImage) === 'loaded') {
+      setDisplayedSrc(targetImage);
       setUsedFallback(false);
-      setImageSrc(targetImage);
+      setIsTransitioning(false);
+      setPendingSrc(null);
+      return;
     }
-  }, [targetImage]);
+    
+    // If target is known to be failed, go straight to fallback chain
+    if (failedImages.has(targetImage)) {
+      resolveWithFallback(targetImage, packageId);
+      return;
+    }
+    
+    // Debounce: wait 150ms before committing to load
+    debounceTimerRef.current = setTimeout(() => {
+      loadingAbortRef.current = false;
+      setPendingSrc(targetImage);
+      setIsTransitioning(true);
+      
+      if (isDev) {
+        console.log(`[Hawthorne Preview] Loading: ${targetImage}`);
+      }
+      
+      // Try to load with 250ms timeout for fast failure
+      const loadPromise = preloadImage(targetImage);
+      const timeoutPromise = new Promise<boolean>((resolve) => 
+        setTimeout(() => resolve(false), 250)
+      );
+      
+      Promise.race([loadPromise, timeoutPromise]).then((success) => {
+        if (loadingAbortRef.current) return; // Aborted by newer selection
+        
+        if (success && imageCache.get(targetImage) === 'loaded') {
+          if (isDev) console.log(`[Hawthorne Preview] ✓ Loaded: ${targetImage}`);
+          setDisplayedSrc(targetImage);
+          setUsedFallback(false);
+        } else {
+          if (isDev) console.warn(`[Hawthorne Preview] ✗ Failed/timeout: ${targetImage}`);
+          resolveWithFallback(targetImage, packageId);
+        }
+        
+        setIsTransitioning(false);
+        setPendingSrc(null);
+      });
+    }, 150);
+    
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [targetImage, packageId, isDev]);
+  
+  // Fast fallback chain resolution
+  const resolveWithFallback = useCallback((failedSrc: string, pkgId: string | null) => {
+    // Fallback 1: package + standard garage
+    if (pkgId) {
+      const fallback1 = getHawthorneFallbackImage(pkgId);
+      if (fallback1 !== failedSrc && imageCache.get(fallback1) === 'loaded') {
+        if (isDev) console.log(`[Hawthorne Preview] → Fallback 1: ${fallback1}`);
+        setDisplayedSrc(fallback1);
+        setUsedFallback(true);
+        setIsTransitioning(false);
+        return;
+      }
+      
+      // Try to load fallback1 quickly
+      if (!failedImages.has(fallback1)) {
+        preloadImage(fallback1).then((success) => {
+          if (success && !loadingAbortRef.current) {
+            if (isDev) console.log(`[Hawthorne Preview] → Fallback 1 loaded: ${fallback1}`);
+            setDisplayedSrc(fallback1);
+            setUsedFallback(true);
+            setIsTransitioning(false);
+            return;
+          }
+          // Fall through to hero
+          useHeroFallback();
+        });
+        return;
+      }
+    }
+    
+    useHeroFallback();
+  }, [isDev]);
+  
+  const useHeroFallback = useCallback(() => {
+    const hero = getHawthorneHeroImage();
+    if (isDev) console.log(`[Hawthorne Preview] → Hero fallback: ${hero}`);
+    setDisplayedSrc(hero);
+    setUsedFallback(true);
+    setIsTransitioning(false);
+  }, [isDev]);
 
+  // Handle image load success (for non-cached loads)
   const handleImageLoad = useCallback(() => {
-    setIsLoading(false);
-  }, []);
+    imageCache.set(displayedSrc, 'loaded');
+    setIsTransitioning(false);
+  }, [displayedSrc]);
 
+  // Handle image error (shouldn't happen if preload logic works, but safety net)
   const handleImageError = useCallback(() => {
-    const currentSrc = imageSrc;
-    
-    // Log failed image path for debugging
-    console.warn(`[Hawthorne Preview] Image failed to load: ${currentSrc}`);
-    
-    // Fallback chain: exact combo → package+standard → hero
-    if (fallbackLevel === 0 && packageId) {
-      const fallback1 = getHawthorneFallbackImage(packageId);
-      console.log(`[Hawthorne Preview] Trying fallback 1: ${fallback1}`);
-      setFallbackLevel(1);
-      setImageSrc(fallback1);
-    } else if (fallbackLevel === 1) {
-      const heroFallback = getHawthorneHeroImage();
-      console.log(`[Hawthorne Preview] Trying hero fallback: ${heroFallback}`);
-      setFallbackLevel(2);
-      setUsedFallback(true);
-      setImageSrc(heroFallback);
-    } else {
-      // Final fallback loaded or failed
-      console.error(`[Hawthorne Preview] All fallbacks failed`);
-      setIsLoading(false);
-    }
-  }, [fallbackLevel, packageId, imageSrc]);
-
-  const previewKey = `${packageId || 'none'}-${garageId || 'none'}`;
+    if (isDev) console.error(`[Hawthorne Preview] Image element error: ${displayedSrc}`);
+    failedImages.add(displayedSrc);
+    imageCache.set(displayedSrc, 'failed');
+    useHeroFallback();
+  }, [displayedSrc, useHeroFallback, isDev]);
 
   return (
     <motion.div
-      key={previewKey}
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
@@ -419,39 +549,39 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
     >
       {/* Fixed aspect ratio container - prevents layout jumps */}
       <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
-        {/* Skeleton loader */}
+        {/* Always show the current image (stale-while-revalidate) */}
+        <img
+          src={displayedSrc}
+          alt={`Hawthorne exterior with ${packageId || 'default'} package and ${garageId || 'standard'} garage`}
+          className="w-full h-full object-contain"
+          width={640}
+          height={400}
+          decoding="async"
+          loading="eager"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
+        
+        {/* Subtle loading overlay - doesn't hide the image */}
         <AnimatePresence>
-          {isLoading && (
+          {isTransitioning && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center"
+              transition={{ duration: 0.1 }}
+              className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-full"
             >
-              <div className="w-12 h-12 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+              <div className="w-3 h-3 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+              <span className="text-[10px] text-muted-foreground">Loading...</span>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Actual image */}
-        <motion.img
-          src={imageSrc}
-          alt={`Hawthorne exterior with ${packageId || 'default'} package and ${garageId || 'standard'} garage`}
-          className={cn(
-            "w-full h-full object-contain",
-            isLoading && "opacity-0"
-          )}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isLoading ? 0 : 1 }}
-          transition={{ duration: 0.2 }}
-        />
         
         {/* Dev-only fallback indicator */}
-        {isDev && usedFallback && !isLoading && (
+        {isDev && usedFallback && !isTransitioning && (
           <div className="absolute bottom-2 left-2 px-2 py-1 bg-amber-500/90 text-white text-[10px] font-mono rounded">
-            Fallback: hero.webp
+            Fallback: {displayedSrc.split('/').pop()}
           </div>
         )}
       </div>
