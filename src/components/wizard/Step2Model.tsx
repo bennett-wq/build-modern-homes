@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, FileText, Check } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
@@ -208,7 +208,7 @@ function ModelCard({ model, isSelected, onSelect }: ModelCardProps) {
           </div>
         )}
         
-        {/* Selection indicator */}
+        {/* Selection indicator - pointer-events-none so it never blocks clicks */}
         <AnimatePresence>
           {isSelected && (
             <motion.div
@@ -216,7 +216,7 @@ function ModelCard({ model, isSelected, onSelect }: ModelCardProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-lg"
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-lg pointer-events-none"
             >
               <Check className="h-5 w-5 text-accent-foreground" />
             </motion.div>
@@ -262,9 +262,12 @@ function ModelCard({ model, isSelected, onSelect }: ModelCardProps) {
               View Floor Plan
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl" aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle className="text-lg">The {model.name} — Floor Plan</DialogTitle>
+              <DialogDescription className="sr-only">
+                View the floor plan details for The {model.name} home model
+              </DialogDescription>
             </DialogHeader>
             <div className="aspect-[4/3] bg-muted rounded-lg flex items-center justify-center overflow-hidden">
               {model.floorplanImage ? (
