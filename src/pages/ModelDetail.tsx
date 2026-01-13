@@ -6,7 +6,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { homeModels } from "./Models";
+import { homeModels } from "@/data/models";
 
 // Aspen model images
 import aspenHero from "@/assets/homes/aspen-hero.png";
@@ -46,7 +46,7 @@ const features = [
 
 export default function ModelDetail() {
   const { modelId } = useParams<{ modelId: string }>();
-  const model = homeModels.find(m => m.id === modelId);
+  const model = homeModels.find(m => m.slug === modelId);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
   // Get gallery and hero for specific models

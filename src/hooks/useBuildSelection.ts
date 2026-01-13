@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 
 export interface BuildSelection {
   developmentSlug: string;
@@ -42,10 +43,12 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     }
 
     // URL params take priority over localStorage
+    // Normalize model slugs for backward compatibility (hawthorn → hawthorne)
+    const rawModelSlug = modelParam || storedSelection.modelSlug || null;
     return {
       developmentSlug,
       lotId: lotParam ? parseInt(lotParam, 10) : (storedSelection.lotId ?? null),
-      modelSlug: modelParam || storedSelection.modelSlug || null,
+      modelSlug: normalizeModelSlug(rawModelSlug),
       packageId: packageParam || storedSelection.packageId || null,
       garageDoorId: garageParam || storedSelection.garageDoorId || null,
     };
@@ -94,7 +97,9 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
   }, [triggerSaveIndicator]);
 
   const setModel = useCallback((modelSlug: string | null) => {
-    setSelectionState(prev => ({ ...prev, modelSlug }));
+    // Always normalize model slugs (hawthorn → hawthorne)
+    const normalized = normalizeModelSlug(modelSlug);
+    setSelectionState(prev => ({ ...prev, modelSlug: normalized }));
     triggerSaveIndicator();
   }, [triggerSaveIndicator]);
 

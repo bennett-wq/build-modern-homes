@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, FileText, Check } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
+import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
@@ -31,7 +32,9 @@ export function Step2Model({
   developmentSlug,
   lotId,
 }: Step2ModelProps) {
-  const selectedModel = homeModels.find(m => m.slug === selectedModelSlug);
+  // Normalize the selected slug for comparison
+  const normalizedSelectedSlug = normalizeModelSlug(selectedModelSlug);
+  const selectedModel = homeModels.find(m => m.slug === normalizedSelectedSlug);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
 
   const handleSelect = useCallback((slug: string) => {
@@ -80,7 +83,7 @@ export function Step2Model({
             >
               <ModelCard
                 model={model}
-                isSelected={model.slug === selectedModelSlug}
+                isSelected={model.slug === normalizedSelectedSlug}
                 onSelect={() => handleSelect(model.slug)}
               />
             </motion.div>
