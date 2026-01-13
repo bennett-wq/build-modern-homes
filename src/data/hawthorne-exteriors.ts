@@ -95,15 +95,15 @@ export function getHawthorneExteriorImage(
   return primaryPath;
 }
 
-// Get fallback image path
+// Get fallback image path for package (without garage variant)
 export function getHawthorneFallbackImage(packageId: string): string {
   const basePath = '/images/models/hawthorne';
   return `${basePath}/${packageId}__standard.webp`;
 }
 
-// Ultimate fallback
+// Ultimate fallback - use hero.webp (canonical filename)
 export function getHawthorneHeroImage(): string {
-  return '/images/models/hawthorne/hawthorn-hero.webp';
+  return '/images/models/hawthorne/hero.webp';
 }
 
 // Helper to get package by ID
