@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,23 +26,29 @@ import {
   CheckCircle,
   DollarSign,
   ShieldCheck,
-  ClipboardCheck
+  ClipboardCheck,
+  Sparkles
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
 import { HomeModel } from '@/data/models';
 import { ExteriorPackage, GarageDoor } from '@/data/packages';
+import { HawthornePackage, HawthorneGarage } from '@/data/hawthorne-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+// Union types for package and garage door
+type AnyPackage = ExteriorPackage | HawthornePackage;
+type AnyGarageDoor = GarageDoor | HawthorneGarage;
+
 interface Step4ReviewProps {
   development: Development;
   lot: Lot | null;
   model: HomeModel | null;
-  package_: ExteriorPackage | null;
-  garageDoor: GarageDoor | null;
+  package_: AnyPackage | null;
+  garageDoor: AnyGarageDoor | null;
   contactUrl: string;
   shareableUrl: string;
   onBack: () => void;
@@ -155,7 +162,7 @@ export function Step4Review({
                     icon={<Palette className="h-4 w-4" />}
                     label="Exterior Package"
                     value={package_?.name || 'Not selected'}
-                    colorSwatch={package_?.sidingColor}
+                    colorSwatch={'primaryColor' in (package_ || {}) ? (package_ as HawthornePackage).primaryColor : (package_ as ExteriorPackage)?.sidingColor}
                   />
 
                   {/* Garage Door */}
@@ -164,6 +171,7 @@ export function Step4Review({
                     label="Garage Door"
                     value={garageDoor?.name || 'Not selected'}
                     colorSwatch={garageDoor?.color}
+                    badge={'isUpgrade' in (garageDoor || {}) && (garageDoor as HawthorneGarage).isUpgrade ? 'Upgrade' : undefined}
                   />
                 </div>
 
@@ -327,9 +335,10 @@ interface SummaryRowProps {
   value: string;
   subValue?: string;
   colorSwatch?: string;
+  badge?: string;
 }
 
-function SummaryRow({ icon, label, value, subValue, colorSwatch }: SummaryRowProps) {
+function SummaryRow({ icon, label, value, subValue, colorSwatch, badge }: SummaryRowProps) {
   return (
     <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
       <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 text-accent">
@@ -345,6 +354,12 @@ function SummaryRow({ icon, label, value, subValue, colorSwatch }: SummaryRowPro
             />
           )}
           <p className="font-semibold text-foreground">{value}</p>
+          {badge && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1">
+              <Sparkles className="h-2.5 w-2.5" />
+              {badge}
+            </Badge>
+          )}
         </div>
         {subValue && <p className="text-xs text-muted-foreground mt-0.5">{subValue}</p>}
       </div>
@@ -357,8 +372,8 @@ interface ScheduleFormProps {
   development: Development;
   lot: Lot | null;
   model: HomeModel | null;
-  package_: ExteriorPackage | null;
-  garageDoor: GarageDoor | null;
+  package_: AnyPackage | null;
+  garageDoor: AnyGarageDoor | null;
   onSuccess: () => void;
 }
 

@@ -47,14 +47,15 @@ export const homeModels: HomeModel[] = [
     description: "An efficient floor plan that maximizes every square foot with smart design choices.",
   },
   {
-    slug: "hawthorn",
-    name: "Hawthorn",
+    slug: "hawthorne",
+    name: "Hawthorne",
     sqft: 1450,
     beds: 2,
     baths: 2,
     price: 245000,
     description: "Perfect for downsizers or first-time buyers, offering comfort in a compact footprint.",
     heroImage: "/images/models/hawthorne/hawthorn-hero.webp",
+    // Photo-based exterior renders available
   },
   {
     slug: "maple",
@@ -77,5 +78,7 @@ export const homeModels: HomeModel[] = [
 ];
 
 export function getModelBySlug(slug: string): HomeModel | undefined {
-  return homeModels.find(m => m.slug === slug);
+  // Normalize "hawthorn" to "hawthorne" for backward compatibility
+  const normalizedSlug = slug === 'hawthorn' ? 'hawthorne' : slug;
+  return homeModels.find(m => m.slug === normalizedSlug);
 }
