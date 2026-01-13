@@ -3,6 +3,9 @@
 
 import aspenExterior01 from "@/assets/homes/aspen-exterior-01.png";
 import belmontExterior01 from "@/assets/homes/belmont-exterior-01.png";
+import cedarHero from "@/assets/homes/cedar-hero.png";
+import mapleHero from "@/assets/homes/maple-hero.png";
+import birchHero from "@/assets/homes/birch-hero.png";
 
 export interface HomeModel {
   slug: string;
@@ -45,6 +48,7 @@ export const homeModels: HomeModel[] = [
     baths: 2,
     price: 265000,
     description: "An efficient floor plan that maximizes every square foot with smart design choices.",
+    heroImage: cedarHero,
   },
   {
     slug: "hawthorne",
@@ -65,6 +69,7 @@ export const homeModels: HomeModel[] = [
     baths: 2.5,
     price: 305000,
     description: "Features an expansive kitchen, covered porch, and flexible bonus room.",
+    heroImage: mapleHero,
   },
   {
     slug: "birch",
@@ -74,6 +79,7 @@ export const homeModels: HomeModel[] = [
     baths: 2,
     price: 275000,
     description: "A balanced design with split-bedroom layout and open entertaining spaces.",
+    heroImage: birchHero,
   },
 ];
 
