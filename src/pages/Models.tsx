@@ -1,14 +1,12 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { ArrowRight, Home, BedDouble, Bath, Maximize } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
-// Home model images
-import aspenExterior01 from "@/assets/homes/aspen-exterior-01.png";
-import belmontExterior01 from "@/assets/homes/belmont-exterior-01.png";
+import { homeModels } from "@/data/models";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -24,64 +22,35 @@ const staggerContainer = {
   }
 };
 
-export const homeModels = [
-  {
-    id: "aspen",
-    name: "Aspen",
-    sqft: 1850,
-    beds: 3,
-    baths: 2,
-    price: 285000,
-    description: "A thoughtfully designed 3-bedroom home with an open-concept living area and spacious primary suite.",
-    image: aspenExterior01
-  },
-  {
-    id: "belmont",
-    name: "Belmont",
-    sqft: 2100,
-    beds: 4,
-    baths: 2.5,
-    price: 325000,
-    description: "Our largest model featuring 4 bedrooms, a dedicated home office, and generous living spaces.",
-    image: belmontExterior01
-  },
-  {
-    id: "cedar",
-    name: "Cedar",
-    sqft: 1650,
-    beds: 3,
-    baths: 2,
-    price: 265000,
-    description: "An efficient floor plan that maximizes every square foot with smart design choices."
-  },
-  {
-    id: "hawthorn",
-    name: "Hawthorn",
-    sqft: 1450,
-    beds: 2,
-    baths: 2,
-    price: 245000,
-    description: "Perfect for downsizers or first-time buyers, offering comfort in a compact footprint."
-  },
-  {
-    id: "maple",
-    name: "Maple",
-    sqft: 1950,
-    beds: 3,
-    baths: 2.5,
-    price: 305000,
-    description: "Features an expansive kitchen, covered porch, and flexible bonus room."
-  },
-  {
-    id: "birch",
-    name: "Birch",
-    sqft: 1750,
-    beds: 3,
-    baths: 2,
-    price: 275000,
-    description: "A balanced design with split-bedroom layout and open entertaining spaces."
+// Model card image component with error handling
+function ModelCardImage({ model }: { model: typeof homeModels[0] }) {
+  const [hasError, setHasError] = useState(false);
+  
+  const handleError = () => {
+    if (import.meta.env.DEV) {
+      console.log(`[Models] Image load failed for ${model.slug}:`, model.heroImage);
+    }
+    setHasError(true);
+  };
+
+  if (model.heroImage && !hasError) {
+    return (
+      <img 
+        src={model.heroImage} 
+        alt={`The ${model.name} exterior`}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        onError={handleError}
+      />
+    );
   }
-];
+
+  return (
+    <div className="text-center text-muted-foreground">
+      <Home size={48} className="mx-auto mb-2 opacity-50" />
+      <p className="text-xs">Exterior Image</p>
+    </div>
+  );
+}
 
 export default function Models() {
   return (
@@ -123,22 +92,11 @@ export default function Models() {
           viewport={{ once: true }}
           className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-          {homeModels.map((model, index) => (
-            <motion.div key={model.id} variants={fadeInUp}>
+          {homeModels.map((model) => (
+            <motion.div key={model.slug} variants={fadeInUp}>
               <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-card group h-full flex flex-col">
                 <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
-                  {model.image ? (
-                    <img 
-                      src={model.image} 
-                      alt={`The ${model.name} exterior`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <Home size={48} className="mx-auto mb-2 opacity-50" />
-                      <p className="text-xs">Exterior Image</p>
-                    </div>
-                  )}
+                  <ModelCardImage model={model} />
                   <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300" />
                 </div>
                 <CardContent className="p-6 flex flex-col flex-1">
@@ -168,7 +126,7 @@ export default function Models() {
                       </p>
                     </div>
                     <Button asChild className="bg-primary hover:bg-charcoal-light text-primary-foreground">
-                      <Link to={`/models/${model.id}`}>
+                      <Link to={`/models/${model.slug}`}>
                         View Floor Plan
                         <ArrowRight className="ml-1 h-4 w-4" />
                       </Link>
