@@ -49,18 +49,21 @@ export default function ModelDetail() {
   const model = homeModels.find(m => m.slug === modelId);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
-  // Get gallery and hero for specific models
-  const getModelAssets = () => {
+  // Get gallery for specific models (model-specific galleries)
+  const getModelGallery = () => {
     switch (modelId) {
       case "aspen":
-        return { gallery: aspenGallery, heroImage: aspenHero };
+        return aspenGallery;
       case "belmont":
-        return { gallery: belmontGallery, heroImage: belmontHero };
+        return belmontGallery;
       default:
-        return { gallery: null, heroImage: null };
+        return null;
     }
   };
-  const { gallery, heroImage } = getModelAssets();
+  const gallery = getModelGallery();
+  
+  // Use the canonical heroImage from model data (same source as /models grid)
+  const heroImage = model?.heroImage || null;
 
   if (!model) {
     return (
