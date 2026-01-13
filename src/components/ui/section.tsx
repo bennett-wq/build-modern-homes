@@ -1,15 +1,15 @@
-import * as React from "react";
+import { forwardRef, ReactNode, HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-interface SectionProps extends React.HTMLAttributes<HTMLElement> {
-  children: React.ReactNode;
+interface SectionProps extends HTMLAttributes<HTMLElement> {
+  children: ReactNode;
   className?: string;
   dark?: boolean;
   id?: string;
 }
 
-const Section = React.forwardRef<HTMLElement, SectionProps>(
-  function Section({ children, className, dark = false, id, ...props }, ref) {
+export const Section = forwardRef<HTMLElement, SectionProps>(
+  ({ children, className, dark = false, id, ...props }, ref) => {
     return (
       <section
         ref={ref}
@@ -28,8 +28,7 @@ const Section = React.forwardRef<HTMLElement, SectionProps>(
     );
   }
 );
-
-export { Section };
+Section.displayName = "Section";
 
 interface SectionHeaderProps {
   title: string;
