@@ -8,6 +8,12 @@ import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots } from '@/data/lots/grand-haven';
 import { getModelBySlug } from '@/data/models';
 import { getPackageById, getGarageDoorById } from '@/data/packages';
+import { 
+  getHawthornePackageById, 
+  getHawthorneGarageById, 
+  isPhotoBasedModel,
+  normalizeModelSlug 
+} from '@/data/hawthorne-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
@@ -74,9 +80,21 @@ export default function BuildWizard() {
   }, [slug]);
 
   const selectedLot = lots.find(l => l.id === selection.lotId) || null;
-  const selectedModel = selection.modelSlug ? getModelBySlug(selection.modelSlug) || null : null;
-  const selectedPackage = selection.packageId ? getPackageById(selection.packageId) || null : null;
-  const selectedGarageDoor = selection.garageDoorId ? getGarageDoorById(selection.garageDoorId) || null : null;
+  const normalizedModelSlug = normalizeModelSlug(selection.modelSlug);
+  const selectedModel = normalizedModelSlug ? getModelBySlug(normalizedModelSlug) || null : null;
+  
+  // Use Hawthorne-specific package/garage data if Hawthorne is selected
+  const isHawthorne = isPhotoBasedModel(selection.modelSlug);
+  const selectedPackage = selection.packageId 
+    ? (isHawthorne 
+        ? getHawthornePackageById(selection.packageId) 
+        : getPackageById(selection.packageId)) || null 
+    : null;
+  const selectedGarageDoor = selection.garageDoorId 
+    ? (isHawthorne 
+        ? getHawthorneGarageById(selection.garageDoorId) 
+        : getGarageDoorById(selection.garageDoorId)) || null 
+    : null;
 
   const goToStep = useCallback((step: number) => {
     if (step < currentStep || step === currentStep) {

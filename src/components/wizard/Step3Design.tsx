@@ -1,11 +1,23 @@
 // Step 3: Design Your Exterior - package and garage door selection with live preview
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles } from 'lucide-react';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
+import { 
+  hawthornePackages, 
+  hawthorneGarages, 
+  getHawthorneExteriorImage, 
+  getHawthorneFallbackImage, 
+  getHawthorneHeroImage,
+  isPhotoBasedModel,
+  normalizeModelSlug,
+  HawthornePackage,
+  HawthorneGarage 
+} from '@/data/hawthorne-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
@@ -36,8 +48,15 @@ export function Step3Design({
   lotId,
   modelSlug,
 }: Step3DesignProps) {
-  const selectedPackage = exteriorPackages.find(p => p.id === selectedPackageId);
-  const selectedDoor = garageDoors.find(d => d.id === selectedGarageDoorId);
+  const normalizedModel = normalizeModelSlug(modelSlug);
+  const usePhotoPreview = isPhotoBasedModel(modelSlug);
+  
+  // Get the appropriate packages/garages based on model
+  const packages = usePhotoPreview ? hawthornePackages : exteriorPackages;
+  const garages = usePhotoPreview ? hawthorneGarages : garageDoors;
+  
+  const selectedPackage = packages.find(p => p.id === selectedPackageId);
+  const selectedDoor = garages.find(d => d.id === selectedGarageDoorId);
   const canProceed = selectedPackageId && selectedGarageDoorId;
 
   const [activeTab, setActiveTab] = useState<string>('package');
@@ -92,10 +111,17 @@ export function Step3Design({
           'bg-gradient-to-b from-muted to-muted/50 flex items-center justify-center p-6 sm:p-8',
           isMobile ? 'h-56 shrink-0' : 'flex-1'
         )}>
-          <ExteriorPreview 
-            package_={selectedPackage} 
-            garageDoor={selectedDoor}
-          />
+          {usePhotoPreview ? (
+            <HawthornePhotoPreview
+              packageId={selectedPackageId}
+              garageId={selectedGarageDoorId}
+            />
+          ) : (
+            <ExteriorPreview 
+              package_={selectedPackage as ExteriorPackage} 
+              garageDoor={selectedDoor as GarageDoor}
+            />
+          )}
         </div>
 
         {/* Selection Panel */}
@@ -133,27 +159,49 @@ export function Step3Design({
 
             <TabsContent value="package" className="flex-1 overflow-auto p-4 mt-0">
               <div className="grid gap-3">
-                {exteriorPackages.map((pkg) => (
-                  <PackageCard
-                    key={pkg.id}
-                    package_={pkg}
-                    isSelected={pkg.id === selectedPackageId}
-                    onSelect={() => handleSelectPackage(pkg.id)}
-                  />
-                ))}
+                {usePhotoPreview ? (
+                  hawthornePackages.map((pkg) => (
+                    <HawthornePackageCard
+                      key={pkg.id}
+                      package_={pkg}
+                      isSelected={pkg.id === selectedPackageId}
+                      onSelect={() => handleSelectPackage(pkg.id)}
+                    />
+                  ))
+                ) : (
+                  exteriorPackages.map((pkg) => (
+                    <PackageCard
+                      key={pkg.id}
+                      package_={pkg}
+                      isSelected={pkg.id === selectedPackageId}
+                      onSelect={() => handleSelectPackage(pkg.id)}
+                    />
+                  ))
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0">
               <div className="grid gap-3">
-                {garageDoors.map((door) => (
-                  <GarageDoorCard
-                    key={door.id}
-                    door={door}
-                    isSelected={door.id === selectedGarageDoorId}
-                    onSelect={() => onSelectGarageDoor(door.id)}
-                  />
-                ))}
+                {usePhotoPreview ? (
+                  hawthorneGarages.map((door) => (
+                    <HawthorneGarageCard
+                      key={door.id}
+                      door={door}
+                      isSelected={door.id === selectedGarageDoorId}
+                      onSelect={() => onSelectGarageDoor(door.id)}
+                    />
+                  ))
+                ) : (
+                  garageDoors.map((door) => (
+                    <GarageDoorCard
+                      key={door.id}
+                      door={door}
+                      isSelected={door.id === selectedGarageDoorId}
+                      onSelect={() => onSelectGarageDoor(door.id)}
+                    />
+                  ))
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -177,7 +225,7 @@ export function Step3Design({
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
                     <div 
                       className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                      style={{ backgroundColor: selectedPackage.sidingColor }}
+                      style={{ backgroundColor: 'primaryColor' in selectedPackage ? selectedPackage.primaryColor : selectedPackage.sidingColor }}
                     />
                     <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
                       {selectedPackage.name}
@@ -193,6 +241,11 @@ export function Step3Design({
                     <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
                       {selectedDoor.name}
                     </span>
+                    {'isUpgrade' in selectedDoor && selectedDoor.isUpgrade && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        Upgrade
+                      </Badge>
+                    )}
                   </div>
                 )}
               </div>
@@ -228,7 +281,7 @@ export function Step3Design({
         onOpenChange={setShowFinancingModal}
         developmentSlug={developmentSlug}
         lotId={lotId}
-        modelSlug={modelSlug}
+        modelSlug={normalizedModel}
         packageId={selectedPackageId}
         garageDoorId={selectedGarageDoorId}
       />
@@ -280,7 +333,117 @@ function TrustFinancingStrip({ onOpenFinancing, onOpenAppraisal }: TrustFinancin
   );
 }
 
-// Live exterior preview SVG - now with smoother transitions
+// Photo-based preview for Hawthorne model
+interface HawthornePhotoPreviewProps {
+  packageId: string | null;
+  garageId: string | null;
+}
+
+function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewProps) {
+  const [imageSrc, setImageSrc] = useState<string>(getHawthorneHeroImage());
+  const [isLoading, setIsLoading] = useState(false);
+  const [fallbackLevel, setFallbackLevel] = useState(0);
+
+  // Compute target image based on selections
+  const targetImage = useMemo(() => {
+    if (!packageId) return getHawthorneHeroImage();
+    if (!garageId) return getHawthorneFallbackImage(packageId);
+    return getHawthorneExteriorImage(packageId, garageId);
+  }, [packageId, garageId]);
+
+  // Preload next likely images
+  useEffect(() => {
+    if (packageId) {
+      // Preload both garage variants for the selected package
+      const preloadImages = [
+        getHawthorneExteriorImage(packageId, 'standard'),
+        getHawthorneExteriorImage(packageId, 'black-industrial'),
+      ];
+      preloadImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+    }
+  }, [packageId]);
+
+  // Update image when target changes
+  useEffect(() => {
+    if (targetImage !== imageSrc) {
+      setIsLoading(true);
+      setFallbackLevel(0);
+      setImageSrc(targetImage);
+    }
+  }, [targetImage]);
+
+  const handleImageLoad = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    // Fallback chain: exact combo → package+standard → hero
+    if (fallbackLevel === 0 && packageId) {
+      setFallbackLevel(1);
+      setImageSrc(getHawthorneFallbackImage(packageId));
+    } else if (fallbackLevel === 1) {
+      setFallbackLevel(2);
+      setImageSrc(getHawthorneHeroImage());
+    } else {
+      // Final fallback loaded or failed
+      setIsLoading(false);
+    }
+  }, [fallbackLevel, packageId]);
+
+  const previewKey = `${packageId || 'none'}-${garageId || 'none'}`;
+
+  return (
+    <motion.div
+      key={previewKey}
+      initial={{ opacity: 0.8, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="w-full max-w-lg relative"
+    >
+      {/* Fixed aspect ratio container - prevents layout jumps */}
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
+        {/* Skeleton loader */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center"
+            >
+              <div className="w-12 h-12 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Actual image */}
+        <motion.img
+          src={imageSrc}
+          alt={`Hawthorne exterior with ${packageId || 'default'} package and ${garageId || 'standard'} garage`}
+          className={cn(
+            "w-full h-full object-contain",
+            isLoading && "opacity-0"
+          )}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isLoading ? 0 : 1 }}
+          transition={{ duration: 0.2 }}
+        />
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+        <Eye className="h-3.5 w-3.5" />
+        <span>Photo Preview</span>
+      </div>
+    </motion.div>
+  );
+}
+
+// Live exterior preview SVG - for non-Hawthorne models
 interface ExteriorPreviewProps {
   package_?: ExteriorPackage;
   garageDoor?: GarageDoor;
@@ -549,6 +712,148 @@ function ExteriorPreview({ package_, garageDoor }: ExteriorPreviewProps) {
   );
 }
 
+// Package card for Hawthorne model
+interface HawthornePackageCardProps {
+  package_: HawthornePackage;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function HawthornePackageCard({ package_, isSelected, onSelect }: HawthornePackageCardProps) {
+  return (
+    <Card
+      className={cn(
+        'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        isSelected 
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
+      )}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={isSelected}
+      aria-label={`Select ${package_.name} exterior package`}
+    >
+      <CardContent className="p-3 flex items-center gap-3">
+        {/* Color swatches */}
+        <div className="flex gap-1">
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.primaryColor }}
+            title="Primary"
+          />
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.secondaryColor }}
+            title="Secondary"
+          />
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.accentColor }}
+            title="Accent"
+          />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-foreground text-sm">{package_.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+        </div>
+        
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Garage door card for Hawthorne model
+interface HawthorneGarageCardProps {
+  door: HawthorneGarage;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function HawthorneGarageCard({ door, isSelected, onSelect }: HawthorneGarageCardProps) {
+  return (
+    <Card
+      className={cn(
+        'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        isSelected 
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
+      )}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={isSelected}
+      aria-label={`Select ${door.name} garage door`}
+    >
+      <CardContent className="p-3 flex items-center gap-3">
+        {/* Door preview */}
+        <div 
+          className="w-12 h-10 rounded-md border border-border flex items-center justify-center shadow-sm"
+          style={{ backgroundColor: door.color }}
+        >
+          <DoorOpen className="h-5 w-5 text-white/60" />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-foreground text-sm">{door.name}</p>
+            {door.isUpgrade && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1">
+                <Sparkles className="h-2.5 w-2.5" />
+                Upgrade
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground truncate">{door.description}</p>
+        </div>
+        
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Original package card for non-Hawthorne models
 interface PackageCardProps {
   package_: ExteriorPackage;
   isSelected: boolean;
@@ -620,6 +925,7 @@ function PackageCard({ package_, isSelected, onSelect }: PackageCardProps) {
   );
 }
 
+// Original garage door card for non-Hawthorne models
 interface GarageDoorCardProps {
   door: GarageDoor;
   isSelected: boolean;
