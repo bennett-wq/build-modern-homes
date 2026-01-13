@@ -88,7 +88,7 @@ export function getHawthorneExteriorImage(
 ): string {
   const basePath = '/images/models/hawthorne';
   
-  // Primary: exact combo
+  // Primary: exact combo (e.g., modern-charcoal__black-industrial.webp)
   const primaryPath = `${basePath}/${packageId}__${garageId}.webp`;
   
   // Fallback chain is handled by the component with onError
@@ -99,6 +99,13 @@ export function getHawthorneExteriorImage(
 export function getHawthorneFallbackImage(packageId: string): string {
   const basePath = '/images/models/hawthorne';
   return `${basePath}/${packageId}__standard.webp`;
+}
+
+// Get hero image with specific garage variant
+export function getHawthorneHeroWithGarage(garageId: string): string {
+  const basePath = '/images/models/hawthorne';
+  // hero__standard.webp or hero__black-industrial.webp
+  return `${basePath}/hero__${garageId}.webp`;
 }
 
 // Ultimate fallback - use hero.webp (canonical filename)
