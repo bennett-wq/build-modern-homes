@@ -1,130 +1,110 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Home, BedDouble, Bath, Maximize } from "lucide-react";
+import { ArrowRight, Home, Ruler, BedDouble, Bath } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
-import { Section, SectionHeader } from "@/components/ui/section";
+import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { homeModels } from "@/data/models";
 import { getModelHeroImage } from "@/lib/model-images";
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6 }
-};
-
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.08
-    }
-  }
-};
+// Trust chips - same as homepage
+const trustChips = [
+  "Financing-ready pathways",
+  "Appraisal-minded design",
+  "CrossMod® or IRC Modular",
+  "Licensed brokerage in MI & IL",
+];
 
 export default function Models() {
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="relative py-24 lg:py-32 bg-secondary">
+      {/* Hero Section - Apple-minimal matching homepage */}
+      <section className="relative py-20 lg:py-28 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
-          >
-            <span className="inline-block text-accent font-medium text-sm uppercase tracking-wider mb-4">
-              Home Collection
-            </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
-              BaseMod Home Models
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              Explore our collection of CrossMod® homes, each featuring factory-built precision 
-              and site-built garages and porches designed by BaseMod.
-            </p>
-          </motion.div>
+          <div className="max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {/* Eyebrow */}
+              <span className="inline-block text-accent font-medium text-sm tracking-wide mb-4">
+                Home Models
+              </span>
+
+              {/* Headline */}
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground leading-[1.1] mb-6">
+                Find the plan that fits.
+              </h1>
+
+              {/* Subheadline */}
+              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl">
+                Compare footprints, layouts, and build types—then take the next step when you're ready.
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-wrap items-center gap-4 mb-8">
+                <Button asChild size="lg">
+                  <Link to="/developments">
+                    Start a Build
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link to="/developments">Browse Developments</Link>
+                </Button>
+                <Button asChild size="lg" variant="ghost" className="text-muted-foreground hover:text-foreground">
+                  <Link to="/contact">Talk to a Specialist</Link>
+                </Button>
+              </div>
+
+              {/* Trust chips */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex flex-wrap gap-2"
+              >
+                {trustChips.map((chip) => (
+                  <span
+                    key={chip}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Models Grid */}
-      <Section>
-        <SectionHeader
-          title="Choose Your Floor Plan"
-          subtitle="Each model is available with customizable exterior options through our Design Studio."
-        />
-
+      {/* Models Grid - Apple-minimal catalog */}
+      <Section className="bg-background">
         <motion.div
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="animate"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
         >
-          {homeModels.map((model, index) => (
-            <motion.div key={model.slug} variants={fadeInUp}>
-              <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-card group h-full flex flex-col">
-                <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
-                  <img 
-                    src={getModelHeroImage(model)} 
-                    alt={`The ${model.name} exterior`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      // Show placeholder on error
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement?.querySelector('.fallback-placeholder')?.classList.remove('hidden');
-                    }}
-                  />
-                  <div className="text-center text-muted-foreground fallback-placeholder hidden absolute inset-0 flex items-center justify-center">
-                    <div>
-                      <Home size={48} className="mx-auto mb-2 opacity-50" />
-                      <p className="text-xs">Exterior Image</p>
-                    </div>
-                  </div>
-                  <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300" />
-                </div>
-                <CardContent className="p-6 flex flex-col flex-1">
-                  <h3 className="text-2xl font-semibold mb-2 text-foreground">The {model.name}</h3>
-                  <p className="text-muted-foreground text-sm mb-4 flex-1">{model.description}</p>
-                  
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4 pb-4 border-b border-border">
-                    <div className="flex items-center gap-1.5">
-                      <Maximize size={16} className="text-accent" />
-                      <span>{model.sqft.toLocaleString()} sq ft</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <BedDouble size={16} className="text-accent" />
-                      <span>{model.beds} Beds</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Bath size={16} className="text-accent" />
-                      <span>{model.baths} Baths</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Starting from</p>
-                      <p className="text-xl font-semibold text-accent">
-                        ${model.price.toLocaleString()}
-                      </p>
-                    </div>
-                    <Button asChild className="bg-primary hover:bg-charcoal-light text-primary-foreground">
-                      <Link to={`/models/${model.slug}`}>
-                        View Floor Plan
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+          <h2 className="text-3xl md:text-4xl font-semibold text-foreground tracking-tight mb-3">
+            All Models
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            Modern floor plans designed for efficiency and livability.
+          </p>
         </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {homeModels.map((model, index) => (
+            <ModelCard key={model.slug} model={model} index={index} />
+          ))}
+        </div>
       </Section>
 
-      {/* CrossMod Explanation */}
+      {/* CrossMod Explanation - Refined */}
       <Section className="bg-secondary">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div
@@ -134,7 +114,10 @@ export default function Models() {
             transition={{ duration: 0.6 }}
             className="order-2 lg:order-1"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-foreground">
+            <span className="inline-block text-accent font-medium text-sm tracking-wide mb-4">
+              Build Types
+            </span>
+            <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-foreground tracking-tight">
               What is a CrossMod® Home?
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
@@ -142,12 +125,12 @@ export default function Models() {
               standards. Built in a controlled environment, they offer consistent quality, 
               faster completion times, and enhanced energy efficiency.
             </p>
-            <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              BaseMod enhances each CrossMod® home with custom-designed, site-built garages 
-              and porches, curated garage doors, and carefully selected exterior materials 
-              and colors—creating a seamless, traditional appearance.
+            <p className="text-muted-foreground text-lg leading-relaxed mb-8">
+              BaseMod enhances each home with custom-designed, site-built garages 
+              and porches, curated garage doors, and carefully selected exterior materials—creating 
+              a seamless, traditional appearance.
             </p>
-            <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+            <Button asChild variant="outline">
               <Link to="/about">
                 Learn More About BaseMod
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -160,7 +143,7 @@ export default function Models() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="aspect-square bg-muted rounded-lg flex items-center justify-center border border-border order-1 lg:order-2"
+            className="aspect-square bg-muted rounded-xl flex items-center justify-center border border-border order-1 lg:order-2"
           >
             <div className="text-center text-muted-foreground">
               <Home size={64} className="mx-auto mb-4 opacity-30" />
@@ -170,31 +153,130 @@ export default function Models() {
         </div>
       </Section>
 
-      {/* CTA */}
-      <Section dark>
-        <div className="text-center max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-primary-foreground">
-              Customize Your Exterior
-            </h2>
-            <p className="text-primary-foreground/70 text-lg mb-8">
-              Use our Design Studio to explore siding colors, shingle options, 
-              and garage door styles for any model.
-            </p>
-            <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Link to="/design-studio">
-                Open Design Studio
-                <ArrowRight className="ml-2 h-4 w-4" />
+      {/* Final CTA - Matching homepage */}
+      <Section className="bg-primary">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto"
+        >
+          <h2 className="text-3xl md:text-4xl font-semibold text-primary-foreground tracking-tight mb-4">
+            Ready to start?
+          </h2>
+          <p className="text-lg text-primary-foreground/70 mb-8">
+            Choose a community lot and design your exterior.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button
+              asChild
+              size="lg"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            >
+              <Link to="/developments">
+                Start a Build
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-          </motion.div>
-        </div>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/50"
+            >
+              <Link to="/contact">Contact Us</Link>
+            </Button>
+          </div>
+        </motion.div>
       </Section>
     </Layout>
+  );
+}
+
+// Model Card Component - Premium, scannable
+interface ModelCardProps {
+  model: typeof homeModels[0];
+  index: number;
+}
+
+function ModelCard({ model, index }: ModelCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const heroImage = getModelHeroImage(model);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.08 }}
+    >
+      <Link
+        to={`/models/${model.slug}`}
+        className="group block bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all duration-200"
+      >
+        {/* Image Container */}
+        <div className="aspect-[4/3] bg-muted overflow-hidden relative">
+          {/* Skeleton loader */}
+          {!imageLoaded && !imageError && (
+            <div className="absolute inset-0 skeleton-shimmer" />
+          )}
+          
+          {!imageError ? (
+            <img
+              src={heroImage}
+              alt={`${model.name} exterior`}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <Home className="w-12 h-12 text-muted-foreground/30" />
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          <h3 className="text-xl font-semibold text-card-foreground mb-3">
+            {model.name}
+          </h3>
+
+          {/* Spec chips */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-sm text-muted-foreground">
+              <Ruler className="w-3.5 h-3.5" />
+              {model.sqft.toLocaleString()} sq ft
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-sm text-muted-foreground">
+              <BedDouble className="w-3.5 h-3.5" />
+              {model.beds} bed
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-sm text-muted-foreground">
+              <Bath className="w-3.5 h-3.5" />
+              {model.baths} bath
+            </span>
+          </div>
+
+          {/* Price note */}
+          {model.price && (
+            <p className="text-xs text-muted-foreground mb-4">
+              Starting from ${model.price.toLocaleString()}
+              <span className="ml-1 opacity-70">· excludes land</span>
+            </p>
+          )}
+
+          {/* CTA - always visible */}
+          <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all duration-200">
+            View Model
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </span>
+        </div>
+      </Link>
+    </motion.div>
   );
 }
