@@ -163,7 +163,7 @@ export default function ModelDetail() {
       </Section>
 
       {/* Model-specific: Floor Plans & Plan Details Section */}
-      {(modelId === "hawthorne" || modelId === "belmont" || modelId === "aspen") && (
+      {(modelId === "hawthorne" || modelId === "belmont" || modelId === "aspen" || modelId === "keeneland") && (
         <Section className="bg-secondary/50">
           <div className="max-w-4xl mx-auto">
             <motion.div
@@ -378,6 +378,53 @@ export default function ModelDetail() {
                         <li className="flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                           Crawl or basement foundation (site-specific)
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Keeneland Plan Details Grid */}
+              {modelId === "keeneland" && (
+                <div className="grid md:grid-cols-2 gap-8">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Ruler className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Plan Details</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          1,635 sq ft
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Base Layout: 3 Bedrooms · 2 Bathrooms
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Footprint: 32' x 58'
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Building className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Build Types</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          CrossMod® (HUD-code) or Modular (IRC-code)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Slab or basement foundation (site-specific)
                         </li>
                       </ul>
                     </CardContent>
