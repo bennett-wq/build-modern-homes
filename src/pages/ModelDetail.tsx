@@ -310,6 +310,80 @@ export default function ModelDetail() {
                   </Card>
                 </div>
               )}
+
+              {/* Aspen Plan Details Grid */}
+              {modelId === "aspen" && (
+                <div className="grid md:grid-cols-3 gap-8">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Ruler className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Plan Details</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          1,620 sq ft
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Base Layout: 4 Bedrooms · 2 Bathrooms
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Footprint: 32' x 60'
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Settings2 className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Flexible Layout Options</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          3 Bedroom + Office configuration
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Optional butler's pantry
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Optional third bathroom
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Highly efficient layout for tighter setbacks
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Building className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Build Types</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          CrossMod® (HUD-code) or Modular (IRC-code)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Crawl or basement foundation (site-specific)
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </motion.div>
           </div>
         </Section>
