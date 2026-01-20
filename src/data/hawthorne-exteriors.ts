@@ -108,9 +108,9 @@ export function getHawthorneHeroWithGarage(garageId: string): string {
   return `${basePath}/hero__${garageId}.webp`;
 }
 
-// Ultimate fallback - use hero.webp (canonical filename)
+// Ultimate fallback - use hawthorne-hero.jpg (canonical filename)
 export function getHawthorneHeroImage(): string {
-  return '/images/models/hawthorne/hero.webp';
+  return '/images/models/hawthorne/hawthorne-hero.jpg';
 }
 
 // Helper to get package by ID

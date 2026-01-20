@@ -58,8 +58,7 @@ export const homeModels: HomeModel[] = [
     baths: 2,
     price: 245000,
     description: "Perfect for downsizers or first-time buyers, offering comfort in a compact footprint.",
-    heroImage: "/images/models/hawthorne/hero.webp",
-    // Photo-based exterior renders available
+    heroImage: "/images/models/hawthorne/hawthorne-hero.jpg",
   },
   {
     slug: "maple",
