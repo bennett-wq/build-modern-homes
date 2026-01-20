@@ -11,9 +11,9 @@ import { getModelHeroImage } from "@/lib/model-images";
 // Trust chips - same as homepage
 const trustChips = [
   "Financing-ready pathways",
-  "Appraisal-minded design",
-  "CrossMod® or IRC Modular",
-  "Licensed brokerage in MI & IL",
+  "Appraisal-aligned specs",
+  "Curated exterior packages",
+  "Guided build experience",
 ];
 
 export default function Models() {
@@ -40,7 +40,7 @@ export default function Models() {
 
               {/* Subheadline */}
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl">
-                Compare footprints, layouts, and build types—then take the next step when you're ready.
+                Compare footprints, layouts, and build types—then take the next step.
               </p>
 
               {/* CTAs */}
