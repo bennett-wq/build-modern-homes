@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Maximize2, List, X } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots, Lot } from '@/data/lots/grand-haven';
+import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +33,9 @@ export function InteractiveSitePlan({
   const lots = useMemo(() => {
     if (developmentSlug === 'grand-haven') {
       return grandHavenLots;
+    }
+    if (developmentSlug === 'st-james-bay') {
+      return stJamesBayLots;
     }
     return [];
   }, [developmentSlug]);

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots } from '@/data/lots/grand-haven';
+import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { getModelBySlug } from '@/data/models';
 import { getPackageById, getGarageDoorById } from '@/data/packages';
 import { 
@@ -76,6 +77,7 @@ export default function BuildWizard() {
 
   const lots = useMemo(() => {
     if (slug === 'grand-haven') return grandHavenLots;
+    if (slug === 'st-james-bay') return stJamesBayLots;
     return [];
   }, [slug]);
 

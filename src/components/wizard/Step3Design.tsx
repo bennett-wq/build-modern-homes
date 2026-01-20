@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles } from 'lucide-react';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
+import { getDevelopmentBySlug } from '@/data/developments';
 import { 
   hawthornePackages, 
   hawthorneGarages, 
@@ -52,9 +53,19 @@ export function Step3Design({
   const normalizedModel = normalizeModelSlug(modelSlug);
   const usePhotoPreview = isPhotoBasedModel(modelSlug);
   
+  // Get development to check for ARB package restrictions
+  const development = developmentSlug ? getDevelopmentBySlug(developmentSlug) : null;
+  const arbReadyPackages = development?.arbReadyPackages;
+  const isArbCommunity = arbReadyPackages && arbReadyPackages.length > 0;
+  
   // Get the appropriate packages/garages based on model
-  const packages = usePhotoPreview ? hawthornePackages : exteriorPackages;
+  const allPackages = usePhotoPreview ? hawthornePackages : exteriorPackages;
   const garages = usePhotoPreview ? hawthorneGarages : garageDoors;
+  
+  // Filter packages if development has ARB restrictions
+  const packages = isArbCommunity 
+    ? allPackages.filter(p => arbReadyPackages.includes(p.id))
+    : allPackages;
   
   const selectedPackage = packages.find(p => p.id === selectedPackageId);
   const selectedDoor = garages.find(d => d.id === selectedGarageDoorId);
@@ -78,12 +89,22 @@ export function Step3Design({
       <div className="px-4 sm:px-6 py-4 border-b border-border bg-card shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
-              Design Your Exterior
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Choose your package and garage door style
-            </p>
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+            Design Your Exterior
+          </h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {isArbCommunity ? 'ARB-ready packages curated for community standards' : 'Choose your package and garage door style'}
+          </p>
+          {isArbCommunity && (
+            <a 
+              href={`/developments/${developmentSlug}/arb-guidelines.pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline mt-1 inline-block"
+            >
+              View ARB Guidelines →
+            </a>
+          )}
           </div>
           <Button 
             variant="ghost" 
