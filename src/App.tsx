@@ -14,6 +14,7 @@ import Contact from "./pages/Contact";
 import DesignStudio from "./pages/DesignStudio";
 import GrandHavenSitePlan from "./pages/GrandHavenSitePlan";
 import BuildWizard from "./pages/BuildWizard";
+import Configurator from "./pages/Configurator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/build" element={<Configurator />} />
           <Route path="/developments" element={<Developments />} />
           <Route path="/developments/:slug" element={<DevelopmentDetail />} />
           <Route path="/developments/:slug/site-plan" element={<GrandHavenSitePlan />} />
