@@ -37,7 +37,7 @@ export const homeModels: HomeModel[] = [
     beds: 3,
     baths: 2,
     price: 325000,
-    description: "The Belmont is a solid, efficient home with a compact 32×60 footprint that fits perfectly into tight setbacks. This 3-bedroom, 2-bath design delivers smart living spaces without wasting square footage.\n\nThe layout features an open-concept living area that flows into the kitchen and dining spaces, with a well-appointed primary suite and two additional bedrooms. A flexible 3rd bathroom can be added to the utility room for growing families or multi-generational living. Built to CrossMod® or IRC-code standards with BaseMod's curated exterior packages, the Belmont proves that efficient design and quality construction go hand in hand.",
+    description: "The Belmont is a compact, efficient 1,620 sq ft plan designed to fit confidently on lots with tighter setbacks — without feeling small inside. The layout delivers a strong open-concept living core, three true bedrooms, and two full baths, making it an ideal everyday home for families, downsizers, and first-time buyers alike. With its 32' × 60' footprint, the Belmont is especially well-suited for narrow lots, infill sites, and communities where buildable envelopes are constrained.\n\nFor added flexibility, the plan can accommodate an optional third bathroom by leveraging space in/near the utility room (site/plumbing dependent), giving buyers a future-proof upgrade path without changing the home's overall footprint.",
     heroImage: belmontExterior01,
     floorplanImage: "/floorplans/belmont/belmont-floorplan.pdf",
   },
