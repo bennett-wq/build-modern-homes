@@ -7,6 +7,7 @@ export interface Development {
   city: string;
   state: string;
   sitePlanImagePath: string;
+  arbGuidelinesUrl?: string;
   description?: string;
   status: 'active' | 'coming-soon' | 'sold-out';
   // Location highlights for detail page
@@ -53,7 +54,8 @@ export const developments: Development[] = [
     name: 'St. James Bay',
     city: 'St. James Bay',
     state: 'Florida',
-    sitePlanImagePath: '/images/developments/st-james-bay/site-plan.png',
+    sitePlanImagePath: '/images/developments/st-james-bay/st-james-bay-site-plan.jpg',
+    arbGuidelinesUrl: '/docs/developments/st-james-bay/arb-guidelines.pdf',
     description: 'St. James Bay is a design-reviewed community where homes are selected to fit the neighborhood\'s architectural standards and site constraints. Choose a lot, select a conforming plan, and move through BaseMod\'s guided build experience with curated exterior packages designed for a clean, coastal-modern look.',
     status: 'active',
     locationHighlights: [
