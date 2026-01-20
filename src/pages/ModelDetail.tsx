@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, CheckCircle, PencilRuler, ChevronLeft, ChevronRight, FileText, Ruler, Settings2, Building, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, CheckCircle, PencilRuler, ChevronLeft, ChevronRight, Ruler, Settings2, Building } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { homeModels } from "@/data/models";
 import { getModelHeroImage } from "@/lib/model-images";
+import { FloorPlanSection } from "@/components/FloorPlanSection";
 
 // Aspen model images
 import aspenHero from "@/assets/homes/aspen-hero.png";
@@ -172,43 +173,7 @@ export default function ModelDetail() {
               transition={{ duration: 0.6 }}
             >
               {/* Floor Plans CTA */}
-              <div className="flex flex-col gap-4 mb-10 p-6 bg-background rounded-lg border border-border">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText className="h-5 w-5 text-accent" />
-                      <h3 className="text-lg font-semibold text-foreground">Floor Plans</h3>
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                      Download the complete floor plan documentation for the {model.name} model.
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground">
-                      <a 
-                        href={`/floorplans/${modelId}/${modelId}-floorplan.pdf`}
-                        target="_blank" 
-                        rel="noreferrer"
-                      >
-                        <FileText className="mr-2 h-4 w-4" />
-                        View Floor Plans (PDF)
-                      </a>
-                    </Button>
-                    <Button asChild variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90">
-                      <a 
-                        href={`/floorplans/${modelId}/${modelId}-floorplan.pdf`}
-                        download
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download Floor Plan
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  If the PDF doesn't open, <a href={`/floorplans/${modelId}/${modelId}-floorplan.pdf`} download className="underline hover:text-accent">click here to download</a>.
-                </p>
-              </div>
+              <FloorPlanSection modelSlug={modelId} modelName={model.name} />
 
               {/* Hawthorne Plan Details Grid */}
               {modelId === "hawthorne" && (
