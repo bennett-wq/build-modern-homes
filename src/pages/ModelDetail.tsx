@@ -184,7 +184,7 @@ export default function ModelDetail() {
                 </div>
                 <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground">
                   <a 
-                    href="/floorplans/hawthorne/CrossMod--3264-32-1_Hawthorne_R.pdf" 
+                    href="/floorplans/hawthorne/hawthorne-floorplan.pdf" 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
