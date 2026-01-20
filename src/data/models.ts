@@ -29,6 +29,7 @@ export const homeModels: HomeModel[] = [
     price: 285000,
     description: "A thoughtfully designed 3-bedroom home with an open-concept living area and spacious primary suite.",
     heroImage: aspenExterior01,
+    floorplanImage: "/floorplans/aspen/aspen-floorplan.pdf",
   },
   {
     slug: "belmont",
