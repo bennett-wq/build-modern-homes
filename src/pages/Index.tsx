@@ -14,9 +14,9 @@ const featuredModels = homeModels.slice(0, 3);
 // Trust chips data
 const trustChips = [
   "Financing-ready pathways",
-  "Appraisal-minded design",
-  "CrossMod® or IRC Modular",
-  "Licensed brokerage in MI & IL",
+  "Appraisal-aligned specs",
+  "Curated exterior packages",
+  "Guided build experience",
 ];
 
 // Start here cards
@@ -24,23 +24,26 @@ const startCards = [
   {
     icon: MapPin,
     title: "Choose a Community Lot",
-    description: "Browse BaseMod communities and available lots.",
+    description: "Browse communities and available lots.",
     cta: "Browse Developments",
     href: "/developments",
+    helperText: null,
   },
   {
     icon: Home,
-    title: "Explore Home Models",
-    description: "Compare plans, options, and build types.",
-    cta: "View Models",
-    href: "/models",
+    title: "Build on My Land",
+    description: "Have land already? Start with plan fit and budget assumptions.",
+    cta: "Get Started",
+    href: "/contact?buildPath=on-your-land",
+    helperText: "Availability varies by market.",
   },
   {
-    icon: FileCheck,
-    title: "Financing & Appraisals",
-    description: "Designed to support conventional financing and appraisals.",
-    cta: "Learn More",
-    href: "/contact?topic=financing-appraisals",
+    icon: MapPin,
+    title: "Help Me Find Land",
+    description: "Get guidance finding land and estimating a build.",
+    cta: "Request Help",
+    href: "/contact?buildPath=find-land",
+    helperText: "Availability varies by market.",
   },
 ];
 
@@ -183,7 +186,7 @@ const Index = () => {
               >
                 <Link
                   to={card.href}
-                  className="group block h-full p-6 bg-card rounded-xl border border-border hover:border-accent/30 hover:shadow-lg transition-all duration-200"
+                  className="group flex flex-col h-full p-6 bg-card rounded-xl border border-border hover:border-accent/30 hover:shadow-lg transition-all duration-200"
                 >
                   <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors duration-200">
                     <card.icon className="w-5 h-5 text-accent" />
@@ -191,13 +194,20 @@ const Index = () => {
                   <h3 className="text-lg font-semibold text-card-foreground mb-2">
                     {card.title}
                   </h3>
-                  <p className="text-muted-foreground text-sm mb-4">
+                  <p className="text-muted-foreground text-sm mb-4 flex-grow">
                     {card.description}
                   </p>
-                  <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all duration-200">
-                    {card.cta}
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </span>
+                  <div>
+                    <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all duration-200">
+                      {card.cta}
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </span>
+                    {card.helperText && (
+                      <p className="text-xs text-muted-foreground/70 mt-2">
+                        {card.helperText}
+                      </p>
+                    )}
+                  </div>
                 </Link>
               </motion.div>
             ))}
@@ -218,7 +228,7 @@ const Index = () => {
             Featured models
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Modern floor plans designed for efficiency and livability.
+            Efficient footprints. Flexible layouts. Modern curb appeal.
           </p>
         </motion.div>
 
