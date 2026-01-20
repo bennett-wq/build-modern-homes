@@ -7,6 +7,7 @@ import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { homeModels } from "@/data/models";
+import { getModelHeroImage } from "@/lib/model-images";
 
 // Aspen model images
 import aspenHero from "@/assets/homes/aspen-hero.png";
@@ -62,8 +63,8 @@ export default function ModelDetail() {
   };
   const gallery = getModelGallery();
   
-  // Use the canonical heroImage from model data (same source as /models grid)
-  const heroImage = model?.heroImage || null;
+  // Use the canonical hero image helper (single source of truth)
+  const heroImage = getModelHeroImage(model);
 
   if (!model) {
     return (
@@ -88,56 +89,71 @@ export default function ModelDetail() {
 
   return (
     <Layout>
-      {/* Hero / Overview */}
-      <section className="relative py-24 lg:py-32 bg-secondary overflow-hidden">
-        {heroImage && (
-          <div className="absolute inset-0 z-0">
-            <img 
-              src={heroImage} 
-              alt={`The ${model.name}`}
-              className="w-full h-full object-cover opacity-20"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-secondary via-secondary/95 to-secondary/80" />
-          </div>
-        )}
-        <div className="container mx-auto px-4 lg:px-8 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Link 
-              to="/models" 
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+      {/* Hero Image Section */}
+      <section className="relative w-full h-[260px] md:h-[420px] overflow-hidden">
+        <img 
+          src={heroImage} 
+          alt={`The ${model.name}`}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = "/placeholder.svg";
+          }}
+        />
+        {/* Subtle gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        
+        {/* Hero content overlay */}
+        <div className="absolute inset-0 flex flex-col justify-end">
+          <div className="container mx-auto px-4 lg:px-8 pb-8 md:pb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to All Models
-            </Link>
-            
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-4">
-              The {model.name}
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-8">
-              {model.description}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-6 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Maximize size={20} className="text-accent" />
-                <span className="font-medium">{model.sqft.toLocaleString()} sq ft</span>
+              <Link 
+                to="/models" 
+                className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors mb-4"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to All Models
+              </Link>
+              
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-2">
+                The {model.name}
+              </h1>
+              
+              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-white/90">
+                <div className="flex items-center gap-2">
+                  <Maximize size={18} />
+                  <span className="font-medium text-sm md:text-base">{model.sqft.toLocaleString()} sq ft</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <BedDouble size={18} />
+                  <span className="font-medium text-sm md:text-base">{model.beds} Bed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Bath size={18} />
+                  <span className="font-medium text-sm md:text-base">{model.baths} Bath</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <BedDouble size={20} className="text-accent" />
-                <span className="font-medium">{model.beds} Bedrooms</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Bath size={20} className="text-accent" />
-                <span className="font-medium">{model.baths} Bathrooms</span>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
+
+      {/* Description Section */}
+      <Section className="bg-background">
+        <div className="max-w-3xl">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-lg md:text-xl text-muted-foreground leading-relaxed"
+          >
+            {model.description}
+          </motion.p>
+        </div>
+      </Section>
 
       {/* Image Gallery - Only for Aspen */}
       {gallery && (
