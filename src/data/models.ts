@@ -3,7 +3,6 @@
 
 import aspenExterior01 from "@/assets/homes/aspen-exterior-01.png";
 import belmontExterior01 from "@/assets/homes/belmont-exterior-01.png";
-import cedarHero from "@/assets/homes/cedar-hero.png";
 import mapleHero from "@/assets/homes/maple-hero.png";
 import birchHero from "@/assets/homes/birch-hero.png";
 
@@ -43,14 +42,15 @@ export const homeModels: HomeModel[] = [
     floorplanImage: "/floorplans/belmont/belmont-floorplan.pdf",
   },
   {
-    slug: "cedar",
-    name: "Cedar",
-    sqft: 1650,
+    slug: "keeneland",
+    name: "Keeneland",
+    sqft: 1635,
     beds: 3,
     baths: 2,
     price: 265000,
-    description: "An efficient floor plan that maximizes every square foot with smart design choices.",
-    heroImage: cedarHero,
+    description: "The Keeneland is a cost-effective, modern home designed to deliver strong livability and design flexibility within a highly efficient footprint. At 1,635 square feet with a 32' × 58' footprint, the Keeneland is well suited for a wide range of sites — including lots with tighter setbacks — while maintaining the feel and function of a traditional site-built home.\n\nThe base layout features 3 bedrooms and 2 bathrooms organized around an open, comfortable living core that maximizes usable space without excess. The plan lends itself especially well to creative exterior treatments, including Board-and-Batten siding, modern color palettes, and BaseMod's curated exterior packages — making it an excellent option for buyers seeking a clean, contemporary look at an attainable price point.\n\nAvailable as a CrossMod® (HUD-code) or IRC-code modular home, the Keeneland offers a versatile, efficient solution for first-time buyers, downsizers, and anyone looking for a modern modular home that appraises, performs, and lives like a site-built residence.",
+    heroImage: "/images/models/keeneland/keeneland-hero.jpg",
+    floorplanImage: "/floorplans/keeneland/keeneland-floorplan.pdf",
   },
   {
     slug: "hawthorne",
