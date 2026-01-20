@@ -37,8 +37,9 @@ export const homeModels: HomeModel[] = [
     beds: 4,
     baths: 2.5,
     price: 325000,
-    description: "Our largest model featuring 4 bedrooms, a dedicated home office, and generous living spaces.",
+    description: "The Belmont is our most spacious model, designed for growing families who need room to spread out without sacrificing the efficiency and quality of modular construction. With four bedrooms, a dedicated home office, and generous living spaces, the Belmont delivers the square footage and flexibility that modern families demand.\n\nFeaturing an open-concept great room that flows seamlessly into the kitchen and dining areas, the Belmont balances communal living with private retreats. The primary suite offers a true sanctuary with an en-suite bathroom and walk-in closet, while secondary bedrooms provide ample space for children, guests, or flex use. Built to CrossMod® or IRC-code standards with BaseMod's curated exterior packages, the Belmont proves that modular homes can deliver the space, style, and performance of traditional site-built construction.",
     heroImage: belmontExterior01,
+    floorplanImage: "/floorplans/belmont/belmont-floorplan.pdf",
   },
   {
     slug: "cedar",
