@@ -5,9 +5,8 @@ import { Layout } from "@/components/layout/Layout";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
-// Use the canonical models data source
 import { homeModels } from "@/data/models";
+import { getModelHeroImage } from "@/lib/model-images";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -67,21 +66,21 @@ export default function Models() {
             <motion.div key={model.slug} variants={fadeInUp}>
               <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-card group h-full flex flex-col">
                 <div className="aspect-[4/3] bg-muted flex items-center justify-center relative overflow-hidden">
-                  {model.heroImage ? (
-                    <img 
-                      src={model.heroImage} 
-                      alt={`The ${model.name} exterior`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        // Fallback if image fails to load
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement?.querySelector('.fallback-placeholder')?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <div className={`text-center text-muted-foreground fallback-placeholder ${model.heroImage ? 'hidden' : ''}`}>
-                    <Home size={48} className="mx-auto mb-2 opacity-50" />
-                    <p className="text-xs">Exterior Image</p>
+                  <img 
+                    src={getModelHeroImage(model)} 
+                    alt={`The ${model.name} exterior`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      // Show placeholder on error
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement?.querySelector('.fallback-placeholder')?.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="text-center text-muted-foreground fallback-placeholder hidden absolute inset-0 flex items-center justify-center">
+                    <div>
+                      <Home size={48} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-xs">Exterior Image</p>
+                    </div>
                   </div>
                   <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300" />
                 </div>
