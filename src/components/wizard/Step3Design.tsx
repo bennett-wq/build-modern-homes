@@ -95,9 +95,9 @@ export function Step3Design({
           <p className="text-sm text-muted-foreground mt-0.5">
             {isArbCommunity ? 'ARB-ready packages curated for community standards' : 'Choose your package and garage door style'}
           </p>
-          {isArbCommunity && (
+          {isArbCommunity && development?.arbGuidelinesUrl && (
             <a 
-              href={`/developments/${developmentSlug}/arb-guidelines.pdf`}
+              href={development.arbGuidelinesUrl}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-accent hover:underline mt-1 inline-block"
