@@ -161,8 +161,8 @@ export default function ModelDetail() {
         </div>
       </Section>
 
-      {/* Hawthorne-specific: Floor Plans & Plan Details Section */}
-      {modelId === "hawthorne" && (
+      {/* Model-specific: Floor Plans & Plan Details Section */}
+      {(modelId === "hawthorne" || modelId === "belmont") && (
         <Section className="bg-secondary/50">
           <div className="max-w-4xl mx-auto">
             <motion.div
@@ -179,12 +179,12 @@ export default function ModelDetail() {
                     <h3 className="text-lg font-semibold text-foreground">Floor Plans</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Download the complete floor plan documentation for the Hawthorne model.
+                    Download the complete floor plan documentation for the {model.name} model.
                   </p>
                 </div>
                 <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground">
                   <a 
-                    href="/floorplans/hawthorne/hawthorne-floorplan.pdf" 
+                    href={`/floorplans/${modelId}/${modelId}-floorplan.pdf`}
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
@@ -194,76 +194,145 @@ export default function ModelDetail() {
                 </Button>
               </div>
 
-              {/* Plan Details Grid */}
-              <div className="grid md:grid-cols-3 gap-8">
-                {/* Plan Details */}
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Ruler className="h-5 w-5 text-accent" />
-                      <h4 className="font-semibold text-foreground">Plan Details</h4>
-                    </div>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        1,620 sq ft
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        Base Layout: 3 Bedrooms · 2 Bathrooms
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        Footprint: 32' x 64'
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+              {/* Hawthorne Plan Details Grid */}
+              {modelId === "hawthorne" && (
+                <div className="grid md:grid-cols-3 gap-8">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Ruler className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Plan Details</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          1,620 sq ft
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Base Layout: 3 Bedrooms · 2 Bathrooms
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Footprint: 32' x 64'
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
 
-                {/* Flexible Layout Options */}
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Settings2 className="h-5 w-5 text-accent" />
-                      <h4 className="font-semibold text-foreground">Flexible Layout Options</h4>
-                    </div>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        3 Bed · 3 Bath option
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        2 Bed · Office / Den option
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        2 or 3 Bedroom configurations available
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Settings2 className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Flexible Layout Options</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          3 Bed · 3 Bath option
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          2 Bed · Office / Den option
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          2 or 3 Bedroom configurations available
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
 
-                {/* Build Types */}
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Building className="h-5 w-5 text-accent" />
-                      <h4 className="font-semibold text-foreground">Build Types</h4>
-                    </div>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        CrossMod® (HUD-code) or Modular (IRC-code)
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        Basement or slab foundation (site-specific)
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Building className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Build Types</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          CrossMod® (HUD-code) or Modular (IRC-code)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Basement or slab foundation (site-specific)
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Belmont Plan Details Grid */}
+              {modelId === "belmont" && (
+                <div className="grid md:grid-cols-3 gap-8">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Ruler className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Plan Details</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          2,100 sq ft
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Base Layout: 4 Bedrooms · 2.5 Bathrooms
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Footprint: 32' x 60'
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Settings2 className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Flexible Layout Options</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          4 Bed · 2.5 Bath option
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          3 Bed · Office / Den option
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Dedicated home office configurations
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Building className="h-5 w-5 text-accent" />
+                        <h4 className="font-semibold text-foreground">Build Types</h4>
+                      </div>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          CrossMod® (HUD-code) or Modular (IRC-code)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          Basement or slab foundation (site-specific)
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </motion.div>
           </div>
         </Section>
