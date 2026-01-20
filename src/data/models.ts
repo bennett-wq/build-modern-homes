@@ -53,12 +53,13 @@ export const homeModels: HomeModel[] = [
   {
     slug: "hawthorne",
     name: "Hawthorne",
-    sqft: 1450,
-    beds: 2,
+    sqft: 1620,
+    beds: 3,
     baths: 2,
     price: 245000,
-    description: "Perfect for downsizers or first-time buyers, offering comfort in a compact footprint.",
+    description: "The Hawthorne is a modern barndominium-inspired home that blends clean architectural lines, efficient living, and flexible layouts into a compact, high-performing design. With an open-concept kitchen and living area, a generous primary suite, and smart circulation throughout, the Hawthorne is designed to live larger than its footprint while maintaining exceptional build efficiency.\n\nThis model is ideal for downsizers, first-time buyers, and anyone seeking a modern aesthetic with practical flexibility — whether built as a CrossMod® or IRC-code modular home. The Hawthorne's layout is intentionally adaptable, allowing buyers to configure bedrooms, bathrooms, or a dedicated office or flex space without sacrificing flow or livability. Paired with BaseMod's curated exterior packages and site-built porch and garage options, the Hawthorne delivers a refined, contemporary home that appraises, performs, and lives like a traditional site-built residence — at a more attainable price point.",
     heroImage: "/images/models/hawthorne/hawthorne-hero.jpg",
+    floorplanImage: "/floorplans/hawthorne/CrossMod--3264-32-1_Hawthorne_R.pdf",
   },
   {
     slug: "maple",
