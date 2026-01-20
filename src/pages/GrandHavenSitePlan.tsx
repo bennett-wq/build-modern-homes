@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -10,6 +10,7 @@ import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { LotDetailsPanel } from '@/components/siteplan/LotDetailsPanel';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots, Lot } from '@/data/lots/grand-haven';
+import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -19,9 +20,17 @@ export default function GrandHavenSitePlan() {
   const isEditMode = searchParams.get('edit') === '1';
   const isMobile = useIsMobile();
   
+  // Get lots based on development slug
+  const initialLots = useMemo(() => {
+    if (slug === 'st-james-bay') {
+      return stJamesBayLots;
+    }
+    return grandHavenLots;
+  }, [slug]);
+  
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
-  const [lots, setLots] = useState<Lot[]>(grandHavenLots);
+  const [lots, setLots] = useState<Lot[]>(initialLots);
 
   const development = getDevelopmentBySlug(slug);
 
@@ -182,16 +191,16 @@ export default function GrandHavenSitePlan() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              About Grand Haven Lots
+              About {development.name} Lots
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Our Grand Haven development features 18 carefully planned lots, each with unique characteristics 
+              Our {development.name} development features {lots.length} carefully planned lots, each with unique characteristics 
               and views. All lots come with utilities and infrastructure already in place, ready for your 
               BaseMod home.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild>
-                <Link to="/contact?development=grand-haven">Schedule a Site Visit</Link>
+                <Link to={`/contact?development=${slug}`}>Schedule a Site Visit</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link to="/models">Browse Home Models</Link>

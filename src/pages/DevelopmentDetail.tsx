@@ -2,7 +2,7 @@
 // Renders based on :slug param from URL
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, TreePine, Car, ShoppingBag, Waves, Sun, ArrowRight, Bell, Building2 } from 'lucide-react';
+import { MapPin, TreePine, Car, ShoppingBag, Waves, Sun, ArrowRight, Bell, Building2, FileText, Download, CheckCircle, ShieldCheck } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Section, SectionHeader } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { InteractiveSitePlan } from '@/components/siteplan/InteractiveSitePlan';
 import { FinancingBadge } from '@/components/financing/FinancingBadge';
 import { AppraisalBadge } from '@/components/appraisal/AppraisalBadge';
-import { getDevelopmentBySlug } from '@/data/developments';
+import { getDevelopmentBySlug, Development } from '@/data/developments';
+import { homeModels } from '@/data/models';
 import { useState } from 'react';
 
 // Icon mapping for dynamic icons from data
@@ -23,6 +24,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ShoppingBag,
   Sun,
   MapPin,
+  ShieldCheck,
 };
 
 const fadeInUp = {
@@ -221,6 +223,12 @@ function ComingSoonContent({ development }: { development: ReturnType<typeof get
 function ActiveDevelopmentContent({ development }: { development: NonNullable<ReturnType<typeof getDevelopmentBySlug>> }) {
   const locationHighlights = development.locationHighlights || defaultLocationHighlights;
   const developmentFeatures = development.features || defaultFeatures;
+  
+  // Get conforming models if this is an ARB community
+  const conformingModelsList = development.conformingModels 
+    ? homeModels.filter(m => development.conformingModels?.includes(m.slug))
+    : [];
+  const hasConformingModels = conformingModelsList.length > 0;
 
   return (
     <Layout>
@@ -244,6 +252,14 @@ function ActiveDevelopmentContent({ development }: { development: NonNullable<Re
               {development.description}
             </p>
             
+            {/* Trust note for ARB communities */}
+            {hasConformingModels && (
+              <p className="text-sm text-muted-foreground/80 mb-4 flex items-center gap-2">
+                <ShieldCheck size={16} className="text-accent flex-shrink-0" />
+                Exterior selections are subject to community architectural review.
+              </p>
+            )}
+            
             {/* Trust Signals - Above the fold */}
             <div className="flex flex-wrap gap-3">
               <FinancingBadge variant="compact" className="inline-flex" />
@@ -252,6 +268,101 @@ function ActiveDevelopmentContent({ development }: { development: NonNullable<Re
           </motion.div>
         </div>
       </section>
+
+      {/* Conforming Models Section (for ARB communities) */}
+      {hasConformingModels && (
+        <Section className="bg-accent/5 border-y border-accent/10">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-8"
+            >
+              <div className="flex items-center justify-center gap-2 text-accent mb-3">
+                <ShieldCheck size={20} />
+                <span className="text-sm font-medium uppercase tracking-wider">Conforming Models</span>
+              </div>
+              <h2 className="text-2xl lg:text-3xl font-semibold text-foreground mb-3">
+                Approved Plans for This Community
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                This community has architectural and setback requirements. These plans are configured to conform.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="grid md:grid-cols-2 gap-6 mb-8"
+            >
+              {conformingModelsList.map((model) => (
+                <Link
+                  key={model.slug}
+                  to={`/models/${model.slug}`}
+                  className="group"
+                >
+                  <Card className="h-full border-border hover:border-accent/50 transition-all duration-200 hover:shadow-lg hover:shadow-accent/5">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="text-xl font-semibold text-foreground group-hover:text-accent transition-colors">
+                            {model.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {model.sqft.toLocaleString()} sq ft · {model.beds} bed · {model.baths} bath
+                          </p>
+                        </div>
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20 flex items-center gap-1">
+                          <CheckCircle size={12} />
+                          Conforming
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {model.description.split('\n')[0].slice(0, 120)}...
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </motion.div>
+
+            {/* ARB Guidelines Link */}
+            {development.arbGuidelinesUrl && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-center"
+              >
+                <Button asChild variant="outline" className="gap-2">
+                  <a 
+                    href={development.arbGuidelinesUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <FileText size={16} />
+                    Architecture Review Board Guidelines (PDF)
+                  </a>
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <a 
+                    href={development.arbGuidelinesUrl} 
+                    download 
+                    className="underline hover:text-accent transition-colors"
+                  >
+                    If the PDF doesn't open, click here to download.
+                  </a>
+                </p>
+              </motion.div>
+            )}
+          </div>
+        </Section>
+      )}
 
       {/* Interactive Site Plan */}
       <Section>
