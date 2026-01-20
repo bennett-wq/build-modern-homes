@@ -163,7 +163,7 @@ export default function ModelDetail() {
       </Section>
 
       {/* Model-specific: Floor Plans & Plan Details Section */}
-      {(modelId === "hawthorne" || modelId === "belmont") && (
+      {(modelId === "hawthorne" || modelId === "belmont" || modelId === "aspen") && (
         <Section className="bg-secondary/50">
           <div className="max-w-4xl mx-auto">
             <motion.div
