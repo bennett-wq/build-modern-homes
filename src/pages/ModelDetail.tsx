@@ -186,7 +186,7 @@ export default function ModelDetail() {
                   <a 
                     href={`/floorplans/${modelId}/${modelId}-floorplan.pdf`}
                     target="_blank" 
-                    rel="noopener noreferrer"
+                    rel="noreferrer"
                   >
                     <FileText className="mr-2 h-4 w-4" />
                     View Floor Plans (PDF)
