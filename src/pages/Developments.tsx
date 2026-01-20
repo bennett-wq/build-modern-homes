@@ -1,4 +1,5 @@
 // Developments Listing Page - Enterprise hub for all BaseMod communities
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, ArrowRight, Bell, Building2 } from 'lucide-react';
@@ -53,6 +54,9 @@ function getStatusBadge(status: Development['status']) {
 
 function DevelopmentCard({ development }: { development: Development }) {
   const isActive = development.status === 'active';
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const hasSitePlanImage = development.sitePlanImagePath && development.sitePlanImagePath.length > 0;
   
   return (
     <motion.div variants={fadeInUp}>
@@ -62,9 +66,30 @@ function DevelopmentCard({ development }: { development: Development }) {
         'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'
       )}>
         <CardContent className="p-0">
-          {/* Card Image Placeholder */}
+          {/* Card Image */}
           <div className="relative aspect-[16/10] bg-muted flex items-center justify-center border-b border-border overflow-hidden">
-            <Building2 className="h-12 w-12 text-muted-foreground/30" />
+            {/* Skeleton loader */}
+            {hasSitePlanImage && !imageLoaded && !imageError && (
+              <div className="absolute inset-0 bg-muted animate-pulse" />
+            )}
+            
+            {hasSitePlanImage && !imageError ? (
+              <img
+                src={development.sitePlanImagePath}
+                alt={`${development.name} site plan`}
+                className={cn(
+                  'w-full h-full object-cover transition-all duration-500',
+                  'group-hover:scale-105',
+                  imageLoaded ? 'opacity-100' : 'opacity-0'
+                )}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+                loading="lazy"
+              />
+            ) : (
+              <Building2 className="h-12 w-12 text-muted-foreground/30" />
+            )}
+            
             <div className="absolute top-3 right-3">
               {getStatusBadge(development.status)}
             </div>
