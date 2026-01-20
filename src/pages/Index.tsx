@@ -1,235 +1,381 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Home, Palette, MapPin, CheckCircle } from "lucide-react";
+import { ArrowRight, Home, Palette, ClipboardCheck, MapPin, Ruler, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
-import { FinancingBadge } from "@/components/financing/FinancingBadge";
-import { AppraisalBadge } from "@/components/appraisal/AppraisalBadge";
+import { homeModels } from "@/data/models";
+import { getModelHeroImage } from "@/lib/model-images";
 import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
 
-const features = [
-  {
-    icon: Home,
-    title: "Factory-Built Precision",
-    description: "CrossMod® homes built with exceptional quality control in a climate-controlled factory environment."
-  },
-  {
-    icon: Palette,
-    title: "Curated Design Options",
-    description: "Select from thoughtfully curated exterior colors, materials, and garage door styles."
-  },
-  {
-    icon: MapPin,
-    title: "Grand Haven Location",
-    description: "A walkable, thoughtfully planned community in beautiful Grand Haven, Michigan."
-  }
+// Featured models - show first 3
+const featuredModels = homeModels.slice(0, 3);
+
+// Trust chips data
+const trustChips = [
+  "Financing-ready pathways",
+  "Appraisal-minded design",
+  "CrossMod® or IRC Modular",
+  "Licensed brokerage in MI & IL",
 ];
 
-const highlights = [
-  "Site-built garages and porches",
-  "Premium exterior finishes",
-  "Energy-efficient construction",
-  "Modern open floor plans",
-  "Quick build timelines",
-  "Attainable pricing"
+// Start here cards
+const startCards = [
+  {
+    icon: MapPin,
+    title: "Choose a Community Lot",
+    description: "Browse BaseMod communities and available lots.",
+    cta: "Browse Developments",
+    href: "/developments",
+  },
+  {
+    icon: Home,
+    title: "Explore Home Models",
+    description: "Compare plans, options, and build types.",
+    cta: "View Models",
+    href: "/models",
+  },
+  {
+    icon: FileCheck,
+    title: "Financing & Appraisals",
+    description: "Designed to support conventional financing and appraisals.",
+    cta: "Learn More",
+    href: "/contact?topic=financing-appraisals",
+  },
+];
+
+// How it works steps
+const steps = [
+  {
+    number: "01",
+    title: "Choose a plan",
+    description: "Browse models and compare layouts",
+  },
+  {
+    number: "02",
+    title: "Design the exterior",
+    description: "Curated packages + options",
+  },
+  {
+    number: "03",
+    title: "Review & schedule",
+    description: "Confirm next steps and pricing",
+  },
 ];
 
 const Index = () => {
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center bg-gradient-to-br from-charcoal to-charcoal-dark overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
+      {/* Hero Section - Apple-minimal */}
+      <section className="relative min-h-[85vh] flex items-center bg-primary overflow-hidden">
+        {/* Background image with overlay */}
+        <div className="absolute inset-0">
+          <img
+            src={hawthornHomepage}
+            alt="Modern BaseMod home exterior"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40" />
         </div>
 
         <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="max-w-2xl">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
-              <span className="inline-block text-wood font-medium tracking-wider uppercase text-sm mb-4">
-                BaseMod Developments • Grand Haven, MI
-              </span>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-                Modern Homes.
-                <br />
-                <span className="text-wood">Thoughtfully Built.</span>
-                <br />
-                Grand Haven.
-              </h1>
-              <p className="text-lg text-white/80 mb-6 max-w-lg">
-                BaseMod Homes are factory-built CrossMod® homes with site-built garages and porches, 
-                delivering quality, efficiency, and modern design at attainable prices.
-              </p>
-              
-              {/* Trust Signals */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-8">
-                <FinancingBadge variant="inline" className="text-white/70 hover:text-white" />
-                <span className="hidden sm:inline text-white/30">•</span>
-                <AppraisalBadge variant="inline" className="text-white/70 hover:text-white" />
+              {/* Eyebrow */}
+              <div className="mb-6">
+                <span className="text-accent font-medium tracking-wide text-sm">
+                  BaseMod Homes
+                </span>
+                <span className="text-primary-foreground/50 text-sm ml-3">
+                  Michigan • Illinois
+                </span>
               </div>
-              
-              <div className="flex flex-wrap gap-4">
+
+              {/* Headline */}
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-primary-foreground leading-[1.1] tracking-tight mb-6">
+                Modern homes.
+                <br />
+                Predictable process.
+              </h1>
+
+              {/* Subheadline */}
+              <p className="text-lg md:text-xl text-primary-foreground/70 mb-8 max-w-lg leading-relaxed">
+                Compare plans, choose curated exteriors, and move from interest to a build-ready next step—fast.
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-wrap items-center gap-4 mb-8">
                 <Button asChild size="lg">
-                  <Link to="/models">
-                    View Floor Plans
+                  <Link to="/developments">
+                    Start a Build
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/5 text-white hover:bg-white/15 hover:border-white/60">
-                  <Link to="/pricing">Explore Pricing</Link>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/50"
+                >
+                  <Link to="/models">Explore Models</Link>
                 </Button>
-                <Button asChild size="lg" variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10">
-                  <Link to="/design-studio">Design Your Exterior</Link>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="ghost"
+                  className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                >
+                  <Link to="/contact">Talk to a Specialist</Link>
                 </Button>
               </div>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-charcoal-light shadow-2xl">
-                <img 
-                  src={hawthornHomepage} 
-                  alt="BaseMod Hawthorn home exterior featuring cedar accents and modern design" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Decorative elements */}
-              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-wood/20 rounded-2xl -z-10" />
-              <div className="absolute -top-4 -left-4 w-24 h-24 border-2 border-wood/30 rounded-2xl -z-10" />
+              {/* Trust chips */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex flex-wrap gap-2"
+              >
+                {trustChips.map((chip) => (
+                  <span
+                    key={chip}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary-foreground/10 text-primary-foreground/70 border border-primary-foreground/10"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </motion.div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <Section className="bg-cream">
-        <div className="text-center mb-16">
+      {/* Start Here Section */}
+      <Section className="bg-background">
+        <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-charcoal mb-4">
-              The BaseMod Difference
+            <h2 className="text-3xl md:text-4xl font-semibold text-foreground tracking-tight mb-3">
+              Start here.
             </h2>
-            <p className="text-lg text-charcoal/70 max-w-2xl mx-auto">
-              We combine the precision of factory construction with custom site-built elements 
-              to deliver homes that exceed expectations.
+            <p className="text-muted-foreground text-lg">
+              Pick a path—we'll guide the rest.
             </p>
           </motion.div>
-        </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <div className="w-14 h-14 bg-wood/10 rounded-xl flex items-center justify-center mb-6">
-                <feature.icon className="w-7 h-7 text-wood" />
-              </div>
-              <h3 className="text-xl font-semibold text-charcoal mb-3">{feature.title}</h3>
-              <p className="text-charcoal/70">{feature.description}</p>
-            </motion.div>
-          ))}
-        </div>
-      </Section>
-
-      {/* Highlights Section */}
-      <Section className="bg-charcoal">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Quality Construction,
-              <br />
-              <span className="text-wood">Attainable Pricing</span>
-            </h2>
-            <p className="text-white/70 mb-8">
-              Every BaseMod Home features a CrossMod® factory-built core enhanced with 
-              BaseMod-designed, site-built garages and porches, creating a seamless blend 
-              of efficiency and customization.
-            </p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {highlights.map((item, index) => (
-                <motion.div
-                  key={item}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="flex items-center gap-3"
+          <div className="grid md:grid-cols-3 gap-6">
+            {startCards.map((card, index) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Link
+                  to={card.href}
+                  className="group block h-full p-6 bg-card rounded-xl border border-border hover:border-accent/30 hover:shadow-lg transition-all duration-200"
                 >
-                  <CheckCircle className="w-5 h-5 text-wood flex-shrink-0" />
-                  <span className="text-white/90">{item}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="aspect-[4/3] rounded-2xl overflow-hidden bg-charcoal-light"
-          >
-            <div className="w-full h-full bg-gradient-to-br from-charcoal-light to-charcoal-dark flex items-center justify-center">
-              <div className="text-center p-8">
-                <Home className="w-16 h-16 text-wood mx-auto mb-4" />
-                <p className="text-white/60 text-sm">Home gallery placeholder</p>
-              </div>
-            </div>
-          </motion.div>
+                  <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors duration-200">
+                    <card.icon className="w-5 h-5 text-accent" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-card-foreground mb-2">
+                    {card.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    {card.description}
+                  </p>
+                  <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all duration-200">
+                    {card.cta}
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </Section>
 
-      {/* CTA Section */}
-      <Section className="bg-cream">
+      {/* Featured Models Section */}
+      <Section className="bg-secondary">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-3xl mx-auto"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-charcoal mb-6">
-            Ready to Design Your Home?
+          <h2 className="text-3xl md:text-4xl font-semibold text-foreground tracking-tight mb-3">
+            Featured models
           </h2>
-          <p className="text-lg text-charcoal/70 mb-8">
-            Explore our collection of floor plans and customize your exterior 
-            with our interactive Design Studio.
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            Modern floor plans designed for efficiency and livability.
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {featuredModels.map((model, index) => {
+            const heroImage = getModelHeroImage(model);
+            return (
+              <motion.div
+                key={model.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Link
+                  to={`/models/${model.slug}`}
+                  className="group block bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all duration-200"
+                >
+                  <div className="aspect-[4/3] bg-muted overflow-hidden">
+                    <img
+                      src={heroImage}
+                      alt={`${model.name} exterior`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.parentElement!.innerHTML = `
+                          <div class="w-full h-full flex items-center justify-center bg-muted">
+                            <svg class="w-12 h-12 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                          </div>
+                        `;
+                      }}
+                    />
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-lg font-semibold text-card-foreground mb-2">
+                      {model.name}
+                    </h3>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
+                      <span>{model.sqft.toLocaleString()} sq ft</span>
+                      <span className="text-border">•</span>
+                      <span>{model.beds} bed</span>
+                      <span className="text-border">•</span>
+                      <span>{model.baths} bath</span>
+                    </div>
+                    <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all duration-200">
+                      View Details
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </span>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-center mt-10"
+        >
+          <Button asChild variant="outline" size="lg">
+            <Link to="/models">
+              View All Models
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </motion.div>
+      </Section>
+
+      {/* How It Works Section */}
+      <Section className="bg-background">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-semibold text-foreground tracking-tight mb-3">
+              How it works
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12 mb-10">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="text-4xl font-light text-accent/40 mb-3">
+                  {step.number}
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="text-center text-muted-foreground"
+          >
+            Clear next steps, fast guidance, and a confident path to build.
+          </motion.p>
+        </div>
+      </Section>
+
+      {/* Final CTA Section */}
+      <Section className="bg-primary">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto"
+        >
+          <h2 className="text-3xl md:text-4xl font-semibold text-primary-foreground tracking-tight mb-4">
+            Ready to start?
+          </h2>
+          <p className="text-lg text-primary-foreground/70 mb-8">
+            Browse communities, explore models, or talk to our team.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button asChild size="lg">
-              <Link to="/models">
-                Browse Models
+            <Button
+              asChild
+              size="lg"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            >
+              <Link to="/developments">
+                Start a Build
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link to="/contact">Schedule a Call</Link>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/50"
+            >
+              <Link to="/contact">Contact Us</Link>
             </Button>
           </div>
         </motion.div>
