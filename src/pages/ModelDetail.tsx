@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, CheckCircle, PencilRuler, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, CheckCircle, PencilRuler, ChevronLeft, ChevronRight, FileText, Ruler, Settings2, Building } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
@@ -144,16 +144,130 @@ export default function ModelDetail() {
       {/* Description Section */}
       <Section className="bg-background">
         <div className="max-w-3xl">
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground leading-relaxed"
           >
-            {model.description}
-          </motion.p>
+            {model.description.split('\n\n').map((paragraph, index) => (
+              <p 
+                key={index} 
+                className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6 last:mb-0"
+              >
+                {paragraph}
+              </p>
+            ))}
+          </motion.div>
         </div>
       </Section>
+
+      {/* Hawthorne-specific: Floor Plans & Plan Details Section */}
+      {modelId === "hawthorne" && (
+        <Section className="bg-secondary/50">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* Floor Plans CTA */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-10 p-6 bg-background rounded-lg border border-border">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="h-5 w-5 text-accent" />
+                    <h3 className="text-lg font-semibold text-foreground">Floor Plans</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Download the complete floor plan documentation for the Hawthorne model.
+                  </p>
+                </div>
+                <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                  <a 
+                    href="/floorplans/hawthorne/CrossMod--3264-32-1_Hawthorne_R.pdf" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    View Floor Plans (PDF)
+                  </a>
+                </Button>
+              </div>
+
+              {/* Plan Details Grid */}
+              <div className="grid md:grid-cols-3 gap-8">
+                {/* Plan Details */}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Ruler className="h-5 w-5 text-accent" />
+                      <h4 className="font-semibold text-foreground">Plan Details</h4>
+                    </div>
+                    <ul className="space-y-2 text-muted-foreground">
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        1,620 sq ft
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        Base Layout: 3 Bedrooms · 2 Bathrooms
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        Footprint: 32' x 64'
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                {/* Flexible Layout Options */}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Settings2 className="h-5 w-5 text-accent" />
+                      <h4 className="font-semibold text-foreground">Flexible Layout Options</h4>
+                    </div>
+                    <ul className="space-y-2 text-muted-foreground">
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        3 Bed · 3 Bath option
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        2 Bed · Office / Den option
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        2 or 3 Bedroom configurations available
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                {/* Build Types */}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Building className="h-5 w-5 text-accent" />
+                      <h4 className="font-semibold text-foreground">Build Types</h4>
+                    </div>
+                    <ul className="space-y-2 text-muted-foreground">
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        CrossMod® (HUD-code) or Modular (IRC-code)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        Basement or slab foundation (site-specific)
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          </div>
+        </Section>
+      )}
 
       {/* Image Gallery - Only for Aspen */}
       {gallery && (
