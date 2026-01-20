@@ -1,12 +1,13 @@
 // Step 2: Pick a Model - grid of model cards with premium polish
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, FileText, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, FileText, Check, ShieldCheck } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
+import { getDevelopmentBySlug } from '@/data/developments';
 import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
@@ -32,6 +33,18 @@ export function Step2Model({
   developmentSlug,
   lotId,
 }: Step2ModelProps) {
+  // Get development to check for conforming model restrictions
+  const development = developmentSlug ? getDevelopmentBySlug(developmentSlug) : null;
+  const conformingModels = development?.conformingModels;
+  
+  // Filter models if development has conforming restrictions
+  const displayModels = useMemo(() => {
+    if (conformingModels && conformingModels.length > 0) {
+      return homeModels.filter(m => conformingModels.includes(m.slug));
+    }
+    return homeModels;
+  }, [conformingModels]);
+  
   // Normalize the selected slug for comparison
   const normalizedSelectedSlug = normalizeModelSlug(selectedModelSlug);
   const selectedModel = homeModels.find(m => m.slug === normalizedSelectedSlug);
@@ -51,7 +64,7 @@ export function Step2Model({
           </h2>
           <div className="flex items-center gap-3 mt-0.5">
             <p className="text-sm text-muted-foreground">
-              Choose from our CrossMod® home collection
+              {conformingModels ? 'Showing conforming plans approved for this development' : 'Choose from our CrossMod® home collection'}
             </p>
             <span className="text-muted-foreground/30">•</span>
             <AppraisalInfoLink />
@@ -74,7 +87,7 @@ export function Step2Model({
           'grid gap-4',
           isMobile ? 'grid-cols-1' : 'grid-cols-2 xl:grid-cols-3'
         )}>
-          {homeModels.map((model, index) => (
+          {displayModels.map((model, index) => (
             <motion.div
               key={model.slug}
               initial={{ opacity: 0, y: 10 }}
@@ -85,6 +98,7 @@ export function Step2Model({
                 model={model}
                 isSelected={model.slug === normalizedSelectedSlug}
                 onSelect={() => handleSelect(model.slug)}
+                isConforming={conformingModels?.includes(model.slug)}
               />
             </motion.div>
           ))}
@@ -160,9 +174,10 @@ interface ModelCardProps {
   model: HomeModel;
   isSelected: boolean;
   onSelect: () => void;
+  isConforming?: boolean;
 }
 
-function ModelCard({ model, isSelected, onSelect }: ModelCardProps) {
+function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
@@ -225,6 +240,16 @@ function ModelCard({ model, isSelected, onSelect }: ModelCardProps) {
             </motion.div>
           )}
         </AnimatePresence>
+        
+        {/* Conforming badge */}
+        {isConforming && (
+          <div className="absolute top-3 left-3 pointer-events-none">
+            <Badge className="bg-green-600 text-white border-0 text-xs font-medium shadow-md">
+              <ShieldCheck className="h-3 w-3 mr-1" />
+              Conforming
+            </Badge>
+          </div>
+        )}
       </div>
 
       <CardContent className="p-4">
