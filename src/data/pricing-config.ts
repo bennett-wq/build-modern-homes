@@ -296,7 +296,7 @@ export const models: ModelConfig[] = [
     sqft: 990,
     length: 66, // 16' x 66' box
     buildTypes: ['xmod'],
-    heroImage: '/images/models/cypress/hero.webp',
+    heroImage: '/images/models/cypress/hero-v2.webp',
     floorPlanPdf: '/floorplans/cypress/cypress-floorplan.pdf',
     pricing: {
       xmod: {

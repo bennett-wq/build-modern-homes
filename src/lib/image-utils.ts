@@ -55,15 +55,32 @@ export function getHeroImageFallbackChain(slug: string, primaryUrl?: string): st
   // Primary: explicit heroImage if provided
   if (primaryUrl) {
     chain.push(primaryUrl);
+    
+    // Dev-only: log the primary URL being used for Cypress
+    if (import.meta.env.DEV && slug === 'cypress') {
+      console.log(`[Cypress Hero] Using primary URL: ${primaryUrl}`);
+    }
   }
   
-  // Secondary: canonical webp path
+  // Secondary: try v2 variant (handles Cypress migration)
+  const v2WebpPath = `/images/models/${slug}/hero-v2.webp`;
+  if (!chain.includes(v2WebpPath)) {
+    chain.push(v2WebpPath);
+  }
+  
+  // Tertiary: v2 png fallback
+  const v2PngPath = `/images/models/${slug}/hero-v2.png`;
+  if (!chain.includes(v2PngPath)) {
+    chain.push(v2PngPath);
+  }
+  
+  // Quaternary: canonical webp path
   const webpPath = `/images/models/${slug}/hero.webp`;
   if (!chain.includes(webpPath)) {
     chain.push(webpPath);
   }
   
-  // Tertiary: png fallback
+  // Quinary: png fallback
   chain.push(`/images/models/${slug}/hero.png`);
   
   // Final: placeholder SVG
