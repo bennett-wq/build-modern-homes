@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info } from 'lucide-react';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { 
@@ -39,6 +39,16 @@ import {
   BelmontPackage,
   FALLBACK_SWATCHES 
 } from '@/data/belmont-exteriors';
+import {
+  keenelandPackages,
+  keenelandGarages,
+  getKeenelandExteriorImage,
+  getKeenelandHeroImage,
+  getAllKeenelandRenderImages,
+  hasKeenelandVariant,
+  KeenelandPackage,
+  KeenelandGarage,
+} from '@/data/keeneland-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
@@ -81,14 +91,21 @@ export function Step3Design({
   const isAspen = normalizedModel === 'aspen';
   const isHawthorne = normalizedModel === 'hawthorne';
   const isBelmont = normalizedModel === 'belmont';
+  const isKeeneland = normalizedModel === 'keeneland';
   
   // Get the appropriate packages/garages based on model
-  const allPackages = isAspen 
-    ? aspenPackages 
-    : isBelmont 
-      ? belmontPackages
-      : (isHawthorne ? hawthornePackages : exteriorPackages);
-  const garages = isHawthorne ? hawthorneGarages : garageDoors;
+  const allPackages = isKeeneland
+    ? keenelandPackages
+    : isAspen 
+      ? aspenPackages 
+      : isBelmont 
+        ? belmontPackages
+        : (isHawthorne ? hawthornePackages : exteriorPackages);
+  const garages = isKeeneland 
+    ? keenelandGarages 
+    : isHawthorne 
+      ? hawthorneGarages 
+      : garageDoors;
   
   // Filter packages if development has ARB restrictions
   const packages = isArbCommunity 
@@ -161,7 +178,12 @@ export function Step3Design({
           'bg-gradient-to-b from-muted to-muted/50 flex items-center justify-center p-6 sm:p-8',
           isMobile ? 'h-56 shrink-0' : 'flex-1'
         )}>
-          {isAspen ? (
+          {isKeeneland ? (
+            <KeenelandPhotoPreview 
+              packageId={selectedPackageId} 
+              garageId={selectedGarageDoorId}
+            />
+          ) : isAspen ? (
             <AspenPhotoPreview packageId={selectedPackageId} />
           ) : isBelmont ? (
             <BelmontPhotoPreview packageId={selectedPackageId} />
@@ -213,7 +235,16 @@ export function Step3Design({
 
             <TabsContent value="package" className="flex-1 overflow-auto p-4 mt-0">
               <div className="grid gap-3">
-                {isAspen ? (
+                {isKeeneland ? (
+                  keenelandPackages.map((pkg) => (
+                    <KeenelandPackageCard
+                      key={pkg.id}
+                      package_={pkg}
+                      isSelected={pkg.id === selectedPackageId}
+                      onSelect={() => handleSelectPackage(pkg.id)}
+                    />
+                  ))
+                ) : isAspen ? (
                   aspenPackages.map((pkg) => (
                     <AspenPackageCard
                       key={pkg.id}
@@ -255,7 +286,17 @@ export function Step3Design({
 
             <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0">
               <div className="grid gap-3">
-                {isAspen ? (
+                {isKeeneland ? (
+                  keenelandGarages.map((door) => (
+                    <KeenelandGarageCard
+                      key={door.id}
+                      door={door}
+                      isSelected={door.id === selectedGarageDoorId}
+                      isAvailable={!selectedPackageId || hasKeenelandVariant(selectedPackageId, door.id)}
+                      onSelect={() => onSelectGarageDoor(door.id)}
+                    />
+                  ))
+                ) : isAspen ? (
                   // Aspen doesn't have photo-based garage variants - use standard doors
                   garageDoors.map((door) => (
                     <GarageDoorCard
@@ -308,7 +349,13 @@ export function Step3Design({
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
                     <div 
                       className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                      style={{ backgroundColor: 'primaryColor' in selectedPackage ? selectedPackage.primaryColor : selectedPackage.sidingColor }}
+                      style={{ 
+                        backgroundColor: 'swatches' in selectedPackage 
+                          ? selectedPackage.swatches[0] 
+                          : 'primaryColor' in selectedPackage 
+                            ? selectedPackage.primaryColor 
+                            : selectedPackage.sidingColor 
+                      }}
                     />
                     <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
                       {selectedPackage.name}
@@ -319,7 +366,13 @@ export function Step3Design({
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
                     <div 
                       className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                      style={{ backgroundColor: selectedDoor.color }}
+                      style={{ 
+                        backgroundColor: 'color' in selectedDoor 
+                          ? selectedDoor.color 
+                          : 'swatches' in selectedDoor && selectedDoor.swatches 
+                            ? selectedDoor.swatches[0] 
+                            : '#666666'
+                      }}
                     />
                     <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
                       {selectedDoor.name}
@@ -1346,7 +1399,308 @@ function BelmontPackageCard({ package_, isSelected, onSelect }: BelmontPackageCa
   );
 }
 
-// Garage door card for Hawthorne model with availability support
+// Photo-based preview for Keeneland model with theme + garage variant support
+interface KeenelandPhotoPreviewProps {
+  packageId: string | null;
+  garageId: string | null;
+}
+
+function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewProps) {
+  const [displayedSrc, setDisplayedSrc] = useState<string>(getKeenelandHeroImage());
+  const [isLoading, setIsLoading] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const preloadCacheRef = useRef<Set<string>>(new Set());
+  
+  // Target image based on package + garage selection
+  const targetImage = useMemo(() => getKeenelandExteriorImage(packageId, garageId), [packageId, garageId]);
+  
+  // Check if current combo has exact match
+  const hasExactMatch = useMemo(() => {
+    if (!packageId || !garageId) return true;
+    return hasKeenelandVariant(packageId, garageId);
+  }, [packageId, garageId]);
+  
+  // Preload all Keeneland render images once
+  useEffect(() => {
+    getAllKeenelandRenderImages().forEach((src) => {
+      if (!preloadCacheRef.current.has(src)) {
+        const img = new Image();
+        img.onload = () => preloadCacheRef.current.add(src);
+        img.src = src;
+      }
+    });
+  }, []);
+  
+  // Handle package/garage changes with crossfade
+  useEffect(() => {
+    if (targetImage === displayedSrc) {
+      setShowComingSoon(!hasExactMatch && !!packageId && !!garageId);
+      return;
+    }
+    
+    // Check if already preloaded
+    if (preloadCacheRef.current.has(targetImage)) {
+      setDisplayedSrc(targetImage);
+      setShowComingSoon(!hasExactMatch && packageId && garageId ? true : false);
+      return;
+    }
+    
+    // Load new image with transition
+    setIsLoading(true);
+    const img = new Image();
+    img.onload = () => {
+      preloadCacheRef.current.add(targetImage);
+      setDisplayedSrc(targetImage);
+      setIsLoading(false);
+      setShowComingSoon(!hasExactMatch && packageId && garageId ? true : false);
+    };
+    img.onerror = () => {
+      // Silent fallback to hero
+      if (import.meta.env.DEV) {
+        console.warn(`[Keeneland] Failed to load: ${targetImage}`);
+      }
+      setDisplayedSrc(getKeenelandHeroImage());
+      setIsLoading(false);
+      setShowComingSoon(true);
+    };
+    img.src = targetImage;
+  }, [targetImage, displayedSrc, hasExactMatch, packageId, garageId]);
+  
+  const handleImageLoad = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+  
+  const handleImageError = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.warn(`[Keeneland] Image element error: ${displayedSrc}`);
+    }
+    setDisplayedSrc(getKeenelandHeroImage());
+  }, [displayedSrc]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0.8, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="w-full max-w-lg relative"
+    >
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
+        {/* Crossfade container */}
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={displayedSrc}
+            src={displayedSrc}
+            alt={`Keeneland exterior with ${packageId || 'modern-charcoal'} package and ${garageId || 'standard'} garage`}
+            className="w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        </AnimatePresence>
+        
+        {/* Subtle loading skeleton */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-muted animate-pulse" />
+        )}
+        
+        {/* Coming soon note for missing combos */}
+        <AnimatePresence>
+          {showComingSoon && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 5 }}
+              className="absolute bottom-3 left-3 right-3 bg-background/90 backdrop-blur-sm rounded-md px-3 py-2 flex items-center gap-2"
+            >
+              <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground">
+                Render for this combination is coming soon — selection saved.
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+        <Eye className="h-3.5 w-3.5" />
+        <span>Photo Preview</span>
+      </div>
+    </motion.div>
+  );
+}
+
+// Package card for Keeneland model
+interface KeenelandPackageCardProps {
+  package_: KeenelandPackage;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function KeenelandPackageCard({ package_, isSelected, onSelect }: KeenelandPackageCardProps) {
+  const swatches = package_.swatches;
+  const swatchLabels = ['Siding color', 'Stone/accent color', 'Trim color'];
+  
+  // Check if a color is light (for border contrast adjustment)
+  const isLightColor = (hex: string): boolean => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.75;
+  };
+  
+  return (
+    <Card
+      className={cn(
+        'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        isSelected 
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
+      )}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={isSelected}
+      aria-label={`Select ${package_.name} exterior package`}
+    >
+      <CardContent className="p-3 flex items-center gap-3">
+        {/* Color swatches from package data */}
+        <div className="flex gap-1">
+          {swatches.map((color, index) => (
+            <div 
+              key={index}
+              className="w-8 h-8 rounded-md shadow-sm"
+              style={{ 
+                backgroundColor: color,
+                border: isLightColor(color) 
+                  ? '1px solid rgba(0,0,0,0.15)' 
+                  : '1px solid rgba(0,0,0,0.10)'
+              }}
+              aria-label={swatchLabels[index]}
+              title={swatchLabels[index]}
+            />
+          ))}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-foreground text-sm">{package_.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+        </div>
+        
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Garage door card for Keeneland model with availability support
+interface KeenelandGarageCardProps {
+  door: KeenelandGarage;
+  isSelected: boolean;
+  isAvailable: boolean;
+  onSelect: () => void;
+}
+
+function KeenelandGarageCard({ door, isSelected, isAvailable, onSelect }: KeenelandGarageCardProps) {
+  const handleClick = () => {
+    // Always allow selection, even if no exact render exists
+    onSelect();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect();
+    }
+  };
+
+  return (
+    <Card
+      className={cn(
+        'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        isSelected
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
+      )}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      aria-pressed={isSelected}
+      aria-label={`Select ${door.name} garage door`}
+    >
+      <CardContent className="p-3 flex items-center gap-3">
+        {/* Door preview with swatches */}
+        <div className="flex gap-1">
+          {door.swatches ? (
+            door.swatches.map((color, index) => (
+              <div 
+                key={index}
+                className="w-6 h-10 rounded-md border border-border shadow-sm"
+                style={{ backgroundColor: color }}
+              />
+            ))
+          ) : (
+            <div 
+              className="w-12 h-10 rounded-md border border-border flex items-center justify-center shadow-sm bg-muted"
+            >
+              <DoorOpen className="h-5 w-5 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-foreground text-sm">{door.name}</p>
+            {!isAvailable && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                Preview N/A
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground truncate">{door.description}</p>
+        </div>
+        
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
 interface HawthorneGarageCardProps {
   door: HawthorneGarage;
   isSelected: boolean;
