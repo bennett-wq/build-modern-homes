@@ -63,6 +63,17 @@ export const homeModels: HomeModel[] = [
     floorplanImage: "/floorplans/hawthorne/CrossMod--3264-32-1_Hawthorne_R.pdf",
   },
   {
+    slug: "laurel",
+    name: "Laurel",
+    sqft: 1440,
+    beds: 3,
+    baths: 2,
+    price: 225000,
+    description: "The Laurel is a compact, efficient design ideal for first-time buyers and downsizers seeking an attainable price point without sacrificing quality. At 1,440 square feet with a thoughtful 3-bedroom layout, the Laurel delivers strong livability in a highly efficient footprint. Available in both CrossMod® and Modular build types.",
+    heroImage: "/images/models/laurel/hero.webp",
+    floorplanImage: "/floorplans/laurel/laurel-floorplan.pdf",
+  },
+  {
     slug: "maple",
     name: "Maple",
     sqft: 1950,

@@ -1,10 +1,13 @@
 import { HomeModel } from "@/data/models";
 
 /**
- * Premium placeholder fallback for when no image is available
+ * Premium placeholder fallback SVG for when no image is available
  * Used as ultimate fallback in all model card contexts
  */
-export const MODEL_PLACEHOLDER = "/placeholder.svg";
+export const HERO_PLACEHOLDER = "/images/models/placeholders/hero-placeholder.svg";
+
+/** @deprecated Use HERO_PLACEHOLDER instead */
+export const MODEL_PLACEHOLDER = HERO_PLACEHOLDER;
 
 /**
  * Get the canonical hero image URL for a model.
@@ -16,11 +19,10 @@ export const MODEL_PLACEHOLDER = "/placeholder.svg";
  * Resolution order:
  * 1. model.heroImage if defined
  * 2. Convention-based path: /images/models/{slug}/hero.webp
- * 3. Placeholder fallback
  */
 export function getModelHeroImage(model: HomeModel | null | undefined): string {
   if (!model) {
-    return MODEL_PLACEHOLDER;
+    return HERO_PLACEHOLDER;
   }
 
   // 1. Use explicit heroImage if defined
@@ -46,16 +48,4 @@ function normalizeModelSlug(slug: string): string {
 export function getModelHeroImageBySlug(slug: string): string {
   const normalizedSlug = normalizeModelSlug(slug);
   return `/images/models/${normalizedSlug}/hero.webp`;
-}
-
-/**
- * Fallback chain for model images - returns array of paths to try in order
- */
-export function getModelImageFallbacks(slug: string): string[] {
-  const normalizedSlug = normalizeModelSlug(slug);
-  return [
-    `/images/models/${normalizedSlug}/hero.webp`,
-    `/images/models/${normalizedSlug}/${normalizedSlug}-hero.jpg`,
-    MODEL_PLACEHOLDER,
-  ];
 }

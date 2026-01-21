@@ -7,7 +7,7 @@ import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { homeModels } from "@/data/models";
-import { getModelHeroImage } from "@/lib/model-images";
+import { getModelHeroImage, HERO_PLACEHOLDER } from "@/lib/model-images";
 import { calculateFullPricing, defaultBuildSelection, type BuildSelection } from "@/hooks/usePricingEngine";
 import { getDefaultZone, getModelBySlug, type BuildType } from "@/data/pricing-config";
 import { getPricingModeLabel } from "@/lib/pricing-mode-utils";
@@ -213,7 +213,6 @@ interface ModelCardProps {
 
 function ModelCard({ model, index }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const heroImage = getModelHeroImage(model);
 
   // Calculate buyer-facing pricing for the model
@@ -256,32 +255,27 @@ function ModelCard({ model, index }: ModelCardProps) {
       <div className="group bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all duration-200">
         {/* Image Container - Links to detail - aspect-video for premium 16:9 feel */}
         <Link to={`/models/${model.slug}`}>
-          <div className="aspect-video bg-muted overflow-hidden relative rounded-t-xl">
+          <div className="aspect-video bg-muted overflow-hidden relative rounded-t-2xl">
             {/* Skeleton loader */}
-            {!imageLoaded && !imageError && (
+            {!imageLoaded && (
               <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
             )}
             
-            {!imageError ? (
-              <img
-                src={heroImage}
-                alt={`${model.name} exterior`}
-                className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
-                  imageLoaded ? "opacity-100" : "opacity-0"
-                }`}
-                onLoad={() => setImageLoaded(true)}
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-muted via-muted to-muted-foreground/5 flex flex-col items-center justify-center gap-2">
-                <div className="w-16 h-16 rounded-full bg-background/60 flex items-center justify-center shadow-inner">
-                  <HomeIcon className="w-8 h-8 text-muted-foreground/40" />
-                </div>
-                <span className="text-xs text-muted-foreground/60 font-medium">
-                  {model.name}
-                </span>
-              </div>
-            )}
+            <img
+              src={heroImage}
+              alt={`${model.name} exterior`}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={(e) => {
+                // Single fallback to SVG placeholder
+                const target = e.currentTarget;
+                if (target.src !== HERO_PLACEHOLDER) {
+                  target.src = HERO_PLACEHOLDER;
+                }
+              }}
+            />
           </div>
         </Link>
 

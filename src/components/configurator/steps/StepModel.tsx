@@ -30,7 +30,7 @@ import {
   defaultExteriorSelection,
   type PricingOutput,
 } from '@/hooks/usePricingEngine';
-import { getModelHeroImageBySlug } from '@/lib/model-images';
+import { getModelHeroImageBySlug, HERO_PLACEHOLDER } from '@/lib/model-images';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
 
@@ -296,7 +296,6 @@ function ModelCard({
   onSelect: () => void;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
   
   const heroImage = model.heroImage || getModelHeroImageBySlug(model.slug);
   
@@ -337,27 +336,29 @@ function ModelCard({
       aria-pressed={isSelected}
     >
       {/* Image Area - Fixed aspect ratio, contained */}
-      <div className="aspect-video relative overflow-hidden bg-muted">
+      <div className="aspect-video relative overflow-hidden bg-muted rounded-t-2xl">
         {/* Loading skeleton */}
-        {!imageLoaded && !imageError && (
+        {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
         )}
         
-        {!imageError ? (
-          <img
-            src={heroImage}
-            alt={`${model.name} exterior`}
-            className={cn(
-              'w-full h-full object-cover transition-all duration-500',
-              'group-hover:scale-[1.02]',
-              imageLoaded ? 'opacity-100' : 'opacity-0',
-            )}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <PremiumPlaceholder modelName={model.name} descriptor={meta.descriptor} />
-        )}
+        <img
+          src={heroImage}
+          alt={`${model.name} exterior`}
+          className={cn(
+            'w-full h-full object-cover transition-all duration-500',
+            'group-hover:scale-[1.02]',
+            imageLoaded ? 'opacity-100' : 'opacity-0',
+          )}
+          onLoad={() => setImageLoaded(true)}
+          onError={(e) => {
+            // Single fallback to SVG placeholder
+            const target = e.currentTarget;
+            if (target.src !== HERO_PLACEHOLDER) {
+              target.src = HERO_PLACEHOLDER;
+            }
+          }}
+        />
         
         {/* Gradient overlay for legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />

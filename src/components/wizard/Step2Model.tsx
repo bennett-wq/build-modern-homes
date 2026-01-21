@@ -12,25 +12,8 @@ import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
-import { getModelHeroImage } from '@/lib/model-images';
+import { getModelHeroImage, HERO_PLACEHOLDER } from '@/lib/model-images';
 import { cn } from '@/lib/utils';
-
-/**
- * Premium placeholder for model cards when hero image fails to load
- * Displays branded gradient with architectural pattern
- */
-function PremiumPlaceholder({ modelName }: { modelName: string }) {
-  return (
-    <div className="w-full h-full bg-gradient-to-br from-muted via-muted to-muted-foreground/5 flex flex-col items-center justify-center gap-2">
-      <div className="w-16 h-16 rounded-full bg-background/60 flex items-center justify-center shadow-inner">
-        <HomeIcon className="w-8 h-8 text-muted-foreground/40" />
-      </div>
-      <span className="text-xs text-muted-foreground/60 font-medium">
-        {modelName}
-      </span>
-    </div>
-  );
-}
 
 interface Step2ModelProps {
   selectedModelSlug: string | null;
@@ -169,7 +152,6 @@ interface ModelCardProps {
 
 function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
   
   // Use canonical hero image path from model-images utility
   const heroImage = getModelHeroImage(model);
@@ -196,28 +178,30 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
       aria-label={`Select The ${model.name} - ${model.sqft} square feet, ${model.beds} bedrooms, ${model.baths} bathrooms`}
     >
       {/* Image with skeleton loading - aspect-video for premium 16:9 feel */}
-      <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
+      <div className="aspect-video bg-muted relative overflow-hidden rounded-t-2xl">
         {/* Loading skeleton - no layout shift */}
-        {!imageLoaded && !imageError && (
+        {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
         )}
         
-        {!imageError ? (
-          <img 
-            src={heroImage} 
-            alt={`The ${model.name} home exterior`}
-            className={cn(
-              'w-full h-full object-cover transition-all duration-500',
-              'group-hover:scale-105',
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            )}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
-            loading="lazy"
-          />
-        ) : (
-          <PremiumPlaceholder modelName={model.name} />
-        )}
+        <img 
+          src={heroImage} 
+          alt={`The ${model.name} home exterior`}
+          className={cn(
+            'w-full h-full object-cover transition-all duration-500',
+            'group-hover:scale-105',
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          )}
+          onLoad={() => setImageLoaded(true)}
+          onError={(e) => {
+            // Single fallback to SVG placeholder
+            const target = e.currentTarget;
+            if (target.src !== HERO_PLACEHOLDER) {
+              target.src = HERO_PLACEHOLDER;
+            }
+          }}
+          loading="lazy"
+        />
         
         {/* Selection indicator - pointer-events-none so it never blocks clicks */}
         <AnimatePresence>
