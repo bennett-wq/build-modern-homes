@@ -75,7 +75,7 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
               onClick={() => onSelectIntent(option.id)}
               className={cn(
                 'relative p-6 rounded-xl border-2 text-left transition-all duration-200',
-                'hover:border-accent/50 hover:shadow-md',
+                'hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5',
                 isSelected
                   ? 'border-accent bg-accent/5 shadow-md'
                   : 'border-border bg-card',
@@ -113,10 +113,21 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
         })}
       </div>
       
+      {/* Inline guidance */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="text-center text-sm text-muted-foreground/80"
+      >
+        Most buyers choose "Build on My Land" or "Find Land to Build". You can change this later.
+      </motion.p>
+      
+      {/* CTA with reassurance */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: selectedIntent ? 1 : 0.5 }}
-        className="flex justify-center"
+        className="flex flex-col items-center gap-2"
       >
         <Button
           size="lg"
@@ -127,6 +138,9 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
           Continue
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
+        <span className="text-xs text-muted-foreground/70">
+          You can change this later.
+        </span>
       </motion.div>
     </div>
   );
