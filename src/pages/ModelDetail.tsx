@@ -79,6 +79,37 @@ const modelData: Record<string, {
     ],
     foundationType: "Slab or basement foundation (site-specific)",
   },
+  laurel: {
+    tagline: "Efficient, thoughtfully designed three-bedroom home with flexible garage options.",
+    footprint: "32' x 48'",
+    highlights: [
+      "Efficient 1,065 sq ft with smart circulation",
+      "Three bedrooms and two full baths",
+      "Flexible garage configurations available",
+      "Ideal for first-time buyers and downsizers",
+    ],
+    layoutOptions: [
+      "No Garage (base configuration)",
+      "Two-Car Garage with Two Doors",
+      "Two-Car Garage with Single Modern Door",
+    ],
+    foundationType: "Slab or crawl foundation (site-specific)",
+  },
+  cypress: {
+    tagline: "Most compact CrossMod design — ideal for narrow lots and ADU applications.",
+    footprint: "16' x 66'",
+    highlights: [
+      "Efficient 990 sq ft in ultra-compact footprint",
+      "Two bedrooms plus flexible den/office",
+      "Open-concept living with smart circulation",
+      "Perfect for narrow lots and ADU applications",
+    ],
+    layoutOptions: [
+      "Flex room as office or den",
+      "Open living and kitchen core",
+    ],
+    foundationType: "Slab or crawl foundation (site-specific)",
+  },
   maple: {
     tagline: "Expansive living with a flexible bonus room and covered porch.",
     footprint: "32' x 68'",
@@ -112,7 +143,7 @@ const modelData: Record<string, {
 };
 
 // Models with floor plan PDFs available
-const modelsWithFloorPlans = ["hawthorne", "belmont", "aspen", "keeneland"];
+const modelsWithFloorPlans = ["hawthorne", "belmont", "aspen", "keeneland", "laurel", "cypress"];
 
 export default function ModelDetail() {
   const { modelId } = useParams<{ modelId: string }>();
