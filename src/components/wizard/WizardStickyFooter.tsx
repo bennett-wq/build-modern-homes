@@ -1,8 +1,9 @@
 // WizardStickyFooter - consistent, premium footer for all wizard steps
 // Fixed to viewport bottom, never requires scrolling to find Continue
-import { ReactNode } from 'react';
+// Includes non-blocking inline feedback for selections (no toasts)
+import { ReactNode, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +20,14 @@ interface WizardStickyFooterProps {
   /** Hide back button (e.g., on first step) */
   hideBack?: boolean;
   className?: string;
+  /** Show "Updated" indicator (triggers when value changes) */
+  showUpdatedIndicator?: boolean;
+  /** Callback for undo action (if provided, shows Undo button with indicator) */
+  onUndo?: () => void;
 }
+
+// Inline feedback indicator duration (ms)
+const INDICATOR_DURATION = 2500;
 
 export function WizardStickyFooter({
   onBack,
@@ -31,7 +39,22 @@ export function WizardStickyFooter({
   showReassurance = true,
   hideBack = false,
   className,
+  showUpdatedIndicator = false,
+  onUndo,
 }: WizardStickyFooterProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  // Show indicator when showUpdatedIndicator becomes true, auto-hide after duration
+  useEffect(() => {
+    if (showUpdatedIndicator) {
+      setIsVisible(true);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+      }, INDICATOR_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [showUpdatedIndicator]);
+  
   return (
     <div 
       className={cn(
@@ -59,20 +82,48 @@ export function WizardStickyFooter({
             <div className="shrink-0" />
           )}
 
-          {/* Center content - selection summary */}
-          {children && (
+          {/* Center content - selection summary + inline feedback */}
+          <div className="hidden md:flex items-center gap-3 min-w-0 flex-1 justify-center">
             <AnimatePresence mode="wait">
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                transition={{ duration: 0.15 }}
-                className="hidden md:flex items-center gap-3 min-w-0 flex-1 justify-center"
-              >
-                {children}
-              </motion.div>
+              {children && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-3"
+                >
+                  {children}
+                </motion.div>
+              )}
             </AnimatePresence>
-          )}
+            
+            {/* Inline "Updated" indicator + Undo */}
+            <AnimatePresence>
+              {isVisible && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-2"
+                >
+                  <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                    Updated
+                  </span>
+                  {onUndo && (
+                    <button
+                      onClick={onUndo}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                    >
+                      <Undo2 className="w-3 h-3" />
+                      Undo
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Continue Button with reassurance */}
           <div className="flex flex-col items-end gap-1 shrink-0">
