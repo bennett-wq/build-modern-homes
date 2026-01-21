@@ -299,6 +299,11 @@ export default function Configurator() {
                       flags={pricingFlags}
                       variant="full"
                       showPlaceholder={false}
+                      onSwitchToInstalled={
+                        selection.servicePackage === 'supply_only' 
+                          ? () => setServicePackage('delivered_installed')
+                          : undefined
+                      }
                     />
                   </div>
                 </div>
@@ -369,6 +374,11 @@ export default function Configurator() {
             flags={pricingFlags}
             variant="mobile"
             showPlaceholder={false}
+            onSwitchToInstalled={
+              selection.servicePackage === 'supply_only' 
+                ? () => setServicePackage('delivered_installed')
+                : undefined
+            }
           />
         )}
       </div>

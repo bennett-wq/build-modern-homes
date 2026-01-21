@@ -59,6 +59,8 @@ export interface BuyerPricingDisplayProps {
   actionLabel?: string;
   /** When true, shows a collapsed placeholder prompting model selection */
   showPlaceholder?: boolean;
+  /** Callback to switch to delivered_installed mode (for supply_only upsell) */
+  onSwitchToInstalled?: () => void;
 }
 
 // ============================================================================
@@ -99,11 +101,22 @@ function getConfidenceLabel(confidence: 'high' | 'medium' | 'low'): string {
 function getPricingModeDisplayLabel(mode: PricingMode): string {
   switch (mode) {
     case 'supply_only':
-      return 'Home Package Only';
+      return 'Home Package Estimate';
     case 'delivered_installed':
       return 'Delivered & Installed Estimate';
     case 'community_all_in':
       return 'All-in Price (Includes Lot)';
+  }
+}
+
+function getPricingModeHeadline(mode: PricingMode): string {
+  switch (mode) {
+    case 'supply_only':
+      return 'Home package';
+    case 'delivered_installed':
+      return 'Starting from';
+    case 'community_all_in':
+      return 'All-in price';
   }
 }
 
@@ -270,8 +283,10 @@ export function BuyerPricingDisplay({
   onAction,
   actionLabel,
   showPlaceholder = false,
+  onSwitchToInstalled,
 }: BuyerPricingDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const isSupplyOnly = flags.pricingMode === 'supply_only';
 
   // Show placeholder when requested (e.g., during model selection step)
   if (showPlaceholder && variant === 'full') {
@@ -340,7 +355,9 @@ export function BuyerPricingDisplay({
       <div className="p-5 bg-secondary/50 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Starting from</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              {getPricingModeHeadline(flags.pricingMode)}
+            </span>
             <ConfidenceBadge confidence={flags.estimateConfidence} />
           </div>
           <WhatsIncludedModal />
@@ -387,6 +404,31 @@ export function BuyerPricingDisplay({
           </p>
         )}
       </div>
+      
+      {/* Supply-only upsell to include installation */}
+      {isSupplyOnly && onSwitchToInstalled && flags.hasPricing && (
+        <div className="px-5 py-4 bg-accent/5 border-b border-border">
+          <button
+            onClick={onSwitchToInstalled}
+            className="w-full text-left group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">
+                  Add Installation Estimate
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Most buyers choose Installed for a more complete number.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 text-accent opacity-70 group-hover:opacity-100 transition-opacity">
+                <Truck className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3 -rotate-90" />
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
       
       {/* Collapsible breakdown */}
       {flags.hasPricing && (
