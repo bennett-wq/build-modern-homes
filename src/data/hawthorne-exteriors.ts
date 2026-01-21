@@ -19,93 +19,169 @@ export interface HawthorneGarage {
   color: string;
 }
 
-// 5 exterior packages for Hawthorne
+// 5 exterior packages for Hawthorne (matching provided images)
 export const hawthornePackages: HawthornePackage[] = [
   {
     id: 'modern-charcoal',
     name: 'Modern Charcoal',
-    description: 'Sleek dark siding with crisp white trim and black accents',
-    primaryColor: 'hsl(0, 0%, 25%)',
-    secondaryColor: 'hsl(0, 0%, 98%)',
-    accentColor: 'hsl(0, 0%, 10%)',
+    description: 'Bold dark siding with natural wood accents and stone',
+    primaryColor: 'hsl(220, 10%, 18%)', // Deep charcoal siding
+    secondaryColor: 'hsl(30, 40%, 45%)', // Cedar wood accents
+    accentColor: 'hsl(220, 8%, 35%)', // Stone/slate
   },
   {
-    id: 'slate-sage',
-    name: 'Slate + Sage',
-    description: 'Sophisticated slate gray with natural sage green accents',
-    primaryColor: 'hsl(210, 10%, 45%)',
-    secondaryColor: 'hsl(120, 15%, 55%)',
-    accentColor: 'hsl(30, 20%, 40%)',
+    id: 'rustic-brown',
+    name: 'Rustic Brown',
+    description: 'Warm olive-brown siding with rich wood tones',
+    primaryColor: 'hsl(75, 15%, 32%)', // Olive brown siding
+    secondaryColor: 'hsl(30, 50%, 40%)', // Natural wood trim
+    accentColor: 'hsl(200, 5%, 45%)', // Gray stone
   },
   {
-    id: 'coastal-mist',
-    name: 'Coastal Mist',
-    description: 'Light coastal palette with soft blues and weathered tones',
-    primaryColor: 'hsl(200, 20%, 75%)',
-    secondaryColor: 'hsl(0, 0%, 98%)',
-    accentColor: 'hsl(200, 30%, 50%)',
+    id: 'classic-navy',
+    name: 'Classic Navy',
+    description: 'Deep navy blue with crisp black trim',
+    primaryColor: 'hsl(220, 35%, 28%)', // Navy siding
+    secondaryColor: 'hsl(80, 15%, 55%)', // Sage green gable
+    accentColor: 'hsl(200, 5%, 50%)', // Gray stone
   },
   {
-    id: 'evergreen-cedar',
-    name: 'Evergreen Cedar',
-    description: 'Rich forest green paired with warm cedar wood tones',
-    primaryColor: 'hsl(140, 30%, 30%)',
-    secondaryColor: 'hsl(25, 50%, 45%)',
-    accentColor: 'hsl(30, 40%, 35%)',
+    id: 'warm-gray',
+    name: 'Warm Gray',
+    description: 'Light gray board & batten with dark trim',
+    primaryColor: 'hsl(0, 0%, 92%)', // Light gray/white siding
+    secondaryColor: 'hsl(35, 25%, 65%)', // Warm tan gable
+    accentColor: 'hsl(220, 10%, 25%)', // Dark trim
   },
   {
-    id: 'black-cedar',
-    name: 'Black + Cedar',
-    description: 'Bold black exterior with natural cedar accents',
-    primaryColor: 'hsl(0, 0%, 12%)',
-    secondaryColor: 'hsl(25, 50%, 50%)',
-    accentColor: 'hsl(25, 40%, 40%)',
+    id: 'coastal-white',
+    name: 'Coastal White',
+    description: 'Soft blue-gray with natural stone accents',
+    primaryColor: 'hsl(180, 8%, 70%)', // Light seafoam gray siding
+    secondaryColor: 'hsl(45, 30%, 70%)', // Warm tan shingle gable
+    accentColor: 'hsl(200, 5%, 55%)', // Gray stone
   },
 ];
 
-// 2 garage door styles (room for third later)
+// 4 garage door styles for Hawthorne
 export const hawthorneGarages: HawthorneGarage[] = [
   {
-    id: 'standard',
-    name: 'Standard',
-    description: 'Classic raised panel garage door in coordinating color',
+    id: 'modern-black',
+    name: 'Modern Black',
+    description: 'Contemporary full-view aluminum with frosted glass panels',
+    isUpgrade: true,
+    color: 'hsl(0, 0%, 12%)',
+  },
+  {
+    id: 'carriage-black',
+    name: 'Carriage Black',
+    description: 'Classic raised panel garage door in matte black',
     isUpgrade: false,
-    color: 'hsl(0, 0%, 50%)',
+    color: 'hsl(0, 0%, 15%)',
+  },
+  {
+    id: 'traditional-gray',
+    name: 'Traditional Gray',
+    description: 'Classic raised panel garage door in charcoal gray',
+    isUpgrade: false,
+    color: 'hsl(0, 0%, 40%)',
   },
   {
     id: 'black-industrial',
     name: 'Black Industrial',
-    description: 'Modern full-view aluminum with frosted glass panels',
+    description: 'Bold industrial style with horizontal ribbing',
     isUpgrade: true,
-    color: 'hsl(0, 0%, 15%)',
+    color: 'hsl(0, 0%, 10%)',
   },
 ];
+
+// Exterior variant images: maps (packageId + garageId) → image path
+// Key format: "{packageId}__{garageId}"
+export const hawthorneExteriorVariantImages: Record<string, string> = {
+  // Classic Navy variants
+  'classic-navy__carriage-black': '/images/models/hawthorne/packages/hawthorne-classic-navy-carriage-black.webp',
+  'classic-navy__modern-black': '/images/models/hawthorne/packages/hawthorne-classic-navy-modern-black.webp',
+  
+  // Coastal White variants
+  'coastal-white__modern-black': '/images/models/hawthorne/packages/hawthorne-coastal-white-modern-black.webp',
+  
+  // Modern Charcoal variants
+  'modern-charcoal__carriage-black': '/images/models/hawthorne/packages/hawthorne-modern-charcoal-carriage-black.webp',
+  'modern-charcoal__modern-black': '/images/models/hawthorne/packages/hawthorne-modern-charcoal-modern-black.webp',
+  'modern-charcoal__black-industrial': '/images/models/hawthorne/packages/hawthorne-modern-charcoal-black-industrial.webp',
+  
+  // Rustic Brown variants
+  'rustic-brown__modern-black': '/images/models/hawthorne/packages/hawthorne-rustic-brown-modern-black.webp',
+  'rustic-brown__traditional-gray': '/images/models/hawthorne/packages/hawthorne-rustic-brown-traditional-gray.webp',
+  
+  // Warm Gray variants
+  'warm-gray__carriage-black': '/images/models/hawthorne/packages/hawthorne-warm-gray-carriage-black.jpg',
+};
+
+// Defaults for Hawthorne
+export const hawthorneDefaultPackageId = 'modern-charcoal';
+export const hawthorneDefaultGarageId = 'modern-black';
+
+// Get all available garage IDs for a given package
+export function getAvailableGaragesForPackage(packageId: string): string[] {
+  const available: string[] = [];
+  for (const key of Object.keys(hawthorneExteriorVariantImages)) {
+    const [pkgId, garageId] = key.split('__');
+    if (pkgId === packageId) {
+      available.push(garageId);
+    }
+  }
+  return available;
+}
+
+// Check if a specific package+garage combo has an image
+export function hasVariantImage(packageId: string, garageId: string): boolean {
+  const key = `${packageId}__${garageId}`;
+  return key in hawthorneExteriorVariantImages;
+}
 
 // Image path resolver with fallback logic
 export function getHawthorneExteriorImage(
   packageId: string,
   garageId: string
 ): string {
-  const basePath = '/images/models/hawthorne';
+  const key = `${packageId}__${garageId}`;
   
-  // Primary: exact combo (e.g., modern-charcoal__black-industrial.webp)
-  const primaryPath = `${basePath}/${packageId}__${garageId}.webp`;
+  // Check if exact combo exists
+  if (hawthorneExteriorVariantImages[key]) {
+    return hawthorneExteriorVariantImages[key];
+  }
   
-  // Fallback chain is handled by the component with onError
-  return primaryPath;
+  // Fallback: first available variant for this package
+  const availableGarages = getAvailableGaragesForPackage(packageId);
+  if (availableGarages.length > 0) {
+    const fallbackKey = `${packageId}__${availableGarages[0]}`;
+    return hawthorneExteriorVariantImages[fallbackKey];
+  }
+  
+  // Ultimate fallback
+  return getHawthorneHeroImage();
 }
 
 // Get fallback image path for package (without garage variant)
 export function getHawthorneFallbackImage(packageId: string): string {
-  const basePath = '/images/models/hawthorne';
-  return `${basePath}/${packageId}__standard.webp`;
+  // Return first available variant for this package
+  const availableGarages = getAvailableGaragesForPackage(packageId);
+  if (availableGarages.length > 0) {
+    const key = `${packageId}__${availableGarages[0]}`;
+    return hawthorneExteriorVariantImages[key];
+  }
+  return getHawthorneHeroImage();
 }
 
 // Get hero image with specific garage variant
 export function getHawthorneHeroWithGarage(garageId: string): string {
-  const basePath = '/images/models/hawthorne';
-  // hero__standard.webp or hero__black-industrial.webp
-  return `${basePath}/hero__${garageId}.webp`;
+  // Use modern-charcoal (default) with the specified garage
+  const key = `modern-charcoal__${garageId}`;
+  if (hawthorneExteriorVariantImages[key]) {
+    return hawthorneExteriorVariantImages[key];
+  }
+  return getHawthorneHeroImage();
 }
 
 // Ultimate fallback - use hawthorne-hero.jpg (canonical filename)
@@ -121,6 +197,11 @@ export function getHawthornePackageById(id: string): HawthornePackage | undefine
 // Helper to get garage by ID
 export function getHawthorneGarageById(id: string): HawthorneGarage | undefined {
   return hawthorneGarages.find(g => g.id === id);
+}
+
+// Get all variant image paths for preloading
+export function getAllHawthorneVariantImages(): string[] {
+  return Object.values(hawthorneExteriorVariantImages);
 }
 
 // Check if a model should use photo-based preview
