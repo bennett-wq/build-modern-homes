@@ -6,8 +6,9 @@ import { FixedSitePlanViewer } from '@/components/siteplan/FixedSitePlanViewer';
 import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, MapPin, AlertCircle, ChevronUp, X } from 'lucide-react';
+import { MapPin, AlertCircle, X } from 'lucide-react';
 import { Lot } from '@/data/lots/grand-haven';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
 
 interface Step1LotProps {
@@ -99,15 +100,17 @@ export function Step1Lot({
 
         {/* Lot List - Desktop sidebar */}
         {!isMobile && (
-          <div className="w-80 border-l border-border bg-background shrink-0">
+          <div className="w-80 border-l border-border bg-background shrink-0 flex flex-col">
             <LotListPanel
               lots={lots}
               selectedLotId={selectedLotId}
               hoveredLotId={hoveredLotId}
               onSelectLot={handleLotFromList}
               onHoverLot={setHoveredLotId}
-              className="h-full"
+              className="flex-1 overflow-auto"
             />
+            {/* Safe bottom padding for sticky footer */}
+            <WizardFooterSpacer />
           </div>
         )}
 
@@ -170,74 +173,46 @@ export function Step1Lot({
         </AnimatePresence>
       </div>
 
-      {/* Selection Footer - always visible, stable position */}
-      <div className="px-4 sm:px-6 py-4 border-t border-border bg-card shrink-0">
-        <AnimatePresence mode="wait">
-          {selectedLot ? (
-            <motion.div
-              key="selected"
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                  <MapPin className="h-5 w-5 text-accent" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground truncate">{selectedLot.label}</p>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        'text-xs font-medium',
-                        selectedLot.status === 'available' && 'bg-green-500/10 text-green-600 border-green-200',
-                        selectedLot.status === 'reserved' && 'bg-amber-500/10 text-amber-600 border-amber-200',
-                        selectedLot.status === 'sold' && 'bg-gray-500/10 text-gray-500 border-gray-200'
-                      )}
-                    >
-                      {selectedLot.status.charAt(0).toUpperCase() + selectedLot.status.slice(1)}
-                    </Badge>
-                    {selectedLot.acreage && (
-                      <span className="text-xs text-muted-foreground">{selectedLot.acreage} acres</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {canProceed ? (
-                <Button 
-                  onClick={onNext} 
-                  className="shrink-0"
-                  size="default"
+      {/* Sticky Footer */}
+      <WizardStickyFooter
+        onContinue={onNext}
+        canContinue={!!canProceed}
+        continueLabel="Continue"
+        hideBack={true}
+      >
+        {selectedLot && (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">{selectedLot.label}</p>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'text-xs font-medium',
+                    selectedLot.status === 'available' && 'bg-green-500/10 text-green-600 border-green-200',
+                    selectedLot.status === 'reserved' && 'bg-amber-500/10 text-amber-600 border-amber-200',
+                    selectedLot.status === 'sold' && 'bg-gray-500/10 text-gray-500 border-gray-200'
+                  )}
                 >
-                  Continue
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <div className="flex items-center gap-2 text-amber-600 shrink-0">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">Not available</span>
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-2"
-            >
-              <p className="text-muted-foreground text-sm">
-                {isMobile ? 'Tap a lot on the map or browse the list' : 'Click a lot on the map to select it'}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                  {selectedLot.status.charAt(0).toUpperCase() + selectedLot.status.slice(1)}
+                </Badge>
+                {selectedLot.acreage && (
+                  <span className="text-xs text-muted-foreground">{selectedLot.acreage} acres</span>
+                )}
+                {!canProceed && selectedLot && (
+                  <span className="flex items-center gap-1 text-amber-600 text-xs">
+                    <AlertCircle className="h-3 w-3" />
+                    Not available
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </WizardStickyFooter>
     </div>
   );
 }

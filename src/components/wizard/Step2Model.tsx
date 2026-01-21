@@ -1,16 +1,17 @@
 // Step 2: Pick a Model - grid of model cards with premium polish
 import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, ArrowRight, Home, BedDouble, Bath, Maximize, FileText, Check, ShieldCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Home, BedDouble, Bath, Maximize, FileText, Check, ShieldCheck } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
 
 interface Step2ModelProps {
@@ -57,7 +58,7 @@ export function Step2Model({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card shrink-0">
         <div>
           <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
             Pick Your Model
@@ -70,18 +71,9 @@ export function Step2Model({
             <AppraisalInfoLink />
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onBack}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Back
-        </Button>
       </div>
 
-      {/* Models Grid */}
+      {/* Models Grid - scrollable with safe bottom padding */}
       <div className="flex-1 overflow-auto p-4 sm:p-6">
         <div className={cn(
           'grid gap-4',
@@ -111,52 +103,32 @@ export function Step2Model({
             <AppraisalSidebarModule />
           </div>
         )}
+
+        {/* Safe bottom padding for sticky footer */}
+        <WizardFooterSpacer />
       </div>
 
-      {/* Footer */}
-      <div className="px-4 sm:px-6 py-4 border-t border-border bg-card shrink-0">
-        <AnimatePresence mode="wait">
-          {selectedModel ? (
-            <motion.div
-              key="selected"
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                  <Home className="h-5 w-5 text-accent" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground truncate">The {selectedModel.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedModel.sqft.toLocaleString()} sq ft • {selectedModel.beds} bed • {selectedModel.baths} bath
-                  </p>
-                </div>
-              </div>
-              <Button 
-                onClick={onNext} 
-                className="shrink-0"
-              >
-                Continue
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-2"
-            >
-              <p className="text-muted-foreground text-sm">Select a model to continue</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* Sticky Footer */}
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={onNext}
+        canContinue={!!selectedModelSlug}
+        continueLabel="Continue"
+      >
+        {selectedModel && (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <Home className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">The {selectedModel.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedModel.sqft.toLocaleString()} sq ft • {selectedModel.beds} bed • {selectedModel.baths} bath
+              </p>
+            </div>
+          </div>
+        )}
+      </WizardStickyFooter>
 
       {/* Financing Modal */}
       <FinancingModal
