@@ -288,6 +288,37 @@ export const models: ModelConfig[] = [
     pricingSource: 'Keeneland Pricing',
     floorPlanOptions: [],
   },
+  {
+    slug: 'cypress',
+    name: 'Cypress',
+    beds: 2,
+    baths: 2,
+    sqft: 990,
+    length: 66, // 16' x 66' box
+    buildTypes: ['xmod'],
+    heroImage: '/images/models/cypress/hero.webp',
+    floorPlanPdf: '/floorplans/cypress/cypress-floorplan.pdf',
+    pricing: {
+      xmod: {
+        base_cost: 56362,
+        options_adjustment: 0,
+        freight: 0,
+        mhi_dues: 35,
+        factory_quote_total: 56397,
+        freightPending: true,
+      },
+    },
+    pricingSource: 'BaseMod Home Package (factory)',
+    floorPlanOptions: [
+      {
+        id: 'flex-room-office',
+        name: 'Flex room as Office',
+        description: 'Label the flex room as a dedicated home office',
+        price: 0,
+        available: true,
+      },
+    ],
+  },
 ];
 
 // ============================================================================
