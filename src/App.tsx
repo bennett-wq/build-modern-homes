@@ -15,6 +15,7 @@ import DesignStudio from "./pages/DesignStudio";
 import GrandHavenSitePlan from "./pages/GrandHavenSitePlan";
 import BuildWizard from "./pages/BuildWizard";
 import Configurator from "./pages/Configurator";
+import QuoteSummary from "./pages/QuoteSummary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/design-studio" element={<DesignStudio />} />
+          <Route path="/quote/:quoteId" element={<QuoteSummary />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

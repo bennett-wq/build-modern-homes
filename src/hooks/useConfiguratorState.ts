@@ -18,6 +18,7 @@ import {
   defaultBuildSelection,
   defaultExteriorSelection,
 } from '@/hooks/usePricingEngine';
+import { derivePricingMode, type PricingModeContext } from '@/lib/pricing-mode-utils';
 
 const STORAGE_KEY = 'basemod-configurator-state';
 
@@ -246,6 +247,22 @@ export function useConfiguratorState() {
   const currentModel = useMemo(() => {
     return selection.modelSlug ? getModelBySlug(selection.modelSlug) : null;
   }, [selection.modelSlug]);
+
+  // Derive pricing mode dynamically from intent
+  // This ensures pricing mode is NEVER hardcoded and always reflects current state
+  const derivedPricingMode = useMemo(() => {
+    return derivePricingMode({
+      buildIntent: selection.intent,
+      hasLotSelected: false, // /build wizard doesn't have lot selection (that's BuildWizard)
+      servicePackage: 'delivered_installed', // Default for /build configurator
+    });
+  }, [selection.intent]);
+
+  // Create selection with derived pricing mode for external consumption
+  const selectionWithDerivedMode = useMemo((): BuildSelection => ({
+    ...selection,
+    pricingMode: derivedPricingMode,
+  }), [selection, derivedPricingMode]);
   
   // Check if floor plan option is selected
   const isFloorPlanOptionSelected = useCallback((optionId: string) => {
@@ -266,10 +283,11 @@ export function useConfiguratorState() {
   }, []);
   
   return {
-    // State
-    selection,
+    // State - use selection with derived pricing mode
+    selection: selectionWithDerivedMode,
     currentStep,
     currentModel,
+    derivedPricingMode,
     
     // Navigation
     goToStep,

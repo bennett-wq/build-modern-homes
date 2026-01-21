@@ -93,14 +93,14 @@ function getConfidenceLabel(confidence: 'high' | 'medium' | 'low'): string {
   }
 }
 
-function getPricingModeLabel(mode: PricingMode): string {
+function getPricingModeDisplayLabel(mode: PricingMode): string {
   switch (mode) {
     case 'supply_only':
       return 'Home Package Only';
     case 'delivered_installed':
-      return 'Delivered & Installed (excludes land)';
+      return 'Delivered & Installed Estimate';
     case 'community_all_in':
-      return 'All-in (includes lot)';
+      return 'All-in Price (Includes Lot)';
   }
 }
 
@@ -325,7 +325,7 @@ export function BuyerPricingDisplay({
         
         {/* Pricing mode label */}
         <p className="text-sm text-muted-foreground mt-1">
-          {getPricingModeLabel(flags.pricingMode)}
+          {getPricingModeDisplayLabel(flags.pricingMode)}
         </p>
         
         {/* Warning flags */}
@@ -485,7 +485,7 @@ function CompactPricingCard({
             </motion.p>
           </AnimatePresence>
           <p className="text-xs text-muted-foreground">
-            {getPricingModeLabel(flags.pricingMode)}
+            {getPricingModeDisplayLabel(flags.pricingMode)}
           </p>
           {flags.freightPending && (
             <p className="text-xs text-amber-600 flex items-center gap-1">
