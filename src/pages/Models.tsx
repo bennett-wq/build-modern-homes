@@ -50,16 +50,13 @@ export default function Models() {
               {/* CTAs */}
               <div className="flex flex-wrap items-center gap-4 mb-8">
                 <Button asChild size="lg">
-                  <Link to="/developments">
-                    Start a Build
+                  <Link to="/build">
+                    Get a Quote
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link to="/developments">Browse Developments</Link>
-                </Button>
-                <Button asChild size="lg" variant="ghost" className="text-muted-foreground hover:text-foreground">
-                  <Link to="/contact">Talk to a Specialist</Link>
+                  <Link to="/communities">Browse Communities</Link>
                 </Button>
               </div>
 
@@ -167,10 +164,10 @@ export default function Models() {
           className="text-center max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-semibold text-primary-foreground tracking-tight mb-4">
-            Ready to start?
+            Ready to get your price?
           </h2>
           <p className="text-lg text-primary-foreground/70 mb-8">
-            Choose a community lot and design your exterior.
+            Design your home and see a real estimate in minutes.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button
@@ -178,8 +175,8 @@ export default function Models() {
               size="lg"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             >
-              <Link to="/developments">
-                Start a Build
+              <Link to="/build">
+                Get a Quote
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -242,6 +239,13 @@ function ModelCard({ model, index }: ModelCardProps) {
     return calculateFullPricing(selection, pricingModel, zone);
   }, [model.slug]);
 
+  const handleGetQuote = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Navigate to /build with model preselected
+    window.location.href = `/build?model=${model.slug}`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -249,39 +253,40 @@ function ModelCard({ model, index }: ModelCardProps) {
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
     >
-      <Link
-        to={`/models/${model.slug}`}
-        className="group block bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all duration-200"
-      >
-        {/* Image Container */}
-        <div className="aspect-[4/3] bg-muted overflow-hidden relative">
-          {/* Skeleton loader */}
-          {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 skeleton-shimmer" />
-          )}
-          
-          {!imageError ? (
-            <img
-              src={heroImage}
-              alt={`${model.name} exterior`}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
-                imageLoaded ? "opacity-100" : "opacity-0"
-              }`}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted">
-              <Home className="w-12 h-12 text-muted-foreground/30" />
-            </div>
-          )}
-        </div>
+      <div className="group bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all duration-200">
+        {/* Image Container - Links to detail */}
+        <Link to={`/models/${model.slug}`}>
+          <div className="aspect-[4/3] bg-muted overflow-hidden relative">
+            {/* Skeleton loader */}
+            {!imageLoaded && !imageError && (
+              <div className="absolute inset-0 skeleton-shimmer" />
+            )}
+            
+            {!imageError ? (
+              <img
+                src={heroImage}
+                alt={`${model.name} exterior`}
+                className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <Home className="w-12 h-12 text-muted-foreground/30" />
+              </div>
+            )}
+          </div>
+        </Link>
 
         {/* Content */}
         <div className="p-5">
-          <h3 className="text-xl font-semibold text-card-foreground mb-3">
-            {model.name}
-          </h3>
+          <Link to={`/models/${model.slug}`}>
+            <h3 className="text-xl font-semibold text-card-foreground mb-3 hover:text-accent transition-colors">
+              {model.name}
+            </h3>
+          </Link>
 
           {/* Spec chips */}
           <div className="flex flex-wrap gap-2 mb-4">
@@ -323,13 +328,19 @@ function ModelCard({ model, index }: ModelCardProps) {
             )}
           </div>
 
-          {/* CTA - always visible */}
-          <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all duration-200">
-            View Model
-            <ArrowRight className="ml-1 h-4 w-4" />
-          </span>
+          {/* CTAs - Get Quote primary, View Details secondary */}
+          <div className="flex gap-2">
+            <Button onClick={handleGetQuote} size="sm" className="flex-1">
+              Get Quote
+            </Button>
+            <Button asChild variant="outline" size="sm" className="flex-1">
+              <Link to={`/models/${model.slug}`}>
+                View Details
+              </Link>
+            </Button>
+          </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }

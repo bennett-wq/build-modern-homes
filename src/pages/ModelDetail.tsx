@@ -217,8 +217,8 @@ export default function ModelDetail() {
           >
             <div className="flex flex-wrap items-center gap-4">
               <Button asChild size="lg">
-                <Link to="/developments">
-                  Start a Build
+                <Link to={`/build?model=${model.slug}`}>
+                  Get a Quote
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -426,10 +426,10 @@ export default function ModelDetail() {
           className="text-center max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-semibold text-primary-foreground tracking-tight mb-4">
-            Ready for next steps?
+            Ready to get your price?
           </h2>
           <p className="text-lg text-primary-foreground/70 mb-8">
-            Get a quick consult on plan fit, budget assumptions, and timeline.
+            Design your home and see a real estimate in minutes.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button
@@ -437,9 +437,9 @@ export default function ModelDetail() {
               size="lg"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             >
-              <Link to="/contact">
-                <Phone className="mr-2 h-4 w-4" />
-                Schedule a Call
+              <Link to={`/build?model=${model.slug}`}>
+                Get a Quote
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button
