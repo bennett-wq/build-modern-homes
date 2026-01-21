@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle } from 'lucide-react';
+import { EXTERIOR_COPY, getPackageDescription, getGarageDescription } from '@/content/exteriorMicrocopy';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { 
@@ -134,22 +136,27 @@ export function Step3Design({
       <div className="px-4 sm:px-6 py-4 border-b border-border bg-card shrink-0">
         <div className="flex items-center justify-between">
           <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
-            Design Your Exterior
-          </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {isArbCommunity ? 'ARB-ready packages curated for community standards' : 'Choose your package and garage door style'}
-          </p>
-          {isArbCommunity && development?.arbGuidelinesUrl && (
-            <a 
-              href={development.arbGuidelinesUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-accent hover:underline mt-1 inline-block"
-            >
-              View ARB Guidelines →
-            </a>
-          )}
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+              {EXTERIOR_COPY.step.title}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isArbCommunity ? EXTERIOR_COPY.step.arbSubtitle : EXTERIOR_COPY.step.subtitle}
+            </p>
+            {EXTERIOR_COPY.step.helper && (
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                {EXTERIOR_COPY.step.helper}
+              </p>
+            )}
+            {isArbCommunity && development?.arbGuidelinesUrl && (
+              <a 
+                href={development.arbGuidelinesUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-accent hover:underline mt-1 inline-block"
+              >
+                View ARB Guidelines →
+              </a>
+            )}
           </div>
           <Button 
             variant="ghost" 
@@ -216,7 +223,7 @@ export function Step3Design({
                 className="flex items-center gap-2 data-[state=active]:shadow-sm"
               >
                 <Palette className="h-4 w-4" />
-                <span>Package</span>
+                <span>{EXTERIOR_COPY.tabs.package.label}</span>
                 {selectedPackageId && (
                   <div className="w-2 h-2 rounded-full bg-green-500" />
                 )}
@@ -226,7 +233,7 @@ export function Step3Design({
                 className="flex items-center gap-2 data-[state=active]:shadow-sm"
               >
                 <DoorOpen className="h-4 w-4" />
-                <span>Garage</span>
+                <span>{EXTERIOR_COPY.tabs.garage.label}</span>
                 {selectedGarageDoorId && (
                   <div className="w-2 h-2 rounded-full bg-green-500" />
                 )}
@@ -234,6 +241,24 @@ export function Step3Design({
             </TabsList>
 
             <TabsContent value="package" className="flex-1 overflow-auto p-4 mt-0">
+              {/* Package tab helper + swatch legend */}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground">{EXTERIOR_COPY.tabs.package.helper}</p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="inline-flex items-center gap-1 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors">
+                        <span>{EXTERIOR_COPY.swatches.legend}</span>
+                        <HelpCircle className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[240px]">
+                      <p className="font-medium text-xs mb-1">{EXTERIOR_COPY.swatches.tooltipTitle}</p>
+                      <p className="text-xs text-muted-foreground">{EXTERIOR_COPY.swatches.tooltipBody}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="grid gap-3">
                 {isKeeneland ? (
                   keenelandPackages.map((pkg) => (
@@ -285,6 +310,8 @@ export function Step3Design({
             </TabsContent>
 
             <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0">
+              {/* Garage tab helper */}
+              <p className="text-xs text-muted-foreground mb-3">{EXTERIOR_COPY.tabs.garage.helper}</p>
               <div className="grid gap-3">
                 {isKeeneland ? (
                   keenelandGarages.map((door) => (
@@ -389,7 +416,7 @@ export function Step3Design({
                 onClick={onNext} 
                 className="shrink-0"
               >
-                Review Plan
+                {EXTERIOR_COPY.footer.cta}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
@@ -402,9 +429,9 @@ export function Step3Design({
               className="text-center py-2"
             >
               <p className="text-muted-foreground text-sm">
-                Select {!selectedPackageId && 'an exterior package'}
-                {!selectedPackageId && !selectedGarageDoorId && ' and '}
-                {!selectedGarageDoorId && 'a garage door'}
+                Select {!selectedPackageId && EXTERIOR_COPY.footer.incomplete.package}
+                {!selectedPackageId && !selectedGarageDoorId && EXTERIOR_COPY.footer.incomplete.connector}
+                {!selectedGarageDoorId && EXTERIOR_COPY.footer.incomplete.garage}
               </p>
             </motion.div>
           )}
@@ -682,7 +709,7 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
               className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-full"
             >
               <div className="w-3 h-3 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
-              <span className="text-[10px] text-muted-foreground">Loading...</span>
+              <span className="text-[10px] text-muted-foreground">{EXTERIOR_COPY.preview.loading}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -690,7 +717,7 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
       
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
         <Eye className="h-3.5 w-3.5" />
-        <span>Photo Preview</span>
+        <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
     </motion.div>
   );
@@ -793,7 +820,7 @@ function AspenPhotoPreview({ packageId }: AspenPhotoPreviewProps) {
       
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
         <Eye className="h-3.5 w-3.5" />
-        <span>Photo Preview</span>
+        <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
     </motion.div>
   );
@@ -1119,7 +1146,9 @@ function HawthornePackageCard({ package_, isSelected, onSelect }: HawthornePacka
         
         <div className="flex-1 min-w-0">
           <p className="font-medium text-foreground text-sm">{package_.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {getPackageDescription(package_.id, package_.description)}
+          </p>
         </div>
         
         <AnimatePresence>
@@ -1191,7 +1220,9 @@ function AspenPackageCard({ package_, isSelected, onSelect }: AspenPackageCardPr
         
         <div className="flex-1 min-w-0">
           <p className="font-medium text-foreground text-sm">{package_.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {getPackageDescription(package_.id, package_.description)}
+          </p>
         </div>
         
         <AnimatePresence>
@@ -1309,7 +1340,7 @@ function BelmontPhotoPreview({ packageId }: BelmontPhotoPreviewProps) {
       
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
         <Eye className="h-3.5 w-3.5" />
-        <span>Photo Preview</span>
+        <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
     </motion.div>
   );
@@ -1378,7 +1409,9 @@ function BelmontPackageCard({ package_, isSelected, onSelect }: BelmontPackageCa
         
         <div className="flex-1 min-w-0">
           <p className="font-medium text-foreground text-sm">{package_.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {getPackageDescription(package_.id, package_.description)}
+          </p>
         </div>
         
         <AnimatePresence>
@@ -1517,7 +1550,7 @@ function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewPro
             >
               <Info className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-xs text-muted-foreground">
-                Render for this combination is coming soon — selection saved.
+                {EXTERIOR_COPY.preview.unavailable}
               </span>
             </motion.div>
           )}
@@ -1526,7 +1559,7 @@ function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewPro
       
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
         <Eye className="h-3.5 w-3.5" />
-        <span>Photo Preview</span>
+        <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
     </motion.div>
   );
@@ -1594,7 +1627,9 @@ function KeenelandPackageCard({ package_, isSelected, onSelect }: KeenelandPacka
         
         <div className="flex-1 min-w-0">
           <p className="font-medium text-foreground text-sm">{package_.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {getPackageDescription(package_.id, package_.description)}
+          </p>
         </div>
         
         <AnimatePresence>
@@ -1681,7 +1716,9 @@ function KeenelandGarageCard({ door, isSelected, isAvailable, onSelect }: Keenel
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground truncate">{door.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {getGarageDescription(door.id, door.description)}
+          </p>
         </div>
         
         <AnimatePresence>
@@ -1774,7 +1811,7 @@ function HawthorneGarageCard({ door, isSelected, isAvailable, onSelect }: Hawtho
             )}
           </div>
           <p className="text-xs text-muted-foreground truncate">
-            {isAvailable ? door.description : 'Not available for selected package'}
+            {isAvailable ? getGarageDescription(door.id, door.description) : 'Not available for selected package'}
           </p>
         </div>
         
@@ -1847,7 +1884,9 @@ function PackageCard({ package_, isSelected, onSelect }: PackageCardProps) {
         
         <div className="flex-1 min-w-0">
           <p className="font-medium text-foreground text-sm">{package_.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {getPackageDescription(package_.id, package_.description)}
+          </p>
         </div>
         
         <AnimatePresence>
@@ -1908,7 +1947,9 @@ function GarageDoorCard({ door, isSelected, onSelect }: GarageDoorCardProps) {
         
         <div className="flex-1 min-w-0">
           <p className="font-medium text-foreground text-sm">{door.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{door.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {getGarageDescription(door.id, door.description)}
+          </p>
         </div>
         
         <AnimatePresence>
