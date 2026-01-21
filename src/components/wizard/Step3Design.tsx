@@ -26,6 +26,12 @@ import {
   getAspenHeroImage,
   AspenPackage 
 } from '@/data/aspen-exteriors';
+import { 
+  belmontPackages, 
+  getBelmontPackageImage,
+  getBelmontHeroImage,
+  BelmontPackage 
+} from '@/data/belmont-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
@@ -67,11 +73,14 @@ export function Step3Design({
   // Determine model type for package/garage selection
   const isAspen = normalizedModel === 'aspen';
   const isHawthorne = normalizedModel === 'hawthorne';
+  const isBelmont = normalizedModel === 'belmont';
   
   // Get the appropriate packages/garages based on model
   const allPackages = isAspen 
     ? aspenPackages 
-    : (isHawthorne ? hawthornePackages : exteriorPackages);
+    : isBelmont 
+      ? belmontPackages
+      : (isHawthorne ? hawthornePackages : exteriorPackages);
   const garages = isHawthorne ? hawthorneGarages : garageDoors;
   
   // Filter packages if development has ARB restrictions
@@ -147,6 +156,8 @@ export function Step3Design({
         )}>
           {isAspen ? (
             <AspenPhotoPreview packageId={selectedPackageId} />
+          ) : isBelmont ? (
+            <BelmontPhotoPreview packageId={selectedPackageId} />
           ) : isHawthorne ? (
             <HawthornePhotoPreview
               packageId={selectedPackageId}
@@ -198,6 +209,15 @@ export function Step3Design({
                 {isAspen ? (
                   aspenPackages.map((pkg) => (
                     <AspenPackageCard
+                      key={pkg.id}
+                      package_={pkg}
+                      isSelected={pkg.id === selectedPackageId}
+                      onSelect={() => handleSelectPackage(pkg.id)}
+                    />
+                  ))
+                ) : isBelmont ? (
+                  belmontPackages.map((pkg) => (
+                    <BelmontPackageCard
                       key={pkg.id}
                       package_={pkg}
                       isSelected={pkg.id === selectedPackageId}
@@ -1090,6 +1110,181 @@ interface AspenPackageCardProps {
 }
 
 function AspenPackageCard({ package_, isSelected, onSelect }: AspenPackageCardProps) {
+  return (
+    <Card
+      className={cn(
+        'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        isSelected 
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
+      )}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={isSelected}
+      aria-label={`Select ${package_.name} exterior package`}
+    >
+      <CardContent className="p-3 flex items-center gap-3">
+        {/* Color swatches */}
+        <div className="flex gap-1">
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.primaryColor }}
+            title="Primary"
+          />
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.secondaryColor }}
+            title="Secondary"
+          />
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.accentColor }}
+            title="Accent"
+          />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-foreground text-sm">{package_.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+        </div>
+        
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Photo-based preview for Belmont model with crossfade transitions
+interface BelmontPhotoPreviewProps {
+  packageId: string | null;
+}
+
+function BelmontPhotoPreview({ packageId }: BelmontPhotoPreviewProps) {
+  const [displayedSrc, setDisplayedSrc] = useState<string>(getBelmontHeroImage());
+  const [isLoading, setIsLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(true);
+  const preloadCacheRef = useRef<Set<string>>(new Set());
+  
+  // Target image based on package selection
+  const targetImage = useMemo(() => getBelmontPackageImage(packageId), [packageId]);
+  
+  // Preload all Belmont package images once
+  useEffect(() => {
+    belmontPackages.forEach((pkg) => {
+      if (!preloadCacheRef.current.has(pkg.previewImage)) {
+        const img = new Image();
+        img.onload = () => preloadCacheRef.current.add(pkg.previewImage);
+        img.src = pkg.previewImage;
+      }
+    });
+  }, []);
+  
+  // Handle package changes with crossfade
+  useEffect(() => {
+    if (targetImage === displayedSrc) return;
+    
+    // Check if already preloaded
+    if (preloadCacheRef.current.has(targetImage)) {
+      setDisplayedSrc(targetImage);
+      return;
+    }
+    
+    // Load new image with transition
+    setIsLoading(true);
+    const img = new Image();
+    img.onload = () => {
+      preloadCacheRef.current.add(targetImage);
+      setDisplayedSrc(targetImage);
+      setIsLoading(false);
+    };
+    img.onerror = () => {
+      // Silent fallback to hero
+      if (import.meta.env.DEV) {
+        console.warn(`[Belmont] Failed to load: ${targetImage}`);
+      }
+      setDisplayedSrc(getBelmontHeroImage());
+      setIsLoading(false);
+    };
+    img.src = targetImage;
+  }, [targetImage, displayedSrc]);
+  
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+  
+  const handleImageError = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.warn(`[Belmont] Image element error: ${displayedSrc}`);
+    }
+    setDisplayedSrc(getBelmontHeroImage());
+  }, [displayedSrc]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0.8, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="w-full max-w-lg relative"
+    >
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
+        {/* Crossfade container */}
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={displayedSrc}
+            src={displayedSrc}
+            alt={`Belmont exterior with ${packageId || 'modern-charcoal'} package`}
+            className="w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        </AnimatePresence>
+        
+        {/* Subtle loading skeleton */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-muted animate-pulse" />
+        )}
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+        <Eye className="h-3.5 w-3.5" />
+        <span>Photo Preview</span>
+      </div>
+    </motion.div>
+  );
+}
+
+// Package card for Belmont model
+interface BelmontPackageCardProps {
+  package_: BelmontPackage;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function BelmontPackageCard({ package_, isSelected, onSelect }: BelmontPackageCardProps) {
   return (
     <Card
       className={cn(

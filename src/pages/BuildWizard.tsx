@@ -16,6 +16,7 @@ import {
   normalizeModelSlug 
 } from '@/data/hawthorne-exteriors';
 import { getAspenPackageById } from '@/data/aspen-exteriors';
+import { getBelmontPackageById } from '@/data/belmont-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
@@ -89,6 +90,7 @@ export default function BuildWizard() {
   // Determine model type for package/garage resolution
   const isHawthorne = normalizedModelSlug === 'hawthorne';
   const isAspen = normalizedModelSlug === 'aspen';
+  const isBelmont = normalizedModelSlug === 'belmont';
   
   // Resolve selected package based on model type
   const selectedPackage = selection.packageId 
@@ -96,7 +98,9 @@ export default function BuildWizard() {
         ? getHawthornePackageById(selection.packageId)
         : isAspen 
           ? getAspenPackageById(selection.packageId)
-          : getPackageById(selection.packageId)) || null 
+          : isBelmont
+            ? getBelmontPackageById(selection.packageId)
+            : getPackageById(selection.packageId)) || null 
     : null;
   
   // Resolve garage door (Aspen uses standard doors, not Hawthorne-specific)
