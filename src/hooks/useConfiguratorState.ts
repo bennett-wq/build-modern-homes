@@ -1,9 +1,10 @@
 // ============================================================================
 // Configurator State Management Hook
 // Persists build selections to localStorage with shareable URL support
+// Enhanced with intelligent preselection and resume logic
 // ============================================================================
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   type BuildType,
@@ -19,8 +20,10 @@ import {
   defaultExteriorSelection,
 } from '@/hooks/usePricingEngine';
 import { derivePricingMode, type PricingModeContext } from '@/lib/pricing-mode-utils';
+import { getQuoteRequests } from '@/types/quote-request';
 
 const STORAGE_KEY = 'basemod-configurator-state';
+const LAST_STEP_KEY = 'basemod-configurator-step';
 
 // Parse URL params into BuildSelection
 function parseUrlParams(searchParams: URLSearchParams): Partial<BuildSelection> {
@@ -88,12 +91,34 @@ function loadFromStorage(): BuildSelection | null {
   return null;
 }
 
+// Load last step from localStorage
+function loadLastStep(): number {
+  try {
+    const stored = localStorage.getItem(LAST_STEP_KEY);
+    if (stored) {
+      return parseInt(stored, 10) || 1;
+    }
+  } catch (e) {
+    console.warn('Failed to load last step from localStorage:', e);
+  }
+  return 1;
+}
+
 // Save state to localStorage
 function saveToStorage(state: BuildSelection): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
     console.warn('Failed to save configurator state to localStorage:', e);
+  }
+}
+
+// Save step to localStorage
+function saveLastStep(step: number): void {
+  try {
+    localStorage.setItem(LAST_STEP_KEY, String(step));
+  } catch (e) {
+    console.warn('Failed to save last step to localStorage:', e);
   }
 }
 
@@ -134,29 +159,148 @@ function generateShareableParams(state: BuildSelection): URLSearchParams {
   return params;
 }
 
+/**
+ * Check if stored state has meaningful progress worth resuming
+ */
+function hasResumableProgress(stored: BuildSelection | null): boolean {
+  if (!stored) return false;
+  
+  // Has meaningful progress if model is selected or build type is set
+  return !!(stored.modelSlug || stored.buildType || stored.floorPlanSelections.length > 0);
+}
+
+/**
+ * Check if there's a saved quote that can be viewed
+ */
+export function getLatestQuoteId(): string | null {
+  const quotes = getQuoteRequests();
+  if (quotes.length > 0) {
+    return quotes[0].id;
+  }
+  return null;
+}
+
+/**
+ * Check if user has an in-progress build
+ */
+export function hasInProgressBuild(): boolean {
+  const stored = loadFromStorage();
+  return hasResumableProgress(stored);
+}
+
 export function useConfiguratorState() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const hasHydrated = useRef(false);
   
-  // Initialize state from URL params, then localStorage, then defaults
+  // Track preselected model from URL (for change confirmation)
+  const preselectedModelRef = useRef<string | null>(null);
+  
+  // State for resume prompt
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [pendingResumeState, setPendingResumeState] = useState<{
+    selection: BuildSelection;
+    step: number;
+  } | null>(null);
+  
+  // Initialize state with intelligent hydration
   const [selection, setSelection] = useState<BuildSelection>(() => {
     const urlParams = parseUrlParams(searchParams);
     const stored = loadFromStorage();
+    const hasUrlParams = Object.keys(urlParams).length > 0;
     
-    // URL params take priority, then stored, then defaults
-    return {
-      ...defaultBuildSelection,
-      ...stored,
-      ...urlParams,
-    };
+    // Track if model was preselected via URL
+    if (urlParams.modelSlug) {
+      preselectedModelRef.current = urlParams.modelSlug;
+    }
+    
+    // If URL params exist, use them (deep link scenario)
+    if (hasUrlParams) {
+      return {
+        ...defaultBuildSelection,
+        ...urlParams,
+      };
+    }
+    
+    // If stored state has progress, we'll prompt to resume
+    if (hasResumableProgress(stored)) {
+      // Return defaults for now, prompt will handle resume
+      return defaultBuildSelection;
+    }
+    
+    return defaultBuildSelection;
   });
   
   // Current step in wizard (1-7)
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const urlParams = parseUrlParams(searchParams);
+    const hasUrlParams = Object.keys(urlParams).length > 0;
+    
+    // If model was preselected, skip to step 3 (model selection)
+    if (urlParams.modelSlug) {
+      return 3;
+    }
+    
+    return 1;
+  });
+  
+  // Check for resumable state on mount (only once)
+  useEffect(() => {
+    if (hasHydrated.current) return;
+    hasHydrated.current = true;
+    
+    const urlParams = parseUrlParams(searchParams);
+    const hasUrlParams = Object.keys(urlParams).length > 0;
+    
+    // Skip resume prompt if URL params are present
+    if (hasUrlParams) return;
+    
+    const stored = loadFromStorage();
+    const lastStep = loadLastStep();
+    
+    if (hasResumableProgress(stored)) {
+      setPendingResumeState({
+        selection: stored!,
+        step: lastStep,
+      });
+      setShowResumePrompt(true);
+    }
+  }, [searchParams]);
+  
+  // Resume saved state
+  const resumeSavedState = useCallback(() => {
+    if (pendingResumeState) {
+      setSelection(pendingResumeState.selection);
+      setCurrentStep(pendingResumeState.step);
+      
+      // Track preselected model from resume
+      if (pendingResumeState.selection.modelSlug) {
+        preselectedModelRef.current = pendingResumeState.selection.modelSlug;
+      }
+    }
+    setShowResumePrompt(false);
+    setPendingResumeState(null);
+  }, [pendingResumeState]);
+  
+  // Start fresh (discard saved state)
+  const startFresh = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LAST_STEP_KEY);
+    setSelection(defaultBuildSelection);
+    setCurrentStep(1);
+    setShowResumePrompt(false);
+    setPendingResumeState(null);
+    preselectedModelRef.current = null;
+  }, []);
   
   // Save to localStorage whenever selection changes
   useEffect(() => {
     saveToStorage(selection);
   }, [selection]);
+  
+  // Save step to localStorage whenever it changes
+  useEffect(() => {
+    saveLastStep(currentStep);
+  }, [currentStep]);
   
   // Update URL when generating shareable link
   const getShareableUrl = useCallback(() => {
@@ -175,9 +319,11 @@ export function useConfiguratorState() {
   // Reset to defaults
   const resetBuild = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LAST_STEP_KEY);
     setSelection(defaultBuildSelection);
     setCurrentStep(1);
     setSearchParams({});
+    preselectedModelRef.current = null;
   }, [setSearchParams]);
   
   // Individual field setters
@@ -185,7 +331,8 @@ export function useConfiguratorState() {
     setSelection(prev => ({ ...prev, intent }));
   }, []);
   
-  const setModelSlug = useCallback((modelSlug: string) => {
+  // Model setter with change tracking
+  const setModelSlug = useCallback((modelSlug: string, skipConfirmation?: boolean) => {
     // When changing model, reset floor plan selections and potentially build type
     const model = getModelBySlug(modelSlug);
     const newBuildType = model?.buildTypes[0] || null;
@@ -196,6 +343,17 @@ export function useConfiguratorState() {
       buildType: newBuildType,
       floorPlanSelections: [],
     }));
+    
+    // Update preselected ref if this is a fresh selection
+    if (!preselectedModelRef.current) {
+      preselectedModelRef.current = modelSlug;
+    }
+  }, []);
+  
+  // Check if changing model would be a change from preselected
+  const isModelChangeFromPreselected = useCallback((newModelSlug: string) => {
+    return preselectedModelRef.current !== null && 
+           preselectedModelRef.current !== newModelSlug;
   }, []);
   
   const setBuildType = useCallback((buildType: BuildType) => {
@@ -288,6 +446,16 @@ export function useConfiguratorState() {
     currentStep,
     currentModel,
     derivedPricingMode,
+    
+    // Resume prompt state
+    showResumePrompt,
+    pendingResumeState,
+    resumeSavedState,
+    startFresh,
+    
+    // Model preselection tracking
+    isModelChangeFromPreselected,
+    preselectedModel: preselectedModelRef.current,
     
     // Navigation
     goToStep,
