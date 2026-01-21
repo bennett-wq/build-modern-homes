@@ -269,8 +269,12 @@ function ModelCard({ model, index }: ModelCardProps) {
               }`}
               onLoad={() => setImageLoaded(true)}
               onError={(e) => {
-                // Single fallback to SVG placeholder
                 const target = e.currentTarget;
+                // Dev-only warning for missing assets
+                if (import.meta.env.DEV && target.src !== HERO_PLACEHOLDER) {
+                  console.warn(`[Models] Missing hero image for "${model.slug}": ${heroImage}`);
+                }
+                // Single fallback to SVG placeholder
                 if (target.src !== HERO_PLACEHOLDER) {
                   target.src = HERO_PLACEHOLDER;
                 }
