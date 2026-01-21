@@ -56,6 +56,8 @@ export interface BuyerPricingDisplayProps {
   className?: string;
   onAction?: () => void;
   actionLabel?: string;
+  /** When true, shows a collapsed placeholder prompting model selection */
+  showPlaceholder?: boolean;
 }
 
 // ============================================================================
@@ -266,8 +268,49 @@ export function BuyerPricingDisplay({
   className = '',
   onAction,
   actionLabel,
+  showPlaceholder = false,
 }: BuyerPricingDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Show placeholder when requested (e.g., during model selection step)
+  if (showPlaceholder && variant === 'full') {
+    return (
+      <div className={`bg-card rounded-xl border border-border overflow-hidden ${className}`}>
+        <div className="p-5 bg-secondary/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-muted-foreground">Starting from</span>
+            <Badge variant="outline" className="text-xs">Preliminary</Badge>
+          </div>
+          
+          <div className="flex items-center gap-2 text-muted-foreground py-2">
+            <Info className="w-4 h-4" />
+            <span className="text-sm">Select a model to see pricing</span>
+          </div>
+          
+          <p className="text-xs text-muted-foreground mt-3">
+            {getPricingModeDisplayLabel(flags.pricingMode)}
+          </p>
+        </div>
+        
+        <div className="p-4 text-xs text-muted-foreground border-t border-border">
+          <p>Estimates exclude land unless selected.</p>
+          <p className="mt-1">Final pricing confirmed via formal written quote and site review.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile placeholder
+  if (showPlaceholder && variant === 'mobile') {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border px-4 py-3 safe-bottom">
+        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+          <Info className="w-4 h-4" />
+          <span className="text-sm">Select a model to see pricing</span>
+        </div>
+      </div>
+    );
+  }
 
   if (variant === 'mobile') {
     return (

@@ -289,6 +289,7 @@ export default function Configurator() {
                     breakdown={pricing.buyerFacingBreakdown}
                     flags={pricingFlags}
                     variant="full"
+                    showPlaceholder={currentStep <= 3 && !selection.modelSlug}
                   />
                 </div>
               </div>
@@ -302,6 +303,7 @@ export default function Configurator() {
             breakdown={pricing.buyerFacingBreakdown}
             flags={pricingFlags}
             variant="mobile"
+            showPlaceholder={currentStep <= 3 && !selection.modelSlug}
           />
         )}
       </div>
