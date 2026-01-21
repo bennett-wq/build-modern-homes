@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, FileText } from "lucide-react";
+import { Menu, X, FileText, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getQuoteRequests } from "@/types/quote-request";
+import { hasInProgressBuild, getLatestQuoteId } from "@/hooks/useConfiguratorState";
 
 const navItems = [
   { label: "Homes", href: "/models" },
@@ -15,19 +16,27 @@ const navItems = [
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasSavedQuote, setHasSavedQuote] = useState(false);
+  const [hasInProgress, setHasInProgress] = useState(false);
+  const [latestQuoteId, setLatestQuoteId] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Check for saved quotes in localStorage
+  // Check for saved quotes and in-progress builds
   useEffect(() => {
     const quotes = getQuoteRequests();
     setHasSavedQuote(quotes.length > 0);
+    setLatestQuoteId(getLatestQuoteId());
+    setHasInProgress(hasInProgressBuild());
   }, [location.pathname]);
 
   const handleGetQuote = () => {
     setIsOpen(false);
     navigate("/build");
   };
+
+  // Determine which resume action to show
+  const showResumeQuote = hasSavedQuote && latestQuoteId;
+  const showResumeBuild = hasInProgress && !location.pathname.startsWith('/build');
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -57,10 +66,21 @@ export function Header() {
               </Link>
             ))}
             
-            {/* Saved Quote link - only show when quote exists */}
-            {hasSavedQuote && (
+            {/* Resume Build link - only show when in-progress build exists */}
+            {showResumeBuild && (
               <Link
-                to="/quote/saved"
+                to="/build"
+                className="text-sm font-medium text-accent hover:text-accent/80 transition-colors flex items-center gap-1.5"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Resume Quote
+              </Link>
+            )}
+            
+            {/* Saved Quote link - only show when quote exists and no in-progress */}
+            {showResumeQuote && !showResumeBuild && (
+              <Link
+                to={`/quote/${latestQuoteId}`}
                 className="text-sm font-medium text-muted-foreground hover:text-accent transition-colors flex items-center gap-1.5"
               >
                 <FileText className="h-4 w-4" />
@@ -114,10 +134,22 @@ export function Header() {
                 </Link>
               ))}
               
-              {/* Saved Quote link for mobile */}
-              {hasSavedQuote && (
+              {/* Resume Build link for mobile */}
+              {showResumeBuild && (
                 <Link
-                  to="/quote/saved"
+                  to="/build"
+                  onClick={() => setIsOpen(false)}
+                  className="py-3 px-4 text-base font-medium text-accent hover:bg-accent/10 rounded-md flex items-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Resume Quote
+                </Link>
+              )}
+              
+              {/* Saved Quote link for mobile */}
+              {showResumeQuote && !showResumeBuild && (
+                <Link
+                  to={`/quote/${latestQuoteId}`}
                   onClick={() => setIsOpen(false)}
                   className="py-3 px-4 text-base font-medium text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md flex items-center gap-2"
                 >
