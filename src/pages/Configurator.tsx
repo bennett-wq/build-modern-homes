@@ -101,9 +101,11 @@ export default function Configurator() {
                 <span className="font-semibold text-foreground">BaseMod</span>
               </Link>
             </div>
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              Design & price your home
-            </span>
+            <div className="text-center flex-1 hidden sm:block">
+              <h1 className="text-lg font-semibold text-foreground">Get Your BaseMod Price</h1>
+              <p className="text-xs text-muted-foreground">Design your home and see a real estimate in minutes.</p>
+            </div>
+            <div className="w-24" /> {/* Spacer for centering */}
           </div>
           
           <StepIndicator

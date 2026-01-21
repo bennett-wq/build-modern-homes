@@ -113,8 +113,8 @@ const Index = () => {
               {/* CTAs */}
               <div className="flex flex-wrap items-center gap-4 mb-8">
                 <Button asChild size="lg">
-                  <Link to="/developments">
-                    Start a Build
+                  <Link to="/build">
+                    Get a Quote
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
@@ -124,15 +124,7 @@ const Index = () => {
                   variant="outline"
                   className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/50"
                 >
-                  <Link to="/models">Explore Models</Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="ghost"
-                  className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
-                >
-                  <Link to="/contact">Talk to a Specialist</Link>
+                  <Link to="/models">Browse Homes</Link>
                 </Button>
               </div>
 
@@ -363,10 +355,10 @@ const Index = () => {
           className="text-center max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-semibold text-primary-foreground tracking-tight mb-4">
-            Ready to start?
+            Ready to get your price?
           </h2>
           <p className="text-lg text-primary-foreground/70 mb-8">
-            Browse communities, explore models, or talk to our team.
+            Design your home and see a real estimate in minutes.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button
@@ -374,8 +366,8 @@ const Index = () => {
               size="lg"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             >
-              <Link to="/developments">
-                Start a Build
+              <Link to="/build">
+                Get a Quote
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
