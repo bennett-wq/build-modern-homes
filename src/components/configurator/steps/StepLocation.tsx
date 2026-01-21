@@ -5,11 +5,12 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, ArrowRight, ArrowLeft, Building2, ChevronDown, HelpCircle } from 'lucide-react';
+import { MapPin, ArrowRight, ArrowLeft, Building2, ChevronDown, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getZoneForZip } from '@/lib/pricing-mode-utils';
 import type { BuildIntent } from '@/data/pricing-config';
 
 interface StepLocationProps {
@@ -42,6 +43,9 @@ export function StepLocation({
   
   // Validate ZIP code (5 digits)
   const isValidZip = /^\d{5}$/.test(zipCode);
+  
+  // Get zone info for display
+  const zipZoneResult = getZoneForZip(zipCode);
   
   // Can continue if: community intent, valid ZIP entered, or "don't know yet" selected
   const canContinue = isCommunityIntent || isValidZip || locationKnown === false;
@@ -188,10 +192,26 @@ export function StepLocation({
             maxLength={5}
           />
           
-          <p className="text-xs text-muted-foreground flex items-start gap-1.5">
-            <HelpCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-            We use your ZIP to estimate sitework, delivery, and local fees. You can refine later.
-          </p>
+          {/* Regional baseline confirmation after valid ZIP */}
+          {isValidZip && zipZoneResult.regionLabel && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="flex items-center gap-2 text-sm text-accent bg-accent/5 px-3 py-2 rounded-lg"
+            >
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              <span>
+                Using regional baseline for ZIP {zipZoneResult.regionLabel} (refine later).
+              </span>
+            </motion.div>
+          )}
+          
+          {!isValidZip && (
+            <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+              <HelpCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+              We use your ZIP to estimate sitework, delivery, and local fees. You can refine later.
+            </p>
+          )}
         </div>
       </motion.div>
       
