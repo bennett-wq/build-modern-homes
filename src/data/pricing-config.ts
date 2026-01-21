@@ -232,10 +232,11 @@ export const models: ModelConfig[] = [
     name: 'Laurel',
     beds: 3,
     baths: 2,
-    sqft: 1200,
+    sqft: 1065,
     length: 48,
     buildTypes: ['xmod', 'mod'],
-    heroImage: '/images/models/laurel/hero.webp',
+    heroImage: '/images/models/laurel/hero-no-garage.webp',
+    floorPlanPdf: '/floorplans/laurel/laurel-floorplan.pdf',
     pricing: {
       xmod: {
         base_cost: 80500,
@@ -262,6 +263,20 @@ export const models: ModelConfig[] = [
         description: 'Upgrade to 9-foot ceilings for a more spacious feel',
         price: 11000,
         buildTypes: ['mod'],
+        available: true,
+      },
+      {
+        id: 'garage-two-door',
+        name: 'Two-Car Garage (Two Doors)',
+        description: 'Site-built attached garage with two separate doors',
+        price: 0, // Pricing handled separately
+        available: true,
+      },
+      {
+        id: 'garage-single-door',
+        name: 'Two-Car Garage (Single Door)',
+        description: 'Site-built attached garage with one large modern door',
+        price: 0, // Pricing handled separately
         available: true,
       },
     ],

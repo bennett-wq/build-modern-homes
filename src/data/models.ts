@@ -65,12 +65,12 @@ export const homeModels: HomeModel[] = [
   {
     slug: "laurel",
     name: "Laurel",
-    sqft: 1440,
+    sqft: 1065,
     beds: 3,
     baths: 2,
     price: 225000,
-    description: "The Laurel is a compact, efficient design ideal for first-time buyers and downsizers seeking an attainable price point without sacrificing quality. At 1,440 square feet with a thoughtful 3-bedroom layout, the Laurel delivers strong livability in a highly efficient footprint. Available in both CrossMod® and Modular build types.",
-    heroImage: "/images/models/laurel/hero.webp",
+    description: "The Laurel is an efficient, thoughtfully designed three-bedroom home with flexible garage options. At 1,065 square feet, the Laurel delivers strong livability in a compact footprint — ideal for first-time buyers, downsizers, and investors seeking an attainable price point without sacrificing quality. Choose from no garage, a two-car garage with two doors, or a two-car garage with a single modern door to match your site and lifestyle.",
+    heroImage: "/images/models/laurel/hero-no-garage.webp",
     floorplanImage: "/floorplans/laurel/laurel-floorplan.pdf",
   },
   {
