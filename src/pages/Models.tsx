@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Home as HomeIcon, Ruler, BedDouble, Bath, AlertCircle } from "lucide-react";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { homeModels } from "@/data/models";
 import { getModelHeroImage, HERO_PLACEHOLDER } from "@/lib/model-images";
+import { getHeroImageFallbackChain, verifyModelHeroImages } from "@/lib/image-utils";
 import { calculateFullPricing, defaultBuildSelection, type BuildSelection } from "@/hooks/usePricingEngine";
 import { getDefaultZone, getModelBySlug, type BuildType } from "@/data/pricing-config";
 import { getPricingModeLabel } from "@/lib/pricing-mode-utils";
@@ -213,7 +214,15 @@ interface ModelCardProps {
 
 function ModelCard({ model, index }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const heroImage = getModelHeroImage(model);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Build fallback chain: heroImage -> /slug/hero.webp -> /slug/hero.png -> placeholder
+  const fallbackChain = useMemo(
+    () => getHeroImageFallbackChain(model.slug, model.heroImage),
+    [model.slug, model.heroImage]
+  );
+  
+  const currentSrc = fallbackChain[currentImageIndex];
 
   // Calculate buyer-facing pricing for the model
   // Uses delivered_installed as default teaser pricing mode
@@ -262,21 +271,23 @@ function ModelCard({ model, index }: ModelCardProps) {
             )}
             
             <img
-              src={heroImage}
+              src={currentSrc}
               alt={`${model.name} exterior`}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
                 imageLoaded ? "opacity-100" : "opacity-0"
               }`}
               onLoad={() => setImageLoaded(true)}
-              onError={(e) => {
-                const target = e.currentTarget;
+              onError={() => {
                 // Dev-only warning for missing assets
-                if (import.meta.env.DEV && target.src !== HERO_PLACEHOLDER) {
-                  console.warn(`[Models] Missing hero image for "${model.slug}": ${heroImage}`);
+                if (import.meta.env.DEV && currentSrc !== HERO_PLACEHOLDER) {
+                  console.warn(`[Models] Image failed for "${model.slug}": ${currentSrc}`);
                 }
-                // Single fallback to SVG placeholder
-                if (target.src !== HERO_PLACEHOLDER) {
-                  target.src = HERO_PLACEHOLDER;
+                // Try next fallback in chain
+                if (currentImageIndex < fallbackChain.length - 1) {
+                  setCurrentImageIndex(prev => prev + 1);
+                } else {
+                  // Final fallback reached, show placeholder
+                  setImageLoaded(true);
                 }
               }}
             />
