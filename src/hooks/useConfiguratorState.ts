@@ -19,7 +19,7 @@ import {
   defaultBuildSelection,
   defaultExteriorSelection,
 } from '@/hooks/usePricingEngine';
-import { derivePricingMode, type PricingModeContext } from '@/lib/pricing-mode-utils';
+import { derivePricingMode, type PricingModeContext, type ServicePackageType } from '@/lib/pricing-mode-utils';
 import { getQuoteRequests } from '@/types/quote-request';
 
 const STORAGE_KEY = 'basemod-configurator-state';
@@ -421,20 +421,25 @@ export function useConfiguratorState() {
     setSelection(prev => ({ ...prev, garageDoorId }));
   }, []);
   
+  // Service package setter
+  const setServicePackage = useCallback((servicePackage: ServicePackageType) => {
+    setSelection(prev => ({ ...prev, servicePackage }));
+  }, []);
+  
   // Get current model from selection
   const currentModel = useMemo(() => {
     return selection.modelSlug ? getModelBySlug(selection.modelSlug) : null;
   }, [selection.modelSlug]);
 
-  // Derive pricing mode dynamically from intent
+  // Derive pricing mode dynamically from intent and service package
   // This ensures pricing mode is NEVER hardcoded and always reflects current state
   const derivedPricingMode = useMemo(() => {
     return derivePricingMode({
       buildIntent: selection.intent,
       hasLotSelected: false, // /build wizard doesn't have lot selection (that's BuildWizard)
-      servicePackage: 'delivered_installed', // Default for /build configurator
+      servicePackage: selection.servicePackage,
     });
-  }, [selection.intent]);
+  }, [selection.intent, selection.servicePackage]);
 
   // Create selection with derived pricing mode for external consumption
   const selectionWithDerivedMode = useMemo((): BuildSelection => ({
@@ -449,11 +454,11 @@ export function useConfiguratorState() {
   
   // Navigation
   const goToStep = useCallback((step: number) => {
-    setCurrentStep(Math.max(1, Math.min(7, step)));
+    setCurrentStep(Math.max(1, Math.min(8, step)));
   }, []);
   
   const nextStep = useCallback(() => {
-    setCurrentStep(prev => Math.min(7, prev + 1));
+    setCurrentStep(prev => Math.min(8, prev + 1));
   }, []);
   
   const prevStep = useCallback(() => {
@@ -486,6 +491,7 @@ export function useConfiguratorState() {
     setIntent,
     setModelSlug,
     setBuildType,
+    setServicePackage,
     setZoneId,
     setIncludeUtilityFees,
     setIncludePermitsCosts,
