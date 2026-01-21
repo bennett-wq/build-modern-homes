@@ -36,7 +36,8 @@ import {
   belmontPackages, 
   getBelmontPackageImage,
   getBelmontHeroImage,
-  BelmontPackage 
+  BelmontPackage,
+  FALLBACK_SWATCHES 
 } from '@/data/belmont-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
@@ -1269,6 +1270,19 @@ interface BelmontPackageCardProps {
 }
 
 function BelmontPackageCard({ package_, isSelected, onSelect }: BelmontPackageCardProps) {
+  // Use data-driven swatches with fallback
+  const swatches = package_.swatches || FALLBACK_SWATCHES;
+  const swatchLabels = ['Primary color', 'Secondary color', 'Accent color'];
+  
+  // Check if a color is light (for border contrast adjustment)
+  const isLightColor = (hex: string): boolean => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.75;
+  };
+  
   return (
     <Card
       className={cn(
@@ -1291,23 +1305,22 @@ function BelmontPackageCard({ package_, isSelected, onSelect }: BelmontPackageCa
       aria-label={`Select ${package_.name} exterior package`}
     >
       <CardContent className="p-3 flex items-center gap-3">
-        {/* Color swatches */}
+        {/* Color swatches from package data */}
         <div className="flex gap-1">
-          <div 
-            className="w-8 h-8 rounded-md border border-border shadow-sm"
-            style={{ backgroundColor: package_.primaryColor }}
-            title="Primary"
-          />
-          <div 
-            className="w-8 h-8 rounded-md border border-border shadow-sm"
-            style={{ backgroundColor: package_.secondaryColor }}
-            title="Secondary"
-          />
-          <div 
-            className="w-8 h-8 rounded-md border border-border shadow-sm"
-            style={{ backgroundColor: package_.accentColor }}
-            title="Accent"
-          />
+          {swatches.map((color, index) => (
+            <div 
+              key={index}
+              className="w-8 h-8 rounded-md shadow-sm"
+              style={{ 
+                backgroundColor: color,
+                border: isLightColor(color) 
+                  ? '1px solid rgba(0,0,0,0.15)' 
+                  : '1px solid rgba(0,0,0,0.10)'
+              }}
+              aria-label={swatchLabels[index]}
+              title={swatchLabels[index]}
+            />
+          ))}
         </div>
         
         <div className="flex-1 min-w-0">

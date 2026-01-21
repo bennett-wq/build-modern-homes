@@ -6,67 +6,78 @@ export interface BelmontPackage {
   name: string;
   description: string;
   previewImage: string;
-  // For color swatches in selector UI
+  // Hex color swatches for selector UI (exactly 3: primary, secondary, accent)
+  swatches: [string, string, string];
+  // Legacy HSL color fields for type compatibility with other package types
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
 }
 
-// 6 exterior packages for Belmont (curated color schemes)
+// Fallback swatches if a package has none defined
+export const FALLBACK_SWATCHES: [string, string, string] = ['#111827', '#E5E7EB', '#A8A29E'];
+
+// 6 exterior packages for Belmont (curated color schemes matching renders)
 export const belmontPackages: BelmontPackage[] = [
   {
     id: 'modern-charcoal',
     name: 'Modern Charcoal',
     description: 'Bold charcoal with sleek contemporary styling',
     previewImage: '/images/models/belmont/packages/modern-charcoal.jpg',
-    primaryColor: 'hsl(200, 8%, 20%)',      // Dark charcoal siding
-    secondaryColor: 'hsl(200, 5%, 35%)',    // Charcoal stone
-    accentColor: 'hsl(25, 70%, 45%)',       // Cedar/wood accent
+    swatches: ['#313437', '#272828', '#404241'],
+    primaryColor: '#313437',
+    secondaryColor: '#272828',
+    accentColor: '#404241',
   },
   {
     id: 'coastal-white',
     name: 'Coastal White',
     description: 'Bright coastal white with dark roof contrast',
     previewImage: '/images/models/belmont/packages/coastal-white.jpg',
-    primaryColor: 'hsl(40, 15%, 92%)',      // Cream/white siding
-    secondaryColor: 'hsl(200, 8%, 45%)',    // Gray stone
-    accentColor: 'hsl(25, 60%, 40%)',       // Brown/wood accent
+    swatches: ['#DEE3E8', '#464E4C', '#0E1415'],
+    primaryColor: '#DEE3E8',
+    secondaryColor: '#464E4C',
+    accentColor: '#0E1415',
   },
   {
     id: 'classic-navy',
     name: 'Classic Navy',
     description: 'Timeless navy blue with crisp white trim',
     previewImage: '/images/models/belmont/packages/classic-navy.jpg',
-    primaryColor: 'hsl(215, 45%, 28%)',     // Deep navy siding
-    secondaryColor: 'hsl(40, 10%, 95%)',    // White/cream trim
-    accentColor: 'hsl(25, 65%, 45%)',       // Copper/wood accent
+    swatches: ['#3A4132', '#DBE0E2', '#B1A89A'],
+    primaryColor: '#3A4132',
+    secondaryColor: '#DBE0E2',
+    accentColor: '#B1A89A',
   },
   {
     id: 'warm-gray',
     name: 'Warm Gray',
     description: 'Sophisticated gray with clean modern lines',
     previewImage: '/images/models/belmont/packages/warm-gray.jpg',
-    primaryColor: 'hsl(210, 10%, 55%)',     // Medium warm gray siding
-    secondaryColor: 'hsl(210, 8%, 75%)',    // Light gray trim
-    accentColor: 'hsl(25, 55%, 42%)',       // Brown wood accent
+    swatches: ['#919492', '#DBDFE2', '#3D4240'],
+    primaryColor: '#919492',
+    secondaryColor: '#DBDFE2',
+    accentColor: '#3D4240',
   },
   {
     id: 'craftsman-sage',
     name: 'Craftsman Sage',
     description: 'Earthy sage green with craftsman-style details',
     previewImage: '/images/models/belmont/packages/craftsman-sage.jpg',
-    primaryColor: 'hsl(125, 25%, 38%)',     // Sage green siding
-    secondaryColor: 'hsl(35, 40%, 35%)',    // Brown trim/stone
-    accentColor: 'hsl(30, 55%, 48%)',       // Warm wood accent
+    swatches: ['#687264', '#D2D0C4', '#535247'],
+    primaryColor: '#687264',
+    secondaryColor: '#D2D0C4',
+    accentColor: '#535247',
   },
   {
     id: 'rustic-brown',
     name: 'Rustic Brown',
     description: 'Warm brown tones with natural wood accents',
     previewImage: '/images/models/belmont/packages/rustic-brown.jpg',
-    primaryColor: 'hsl(25, 40%, 35%)',      // Warm brown siding
-    secondaryColor: 'hsl(35, 25%, 75%)',    // Tan/beige trim
-    accentColor: 'hsl(20, 50%, 45%)',       // Wood/rust accent
+    swatches: ['#6B4A3A', '#E6DFD6', '#1F2326'],
+    primaryColor: '#6B4A3A',
+    secondaryColor: '#E6DFD6',
+    accentColor: '#1F2326',
   },
 ];
 
@@ -87,4 +98,11 @@ export function getBelmontPackageImage(packageId: string | null): string {
 // Get Belmont hero/default image
 export function getBelmontHeroImage(): string {
   return '/images/models/belmont/packages/modern-charcoal.jpg';
+}
+
+// Get swatches for a package (with fallback)
+export function getBelmontSwatches(packageId: string | null): [string, string, string] {
+  if (!packageId) return FALLBACK_SWATCHES;
+  const pkg = getBelmontPackageById(packageId);
+  return pkg?.swatches || FALLBACK_SWATCHES;
 }
