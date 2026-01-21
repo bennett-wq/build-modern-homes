@@ -10,6 +10,7 @@ import { homeModels } from "@/data/models";
 import { getModelHeroImage } from "@/lib/model-images";
 import { calculateFullPricing, defaultBuildSelection, type BuildSelection } from "@/hooks/usePricingEngine";
 import { getDefaultZone, getModelBySlug, type BuildType } from "@/data/pricing-config";
+import { getPricingModeLabel } from "@/lib/pricing-mode-utils";
 
 // Trust chips - same as homepage
 const trustChips = [
@@ -219,6 +220,7 @@ function ModelCard({ model, index }: ModelCardProps) {
   const heroImage = getModelHeroImage(model);
 
   // Calculate buyer-facing pricing for the model
+  // Uses delivered_installed as default teaser pricing mode
   const buyerPricing = useMemo(() => {
     const pricingModel = getModelBySlug(model.slug);
     if (!pricingModel) return null;
@@ -226,10 +228,12 @@ function ModelCard({ model, index }: ModelCardProps) {
     // Get the first available build type for "starting from" pricing
     const buildType: BuildType = pricingModel.buildTypes[0] || 'xmod';
     
+    // Use delivered_installed as the default pricing mode for /models teasers
     const selection: BuildSelection = {
       ...defaultBuildSelection,
       modelSlug: model.slug,
       buildType,
+      pricingMode: 'delivered_installed', // Canonical default for model cards
       includeUtilityFees: false,  // Show base price without optional fees
       includePermitsCosts: false,
     };
@@ -303,7 +307,7 @@ function ModelCard({ model, index }: ModelCardProps) {
                   Starting from {formatPrice(buyerPricing.buyerFacingBreakdown.startingFromPrice)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Delivered & Installed · excludes land
+                  {getPricingModeLabel(buyerPricing.pricingMode)}
                 </p>
                 {buyerPricing.freightPending && (
                   <p className="text-xs text-amber-600 flex items-center gap-1">

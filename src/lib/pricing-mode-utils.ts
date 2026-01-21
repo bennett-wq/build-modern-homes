@@ -39,15 +39,16 @@ export function derivePricingMode(context: PricingModeContext): PricingMode {
 
 /**
  * Get display label for pricing mode (shown next to totals)
+ * These are the CANONICAL buyer-facing labels
  */
 export function getPricingModeLabel(mode: PricingMode): string {
   switch (mode) {
     case 'community_all_in':
-      return 'All-in (includes lot)';
+      return 'All-in Price (Includes Lot)';
     case 'delivered_installed':
-      return 'Installed estimate';
+      return 'Delivered & Installed Estimate';
     case 'supply_only':
-      return 'Home package only';
+      return 'Home Package Only';
     default:
       return 'Estimate';
   }
@@ -66,5 +67,21 @@ export function getPricingModeShortLabel(mode: PricingMode): string {
       return 'Home only';
     default:
       return 'Est.';
+  }
+}
+
+/**
+ * Get secondary description for pricing mode
+ */
+export function getPricingModeDescription(mode: PricingMode): string {
+  switch (mode) {
+    case 'community_all_in':
+      return 'Turnkey pricing in a BaseMod community';
+    case 'delivered_installed':
+      return 'Factory home delivered and installed on your land';
+    case 'supply_only':
+      return 'Factory home only, excludes delivery and installation';
+    default:
+      return '';
   }
 }
