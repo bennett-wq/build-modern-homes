@@ -81,7 +81,7 @@ export const homeModels: HomeModel[] = [
     baths: 2,
     price: 185000,
     description: "The Cypress is an efficient 990 sq ft two-bedroom design with a flexible den/office space. At just 16' × 66', it's the most compact CrossMod® option in the BaseMod lineup — ideal for narrow lots, accessory dwelling units, or buyers seeking maximum efficiency without sacrificing quality. The open-concept living area and smart circulation deliver surprising livability in a streamlined footprint.",
-    heroImage: "/images/models/cypress/hero.webp",
+    heroImage: "/images/models/cypress/hero-v2.webp",
     floorplanImage: "/floorplans/cypress/cypress-floorplan.pdf",
   },
   {
