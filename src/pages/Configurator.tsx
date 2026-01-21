@@ -177,11 +177,17 @@ export default function Configurator() {
               <div className="w-24" /> {/* Spacer for centering */}
             </div>
             
-            <StepIndicator
-              steps={STEPS}
-              currentStep={currentStep}
-              onStepClick={goToStep}
-            />
+            <div className="space-y-2">
+              <StepIndicator
+                steps={STEPS}
+                currentStep={currentStep}
+                onStepClick={goToStep}
+              />
+              {/* Step progress text */}
+              <p className="text-center text-xs text-muted-foreground/70">
+                Step {currentStep} of {STEPS.length}
+              </p>
+            </div>
           </div>
         </header>
         

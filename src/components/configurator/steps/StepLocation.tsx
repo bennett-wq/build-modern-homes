@@ -80,7 +80,12 @@ export function StepLocation({
         transition={{ delay: 0.2 }}
         className="bg-card rounded-xl border border-border p-6 space-y-6"
       >
-        <h3 className="font-semibold text-foreground">Include in Estimate</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">Include in Estimate</h3>
+          <span className="text-xs text-muted-foreground/70 italic">
+            You'll be able to refine these before finalizing
+          </span>
+        </div>
         
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -123,7 +128,7 @@ export function StepLocation({
         </p>
       </motion.div>
       
-      {/* Navigation */}
+      {/* Navigation with reassurance */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -134,10 +139,15 @@ export function StepLocation({
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button size="lg" onClick={onNext}>
-          Continue
-          <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button size="lg" onClick={onNext}>
+            Continue
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+          <span className="text-xs text-muted-foreground/70">
+            You can change this later.
+          </span>
+        </div>
       </motion.div>
     </div>
   );

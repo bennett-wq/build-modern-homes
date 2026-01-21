@@ -206,6 +206,15 @@ export function StepModel({
         >
           Select a model to continue. You can change this later.
         </motion.p>
+        {/* Inline guidance */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-muted-foreground/70 text-xs mt-2"
+        >
+          Not sure which to choose? Start with our most popular or best value option.
+        </motion.p>
       </div>
       
       {/* Model Grid - Responsive, constrained */}
@@ -214,6 +223,8 @@ export function StepModel({
           const isSelected = selectedModelSlug === model.slug;
           const { price, hasPricing } = modelPrices[model.slug] || { price: 0, hasPricing: false };
           const meta = modelMeta[model.slug] || { descriptor: 'Modern floor plan' };
+          // Check if this is a recommended model (popular or value)
+          const isRecommended = meta.badge?.variant === 'popular' || meta.badge?.variant === 'value';
           
           return (
             <motion.div
@@ -226,6 +237,7 @@ export function StepModel({
                 model={model}
                 meta={meta}
                 isSelected={isSelected}
+                isRecommended={isRecommended}
                 price={price}
                 hasPricing={hasPricing}
                 onSelect={() => onSelectModel(model.slug)}
@@ -247,23 +259,28 @@ export function StepModel({
           Back
         </Button>
         
-        <div className="flex items-center gap-4">
-          {selectedModel && selectedPrice && (
-            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{selectedModel.name}</span>
-              <span>•</span>
-              <span className="text-foreground font-semibold">{formatPrice(selectedPrice.price)}</span>
-            </div>
-          )}
-          <Button
-            size="lg"
-            onClick={onNext}
-            disabled={!selectedModelSlug}
-            className="min-w-[180px]"
-          >
-            Continue to Build Type
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-4">
+            {selectedModel && selectedPrice && (
+              <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{selectedModel.name}</span>
+                <span>•</span>
+                <span className="text-foreground font-semibold">{formatPrice(selectedPrice.price)}</span>
+              </div>
+            )}
+            <Button
+              size="lg"
+              onClick={onNext}
+              disabled={!selectedModelSlug}
+              className="min-w-[180px]"
+            >
+              Continue to Build Type
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+          <span className="text-xs text-muted-foreground/70">
+            You can change this later.
+          </span>
         </div>
       </motion.div>
     </div>
@@ -278,6 +295,7 @@ function ModelCard({
   model,
   meta,
   isSelected,
+  isRecommended,
   price,
   hasPricing,
   onSelect,
@@ -285,6 +303,7 @@ function ModelCard({
   model: ModelConfig;
   meta: ModelMeta;
   isSelected: boolean;
+  isRecommended: boolean;
   price: number;
   hasPricing: boolean;
   onSelect: () => void;
@@ -294,14 +313,14 @@ function ModelCard({
   
   const heroImage = model.heroImage || getModelHeroImageBySlug(model.slug);
   
-  // Badge styling based on variant
+  // Badge styling based on variant - enhanced for popular/value
   const getBadgeClasses = (variant: string) => {
-    const base = 'text-[10px] font-medium px-2 py-0.5 rounded-full';
+    const base = 'text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm';
     switch (variant) {
       case 'popular':
-        return cn(base, 'bg-amber-500/90 text-white');
+        return cn(base, 'bg-amber-500 text-white');
       case 'value':
-        return cn(base, 'bg-emerald-500/90 text-white');
+        return cn(base, 'bg-emerald-500 text-white');
       case 'affordable':
         return cn(base, 'bg-blue-500/90 text-white');
       case 'premium':
@@ -320,7 +339,9 @@ function ModelCard({
         'hover:shadow-lg hover:-translate-y-0.5',
         isSelected 
           ? 'border-accent ring-2 ring-accent/20 shadow-lg bg-card' 
-          : 'border-border bg-card hover:border-accent/40',
+          : isRecommended
+            ? 'border-border bg-card hover:border-accent/40 ring-1 ring-accent/10'
+            : 'border-border bg-card hover:border-accent/40',
       )}
       onClick={onSelect}
       role="button"
