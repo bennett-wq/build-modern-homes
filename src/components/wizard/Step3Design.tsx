@@ -11,10 +11,16 @@ import { getDevelopmentBySlug } from '@/data/developments';
 import { 
   hawthornePackages, 
   hawthorneGarages, 
+  hawthorneExteriorVariantImages,
+  hawthorneDefaultPackageId,
+  hawthorneDefaultGarageId,
   getHawthorneExteriorImage, 
   getHawthorneFallbackImage, 
   getHawthorneHeroImage,
   getHawthorneHeroWithGarage,
+  getAllHawthorneVariantImages,
+  getAvailableGaragesForPackage,
+  hasVariantImage,
   isPhotoBasedModel,
   normalizeModelSlug,
   HawthornePackage,
@@ -264,6 +270,7 @@ export function Step3Design({
                       key={door.id}
                       door={door}
                       isSelected={door.id === selectedGarageDoorId}
+                      isAvailable={!selectedPackageId || hasVariantImage(selectedPackageId, door.id)}
                       onSelect={() => onSelectGarageDoor(door.id)}
                     />
                   ))
@@ -457,49 +464,26 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
     currentGarageRef.current = garageId;
   }, [garageId]);
   
-  // Compute target image based on selections
+  // Compute target image based on selections using new variant system
   const targetImage = useMemo(() => {
     if (!packageId) return getHawthorneHeroImage();
     if (!garageId) return getHawthorneFallbackImage(packageId);
     return getHawthorneExteriorImage(packageId, garageId);
   }, [packageId, garageId]);
 
-  // Get all package IDs for preloading adjacent
-  const packageIds = useMemo(() => hawthornePackages.map(p => p.id), []);
-  
-  // Preload strategy: current package both garages + adjacent packages + hero variants
+  // Preload ALL Hawthorne variant images once
   useEffect(() => {
-    const toPreload: string[] = [];
-    
-    // Always preload hero variants
-    toPreload.push(getHawthorneHeroImage());
-    toPreload.push(getHawthorneHeroWithGarage('standard'));
-    toPreload.push(getHawthorneHeroWithGarage('black-industrial'));
-    
-    if (packageId) {
-      // Both garage variants for current package
-      toPreload.push(getHawthorneExteriorImage(packageId, 'standard'));
-      toPreload.push(getHawthorneExteriorImage(packageId, 'black-industrial'));
-      
-      // Adjacent packages (prev/next) with current garage
-      const currentIdx = packageIds.indexOf(packageId);
-      if (currentIdx > 0) {
-        const prevPkg = packageIds[currentIdx - 1];
-        toPreload.push(getHawthorneExteriorImage(prevPkg, garageId || 'standard'));
-      }
-      if (currentIdx < packageIds.length - 1) {
-        const nextPkg = packageIds[currentIdx + 1];
-        toPreload.push(getHawthorneExteriorImage(nextPkg, garageId || 'standard'));
-      }
-    }
-    
-    // Preload all without blocking
-    toPreload.forEach(src => {
+    const allVariants = getAllHawthorneVariantImages();
+    allVariants.forEach(src => {
       if (!imageCache.has(src)) {
         preloadImage(src);
       }
     });
-  }, [packageId, garageId, packageIds]);
+    // Also preload hero
+    if (!imageCache.has(getHawthorneHeroImage())) {
+      preloadImage(getHawthorneHeroImage());
+    }
+  }, []);
 
   // Improved fallback chain: package+garage → hero+garage → hero
   const resolveWithFallback = useCallback((failedSrc: string, pkgId: string | null, grgId: string | null) => {
@@ -1349,39 +1333,56 @@ function BelmontPackageCard({ package_, isSelected, onSelect }: BelmontPackageCa
   );
 }
 
-// Garage door card for Hawthorne model
+// Garage door card for Hawthorne model with availability support
 interface HawthorneGarageCardProps {
   door: HawthorneGarage;
   isSelected: boolean;
+  isAvailable: boolean;
   onSelect: () => void;
 }
 
-function HawthorneGarageCard({ door, isSelected, onSelect }: HawthorneGarageCardProps) {
+function HawthorneGarageCard({ door, isSelected, isAvailable, onSelect }: HawthorneGarageCardProps) {
+  const handleClick = () => {
+    if (isAvailable) {
+      onSelect();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === 'Enter' || e.key === ' ') && isAvailable) {
+      e.preventDefault();
+      onSelect();
+    }
+  };
+
   return (
     <Card
       className={cn(
-        'cursor-pointer transition-all duration-200',
+        'transition-all duration-200',
         'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
-        isSelected 
+        isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+        isSelected && isAvailable
           ? 'ring-2 ring-accent border-accent shadow-md' 
-          : 'hover:border-accent/40 hover:shadow-sm'
+          : isAvailable 
+            ? 'hover:border-accent/40 hover:shadow-sm'
+            : 'bg-muted/50'
       )}
-      onClick={onSelect}
+      onClick={handleClick}
       role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
+      tabIndex={isAvailable ? 0 : -1}
+      onKeyDown={handleKeyDown}
       aria-pressed={isSelected}
-      aria-label={`Select ${door.name} garage door`}
+      aria-disabled={!isAvailable}
+      aria-label={`Select ${door.name} garage door${!isAvailable ? ' (not available for this package)' : ''}`}
+      title={!isAvailable ? 'Not available for this package' : undefined}
     >
       <CardContent className="p-3 flex items-center gap-3">
         {/* Door preview */}
         <div 
-          className="w-12 h-10 rounded-md border border-border flex items-center justify-center shadow-sm"
+          className={cn(
+            'w-12 h-10 rounded-md border border-border flex items-center justify-center shadow-sm',
+            !isAvailable && 'opacity-50'
+          )}
           style={{ backgroundColor: door.color }}
         >
           <DoorOpen className="h-5 w-5 text-white/60" />
@@ -1389,19 +1390,29 @@ function HawthorneGarageCard({ door, isSelected, onSelect }: HawthorneGarageCard
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-foreground text-sm">{door.name}</p>
+            <p className={cn(
+              'font-medium text-sm',
+              isAvailable ? 'text-foreground' : 'text-muted-foreground'
+            )}>{door.name}</p>
             {door.isUpgrade && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1">
                 <Sparkles className="h-2.5 w-2.5" />
                 Upgrade
               </Badge>
             )}
+            {!isAvailable && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                N/A
+              </Badge>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground truncate">{door.description}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {isAvailable ? door.description : 'Not available for selected package'}
+          </p>
         </div>
         
         <AnimatePresence>
-          {isSelected && (
+          {isSelected && isAvailable && (
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
