@@ -1,31 +1,41 @@
 // ============================================================================
 // Step 3: Pick a Model
-// Redesigned for visual confidence, scannability, and conversion focus
+// Premium redesign with price trust, branded placeholders, and clean hierarchy
 // ============================================================================
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, 
   ArrowLeft, 
-  Home, 
   Ruler, 
   BedDouble, 
   Bath, 
   Check, 
-  AlertCircle,
   Scale,
   X,
   Star,
   TrendingUp,
   DollarSign,
+  Sparkles,
+  Users,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { models, type ModelConfig, type BuildType, getDefaultZone } from '@/data/pricing-config';
-import { calculatePriceBreakdown, defaultBuildSelection, defaultExteriorSelection } from '@/hooks/usePricingEngine';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  models, 
+  type ModelConfig, 
+  type BuildType, 
+  getDefaultZone,
+} from '@/data/pricing-config';
+import { 
+  calculateFullPricing, 
+  defaultBuildSelection, 
+  defaultExteriorSelection,
+  type PricingOutput,
+} from '@/hooks/usePricingEngine';
 import { getModelHeroImageBySlug } from '@/lib/model-images';
 import { cn } from '@/lib/utils';
 
@@ -34,7 +44,11 @@ import { cn } from '@/lib/utils';
 // ============================================================================
 
 interface ModelMeta {
-  badge?: { label: string; icon: typeof Star; variant: 'popular' | 'value' | 'affordable' };
+  badge?: { 
+    label: string; 
+    icon: typeof Star; 
+    variant: 'popular' | 'value' | 'affordable' | 'premium' | 'family';
+  };
   descriptor: string;
 }
 
@@ -48,14 +62,16 @@ const modelMeta: Record<string, ModelMeta> = {
     descriptor: 'Compact efficiency meets strong livability',
   },
   aspen: {
+    badge: { label: 'Most Bedrooms', icon: Users, variant: 'family' },
     descriptor: 'Maximum bedrooms in a smart footprint',
   },
   keeneland: {
-    badge: { label: 'Most Affordable', icon: DollarSign, variant: 'affordable' },
-    descriptor: 'Attainable price, premium feel',
+    badge: { label: 'Premium', icon: Sparkles, variant: 'premium' },
+    descriptor: 'Spacious open-concept with refined details',
   },
   laurel: {
-    descriptor: 'Open concept with flexible spaces',
+    badge: { label: 'Most Affordable', icon: DollarSign, variant: 'affordable' },
+    descriptor: 'Attainable price, quality construction',
   },
 };
 
@@ -73,20 +89,28 @@ interface StepModelProps {
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// UNIFIED PRICING HELPER
+// Uses the same buyerFacingBreakdown logic as the pricing rail
+// This is the SINGLE SOURCE OF TRUTH for "Starting from" prices
 // ============================================================================
 
-// Calculate "Starting From" price for a model (using lowest buildType)
-function getStartingPrice(model: ModelConfig, includeUtilityFees: boolean, includePermitsCosts: boolean): {
+function getBuyerFacingStartingPrice(
+  model: ModelConfig,
+  includeUtilityFees: boolean,
+  includePermitsCosts: boolean
+): {
   price: number;
   hasPricing: boolean;
   buildType: BuildType;
+  pricingOutput: PricingOutput | null;
 } {
   const zone = getDefaultZone();
   let lowestPrice = Infinity;
   let hasPricing = false;
   let bestBuildType: BuildType = model.buildTypes[0];
+  let bestPricingOutput: PricingOutput | null = null;
   
+  // Find the lowest buyer-facing price across all build types
   for (const buildType of model.buildTypes) {
     const selection = {
       ...defaultBuildSelection,
@@ -95,18 +119,21 @@ function getStartingPrice(model: ModelConfig, includeUtilityFees: boolean, inclu
       includeUtilityFees,
       includePermitsCosts,
       exteriorSelection: defaultExteriorSelection,
+      pricingMode: 'delivered_installed' as const, // Match the pricing rail mode
     };
     
-    const breakdown = calculatePriceBreakdown(selection, model, zone);
+    // Use the SAME calculateFullPricing that powers the pricing rail
+    const pricingOutput = calculateFullPricing(selection, model, zone);
     
-    if (breakdown.hasPricing && breakdown.allInEstimateTotal < lowestPrice) {
-      lowestPrice = breakdown.allInEstimateTotal;
+    if (pricingOutput.hasPricing && pricingOutput.buyerFacingBreakdown.startingFromPrice < lowestPrice) {
+      lowestPrice = pricingOutput.buyerFacingBreakdown.startingFromPrice;
       hasPricing = true;
       bestBuildType = buildType;
+      bestPricingOutput = pricingOutput;
     }
   }
   
-  // If no factory pricing, calculate sitework-only estimate
+  // Fallback for models without factory pricing
   if (!hasPricing) {
     const selection = {
       ...defaultBuildSelection,
@@ -114,15 +141,18 @@ function getStartingPrice(model: ModelConfig, includeUtilityFees: boolean, inclu
       buildType: model.buildTypes[0],
       includeUtilityFees,
       includePermitsCosts,
+      pricingMode: 'delivered_installed' as const,
     };
-    const breakdown = calculatePriceBreakdown(selection, model, zone);
-    lowestPrice = breakdown.basemodSiteworkTotal + breakdown.optionalFeesTotal;
+    const pricingOutput = calculateFullPricing(selection, model, zone);
+    lowestPrice = pricingOutput.buyerFacingBreakdown.startingFromPrice;
+    bestPricingOutput = pricingOutput;
   }
   
   return {
     price: lowestPrice === Infinity ? 0 : lowestPrice,
     hasPricing,
     buildType: bestBuildType,
+    pricingOutput: bestPricingOutput,
   };
 }
 
@@ -156,81 +186,80 @@ export function StepModel({
         return prev.filter(s => s !== slug);
       }
       if (prev.length >= 3) {
-        // Replace oldest
         return [...prev.slice(1), slug];
       }
       return [...prev, slug];
     });
   };
   
-  // Pre-calculate prices for comparison
+  // Pre-calculate buyer-facing prices for all models using unified logic
   const modelPrices = useMemo(() => {
     const prices: Record<string, { price: number; hasPricing: boolean }> = {};
     models.forEach(model => {
-      prices[model.slug] = getStartingPrice(model, includeUtilityFees, includePermitsCosts);
+      const result = getBuyerFacingStartingPrice(model, includeUtilityFees, includePermitsCosts);
+      prices[model.slug] = { price: result.price, hasPricing: result.hasPricing };
     });
     return prices;
   }, [includeUtilityFees, includePermitsCosts]);
   
+  // Get selected model details
+  const selectedModel = selectedModelSlug 
+    ? models.find(m => m.slug === selectedModelSlug) 
+    : null;
+  const selectedPrice = selectedModelSlug 
+    ? modelPrices[selectedModelSlug] 
+    : null;
+  
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Header - Premium and tight */}
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-2xl md:text-3xl font-semibold text-foreground mb-3"
+          className="text-2xl md:text-3xl font-semibold text-foreground mb-2"
         >
-          Choose Your Home
+          Choose your home
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-muted-foreground"
+          className="text-muted-foreground text-sm"
         >
-          Each model is designed for efficiency and livability. Pick the one that fits your needs.
+          Select a model to continue. You can change this later.
         </motion.p>
-      </div>
-      
-      {/* Compare bar - only show when models are selected */}
-      <AnimatePresence>
-        {compareModels.length >= 2 && (
+        
+        {/* Compare link (moved from cards) */}
+        {compareModels.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4"
           >
-            <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Scale className="w-4 h-4 text-accent" />
-                <span className="text-sm font-medium text-foreground">
-                  {compareModels.length} models selected
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCompareModels([])}
-                >
-                  Clear
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setShowCompare(true)}
-                >
-                  Compare
-                </Button>
-              </div>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCompare(true)}
+              className="text-accent hover:text-accent/80"
+            >
+              <Scale className="w-4 h-4 mr-2" />
+              Compare {compareModels.length} models
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCompareModels([])}
+              className="text-muted-foreground ml-2"
+            >
+              Clear
+            </Button>
           </motion.div>
         )}
-      </AnimatePresence>
+      </div>
       
-      {/* Model Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* Model Grid - 3 columns desktop, 2 tablet, 1 mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {models.map((model, index) => {
           const isSelected = selectedModelSlug === model.slug;
           const isComparing = compareModels.includes(model.slug);
@@ -259,7 +288,7 @@ export function StepModel({
         })}
       </div>
       
-      {/* Navigation */}
+      {/* Navigation - Deliberate, not auto-advance */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -270,14 +299,25 @@ export function StepModel({
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button
-          size="lg"
-          onClick={onNext}
-          disabled={!selectedModelSlug}
-        >
-          Get Quote
-          <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
+        
+        <div className="flex items-center gap-4">
+          {selectedModel && selectedPrice && (
+            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{selectedModel.name}</span>
+              <span>•</span>
+              <span className="text-foreground font-semibold">{formatPrice(selectedPrice.price)}</span>
+            </div>
+          )}
+          <Button
+            size="lg"
+            onClick={onNext}
+            disabled={!selectedModelSlug}
+            className="min-w-[180px]"
+          >
+            Continue to Build Type
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
       </motion.div>
       
       {/* Compare Dialog */}
@@ -297,7 +337,7 @@ export function StepModel({
 }
 
 // ============================================================================
-// MODEL CARD COMPONENT
+// MODEL CARD COMPONENT - Premium design with branded placeholders
 // ============================================================================
 
 function ModelCard({
@@ -325,53 +365,45 @@ function ModelCard({
   // Get hero image with fallback
   const heroImage = model.heroImage || getModelHeroImageBySlug(model.slug);
   
+  // Badge styling based on variant
+  const getBadgeClasses = (variant: string) => {
+    const base = 'text-[10px] font-medium px-2 py-0.5 rounded-full backdrop-blur-sm';
+    switch (variant) {
+      case 'popular':
+        return cn(base, 'bg-amber-500/90 text-white');
+      case 'value':
+        return cn(base, 'bg-emerald-500/90 text-white');
+      case 'affordable':
+        return cn(base, 'bg-blue-500/90 text-white');
+      case 'premium':
+        return cn(base, 'bg-violet-500/90 text-white');
+      case 'family':
+        return cn(base, 'bg-rose-500/90 text-white');
+      default:
+        return cn(base, 'bg-accent/90 text-accent-foreground');
+    }
+  };
+  
   return (
     <div
       className={cn(
-        'group relative rounded-xl border-2 overflow-hidden transition-all duration-200 cursor-pointer',
-        'hover:shadow-xl hover:border-accent/50 hover:-translate-y-1',
+        'group relative rounded-xl border overflow-hidden transition-all duration-200 cursor-pointer',
+        'hover:shadow-lg hover:-translate-y-0.5',
         isSelected 
-          ? 'border-accent shadow-lg ring-2 ring-accent/20' 
-          : 'border-border bg-card',
+          ? 'border-accent ring-2 ring-accent/20 shadow-lg' 
+          : 'border-border bg-card hover:border-accent/40',
       )}
       onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onSelect()}
+      aria-pressed={isSelected}
     >
-      {/* Badge - Top Left */}
-      {meta.badge && (
-        <div className="absolute top-3 left-3 z-10">
-          <Badge 
-            className={cn(
-              'text-xs font-medium shadow-sm',
-              meta.badge.variant === 'popular' && 'bg-accent text-accent-foreground',
-              meta.badge.variant === 'value' && 'bg-green-600 text-white',
-              meta.badge.variant === 'affordable' && 'bg-blue-600 text-white',
-            )}
-          >
-            <meta.badge.icon className="w-3 h-3 mr-1" />
-            {meta.badge.label}
-          </Badge>
-        </div>
-      )}
-      
-      {/* Selected indicator - Top Right */}
-      <AnimatePresence>
-        {isSelected && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-accent flex items-center justify-center shadow-lg"
-          >
-            <Check className="w-4 h-4 text-accent-foreground" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Image - Dominant */}
-      <div className="aspect-[16/10] bg-muted overflow-hidden relative">
+      {/* Image Area - Consistent aspect ratio */}
+      <div className="aspect-video relative overflow-hidden bg-muted">
         {/* Loading skeleton */}
         {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 bg-muted animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
         )}
         
         {!imageError ? (
@@ -379,80 +411,203 @@ function ModelCard({
             src={heroImage}
             alt={`${model.name} exterior`}
             className={cn(
-              'w-full h-full object-cover transition-all duration-300',
-              'group-hover:scale-105',
+              'w-full h-full object-cover transition-all duration-500',
+              'group-hover:scale-[1.02]',
               imageLoaded ? 'opacity-100' : 'opacity-0',
             )}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
         ) : (
-          // Branded placeholder fallback
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-secondary to-muted">
-            <Home className="w-12 h-12 text-muted-foreground/40 mb-2" />
-            <span className="text-sm font-medium text-muted-foreground">{model.name}</span>
+          // Premium branded placeholder
+          <PremiumPlaceholder modelName={model.name} descriptor={meta.descriptor} />
+        )}
+        
+        {/* Subtle gradient overlay for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+        
+        {/* Badge - Top Left (subtle pill) */}
+        {meta.badge && (
+          <div className="absolute top-3 left-3 z-10">
+            <div className={getBadgeClasses(meta.badge.variant)}>
+              <meta.badge.icon className="w-3 h-3 inline-block mr-1 -mt-0.5" />
+              {meta.badge.label}
+            </div>
           </div>
         )}
+        
+        {/* Selected checkmark - Top Right */}
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-accent flex items-center justify-center shadow-lg"
+            >
+              <Check className="w-4 h-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Compare toggle - Bottom right of image */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCompare();
+          }}
+          className={cn(
+            'absolute bottom-2 right-2 z-10 px-2 py-1 rounded text-[10px] font-medium transition-all',
+            'bg-black/50 backdrop-blur-sm hover:bg-black/70',
+            isComparing 
+              ? 'text-accent' 
+              : 'text-white/70 hover:text-white',
+          )}
+        >
+          {isComparing ? '✓ Comparing' : '+ Compare'}
+        </button>
       </div>
       
       {/* Content */}
-      <div className="p-4">
-        {/* Model name */}
-        <h3 className="text-lg font-semibold text-foreground mb-1">
+      <div className="p-4 space-y-3">
+        {/* Model name - Large */}
+        <h3 className="text-lg font-semibold text-foreground">
           {model.name}
         </h3>
         
-        {/* One-line descriptor */}
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-1">
+        {/* Descriptor - 1 line, no truncation mid-word */}
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {meta.descriptor}
         </p>
         
-        {/* Specs row */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-          <span className="flex items-center gap-1.5">
-            <BedDouble className="w-4 h-4 text-accent" />
-            {model.beds} Beds
+        {/* Specs row - Smaller, muted */}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <BedDouble className="w-3.5 h-3.5" />
+            {model.beds} bed
           </span>
-          <span className="flex items-center gap-1.5">
-            <Bath className="w-4 h-4 text-accent" />
-            {model.baths} Baths
+          <span className="flex items-center gap-1">
+            <Bath className="w-3.5 h-3.5" />
+            {model.baths} bath
           </span>
-          <span className="flex items-center gap-1.5">
-            <Ruler className="w-4 h-4 text-accent" />
+          <span className="flex items-center gap-1">
+            <Ruler className="w-3.5 h-3.5" />
             {model.sqft.toLocaleString()} sf
           </span>
         </div>
         
-        {/* Price line */}
-        <div className="flex items-center justify-between">
+        {/* Price row + CTA */}
+        <div className="flex items-center justify-between pt-2 border-t border-border/50">
           {hasPricing ? (
             <div>
-              <span className="text-xl font-bold text-foreground">
-                {formatPrice(price)}
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold text-foreground">
+                  {formatPrice(price)}
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                Installed from
               </span>
-              <span className="text-xs text-muted-foreground ml-1.5">starting</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-amber-600">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">Pricing available soon</span>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Info className="w-3.5 h-3.5" />
+              <span className="text-xs">Price coming soon</span>
             </div>
           )}
           
-          {/* Compare checkbox */}
-          <div
-            className="flex items-center gap-1.5"
+          {/* CTA - "Select" or "Selected" */}
+          <Button
+            size="sm"
+            variant={isSelected ? 'default' : 'outline'}
+            className={cn(
+              'transition-all',
+              isSelected && 'bg-accent hover:bg-accent/90',
+            )}
             onClick={(e) => {
               e.stopPropagation();
-              onToggleCompare();
+              onSelect();
             }}
           >
-            <Checkbox 
-              checked={isComparing} 
-              className="data-[state=checked]:bg-accent data-[state=checked]:border-accent"
-            />
-            <span className="text-xs text-muted-foreground">Compare</span>
-          </div>
+            {isSelected ? (
+              <>
+                <Check className="w-3.5 h-3.5 mr-1" />
+                Selected
+              </>
+            ) : (
+              'Select'
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// PREMIUM PLACEHOLDER - Branded fallback for missing images
+// ============================================================================
+
+function PremiumPlaceholder({ 
+  modelName, 
+  descriptor 
+}: { 
+  modelName: string; 
+  descriptor: string;
+}) {
+  return (
+    <div className="w-full h-full relative overflow-hidden">
+      {/* Gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900" />
+      
+      {/* Architectural grid pattern */}
+      <svg
+        className="absolute inset-0 w-full h-full opacity-10"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+            <path d="M 32 0 L 0 0 0 32" fill="none" stroke="white" strokeWidth="0.5" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+      
+      {/* Blueprint line art - simplified house shape */}
+      <svg
+        className="absolute inset-0 w-full h-full opacity-15"
+        viewBox="0 0 200 120"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* House outline */}
+        <path
+          d="M 30 70 L 30 100 L 170 100 L 170 70 L 100 35 L 30 70"
+          stroke="white"
+          strokeWidth="1"
+          fill="none"
+        />
+        {/* Door */}
+        <rect x="90" y="75" width="20" height="25" stroke="white" strokeWidth="0.5" fill="none" />
+        {/* Windows */}
+        <rect x="50" y="75" width="18" height="14" stroke="white" strokeWidth="0.5" fill="none" />
+        <rect x="132" y="75" width="18" height="14" stroke="white" strokeWidth="0.5" fill="none" />
+        {/* Chimney */}
+        <rect x="140" y="45" width="10" height="20" stroke="white" strokeWidth="0.5" fill="none" />
+      </svg>
+      
+      {/* Content overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+        <div className="space-y-2">
+          <h4 className="text-white font-semibold text-lg tracking-wide">
+            {modelName}
+          </h4>
+          <p className="text-white/60 text-xs max-w-[180px] line-clamp-2">
+            {descriptor}
+          </p>
+          <p className="text-white/40 text-[10px] uppercase tracking-wider pt-2">
+            Exterior render coming soon
+          </p>
         </div>
       </div>
     </div>
@@ -466,7 +621,7 @@ function ModelCard({
 function CompareDialog({
   isOpen,
   onClose,
-  models,
+  models: compareModels,
   prices,
   selectedSlug,
   onSelect,
@@ -478,11 +633,11 @@ function CompareDialog({
   selectedSlug: string | null;
   onSelect: (slug: string) => void;
 }) {
-  if (models.length === 0) return null;
+  if (compareModels.length === 0) return null;
   
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-accent" />
@@ -490,93 +645,110 @@ function CompareDialog({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${models.length}, 1fr)` }}>
-          {models.map(model => {
+        <div 
+          className="grid gap-4" 
+          style={{ gridTemplateColumns: `repeat(${compareModels.length}, 1fr)` }}
+        >
+          {compareModels.map(model => {
             const { price, hasPricing } = prices[model.slug] || { price: 0, hasPricing: false };
             const isSelected = selectedSlug === model.slug;
+            const meta = modelMeta[model.slug] || { descriptor: 'Modern floor plan' };
             const heroImage = model.heroImage || getModelHeroImageBySlug(model.slug);
             
             return (
-              <div 
+              <div
                 key={model.slug}
                 className={cn(
-                  'border rounded-lg overflow-hidden',
-                  isSelected ? 'border-accent ring-1 ring-accent/30' : 'border-border'
+                  'rounded-lg border p-4 transition-all cursor-pointer',
+                  isSelected 
+                    ? 'border-accent bg-accent/5' 
+                    : 'border-border hover:border-accent/40',
                 )}
+                onClick={() => onSelect(model.slug)}
               >
                 {/* Image */}
-                <div className="aspect-[16/10] bg-muted">
+                <div className="aspect-video rounded-md overflow-hidden bg-muted mb-3">
                   <img
                     src={heroImage}
                     alt={model.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
+                      e.currentTarget.style.display = 'none';
                     }}
                   />
                 </div>
                 
-                {/* Details */}
-                <div className="p-3 space-y-2">
-                  <h4 className="font-semibold text-foreground">{model.name}</h4>
-                  
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <div className="flex justify-between">
-                      <span>Square Feet</span>
-                      <span className="font-medium text-foreground">{model.sqft.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Bedrooms</span>
-                      <span className="font-medium text-foreground">{model.beds}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Bathrooms</span>
-                      <span className="font-medium text-foreground">{model.baths}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Build Types</span>
-                      <span className="font-medium text-foreground uppercase text-xs">
-                        {model.buildTypes.join(' / ')}
+                {/* Name */}
+                <h4 className="font-semibold text-foreground mb-1">{model.name}</h4>
+                
+                {/* Specs */}
+                <div className="space-y-1.5 text-sm text-muted-foreground mb-3">
+                  <div className="flex justify-between">
+                    <span>Square feet</span>
+                    <span className="font-medium text-foreground">{model.sqft.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Bedrooms</span>
+                    <span className="font-medium text-foreground">{model.beds}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Bathrooms</span>
+                    <span className="font-medium text-foreground">{model.baths}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Build types</span>
+                    <span className="font-medium text-foreground uppercase text-xs">
+                      {model.buildTypes.join(', ')}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Price */}
+                <div className="pt-3 border-t border-border">
+                  {hasPricing ? (
+                    <div>
+                      <span className="text-lg font-bold text-foreground">
+                        {formatPrice(price)}
+                      </span>
+                      <span className="text-xs text-muted-foreground block">
+                        Installed from
                       </span>
                     </div>
-                  </div>
-                  
-                  <div className="pt-2 border-t border-border">
-                    {hasPricing ? (
-                      <div className="text-center">
-                        <span className="text-lg font-bold text-foreground">{formatPrice(price)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">starting</span>
-                      </div>
-                    ) : (
-                      <div className="text-center text-sm text-muted-foreground">
-                        Pricing coming soon
-                      </div>
-                    )}
-                  </div>
-                  
-                  <Button
-                    className="w-full"
-                    size="sm"
-                    variant={isSelected ? 'default' : 'outline'}
-                    onClick={() => onSelect(model.slug)}
-                  >
-                    {isSelected ? (
-                      <>
-                        <Check className="w-4 h-4 mr-1" />
-                        Selected
-                      </>
-                    ) : (
-                      'Select This Model'
-                    )}
-                  </Button>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Price coming soon</span>
+                  )}
                 </div>
+                
+                {/* Select button */}
+                <Button
+                  size="sm"
+                  variant={isSelected ? 'default' : 'outline'}
+                  className="w-full mt-3"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(model.slug);
+                  }}
+                >
+                  {isSelected ? (
+                    <>
+                      <Check className="w-4 h-4 mr-1" />
+                      Selected
+                    </>
+                  ) : (
+                    'Select This Model'
+                  )}
+                </Button>
               </div>
             );
           })}
+        </div>
+        
+        <div className="flex justify-end pt-4">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-
-export default StepModel;
