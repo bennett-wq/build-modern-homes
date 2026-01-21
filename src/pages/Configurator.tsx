@@ -2,6 +2,10 @@
 // /build - Buyer Configurator Wizard
 // Multi-step build configuration with live pricing
 // Enhanced with intelligent preselection and resume capability
+// 
+// LAYOUT ARCHITECTURE:
+// - Steps 1-3 (Intent, Location, Model): Single-column centered layout, no pricing rail
+// - Steps 4-7 (Build Type, Floor Plan, Exterior, Summary): Two-column with pricing rail
 // ============================================================================
 
 import { useEffect, useState, useCallback } from 'react';
@@ -87,6 +91,10 @@ export default function Configurator() {
     hasPricing: pricing.hasPricing,
     pricingMode: pricing.pricingMode,
   };
+  
+  // Determine if we should show the pricing rail
+  // Only show on steps 4+ when there's meaningful pricing context
+  const showPricingRail = currentStep >= 4;
   
   // Handle model selection with change confirmation
   const handleModelSelect = useCallback((modelSlug: string) => {
@@ -179,9 +187,100 @@ export default function Configurator() {
         
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          <div className={isMobile ? '' : 'grid lg:grid-cols-[1fr_360px] gap-8'}>
-            {/* Step Content */}
-            <div className={isMobile ? 'pb-24' : ''}>
+          {/* 
+            LAYOUT LOGIC:
+            - Steps 1-3: Single column, centered content, no pricing rail
+            - Steps 4+: Two-column layout with pricing rail on desktop
+          */}
+          {showPricingRail ? (
+            // Two-column layout for steps 4+
+            <div className={isMobile ? '' : 'grid lg:grid-cols-[1fr_360px] gap-8'}>
+              {/* Step Content */}
+              <div className={isMobile ? 'pb-24' : ''}>
+                {/* Model Change Confirmation */}
+                <ModelChangeConfirm
+                  isOpen={!!pendingModelChange}
+                  previousModelName={pendingModelChange?.previousName || ''}
+                  newModelName={pendingModelChange?.newName || ''}
+                  onConfirm={confirmModelChange}
+                  onCancel={cancelModelChange}
+                />
+                
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    variants={stepVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={{ duration: 0.2 }}
+                  >
+                    {currentStep === 4 && currentModel && (
+                      <StepBuildType
+                        model={currentModel}
+                        selectedBuildType={selection.buildType}
+                        onSelectBuildType={setBuildType}
+                        onNext={nextStep}
+                        onBack={prevStep}
+                        includeUtilityFees={selection.includeUtilityFees}
+                        includePermitsCosts={selection.includePermitsCosts}
+                      />
+                    )}
+                    
+                    {currentStep === 5 && currentModel && selection.buildType && (
+                      <StepFloorPlan
+                        model={currentModel}
+                        buildType={selection.buildType}
+                        isOptionSelected={isFloorPlanOptionSelected}
+                        onToggleOption={toggleFloorPlanOption}
+                        onNext={nextStep}
+                        onBack={prevStep}
+                      />
+                    )}
+                    
+                    {currentStep === 6 && currentModel && (
+                      <StepExterior
+                        model={currentModel}
+                        exteriorSelection={selection.exteriorSelection}
+                        onUpdateExterior={updateExteriorSelection}
+                        onNext={nextStep}
+                        onBack={prevStep}
+                      />
+                    )}
+                    
+                    {currentStep === 7 && currentModel && selection.buildType && (
+                      <StepSummary
+                        model={currentModel}
+                        buildType={selection.buildType}
+                        breakdown={breakdown}
+                        exteriorSelection={selection.exteriorSelection}
+                        intent={selection.intent}
+                        formatPrice={formatPrice}
+                        onCopyLink={copyShareableLink}
+                        onBack={prevStep}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              
+              {/* Buyer-Facing Pricing Panel (Desktop) - Only for steps 4+ */}
+              {!isMobile && (
+                <div className="hidden lg:block">
+                  <div className="sticky top-32">
+                    <BuyerPricingDisplay
+                      breakdown={pricing.buyerFacingBreakdown}
+                      flags={pricingFlags}
+                      variant="full"
+                      showPlaceholder={false}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Single-column centered layout for steps 1-3
+            <div className="max-w-4xl mx-auto">
               {/* Model Change Confirmation */}
               <ModelChangeConfirm
                 isOpen={!!pendingModelChange}
@@ -231,79 +330,19 @@ export default function Configurator() {
                       includePermitsCosts={selection.includePermitsCosts}
                     />
                   )}
-                  
-                  {currentStep === 4 && currentModel && (
-                    <StepBuildType
-                      model={currentModel}
-                      selectedBuildType={selection.buildType}
-                      onSelectBuildType={setBuildType}
-                      onNext={nextStep}
-                      onBack={prevStep}
-                      includeUtilityFees={selection.includeUtilityFees}
-                      includePermitsCosts={selection.includePermitsCosts}
-                    />
-                  )}
-                  
-                  {currentStep === 5 && currentModel && selection.buildType && (
-                    <StepFloorPlan
-                      model={currentModel}
-                      buildType={selection.buildType}
-                      isOptionSelected={isFloorPlanOptionSelected}
-                      onToggleOption={toggleFloorPlanOption}
-                      onNext={nextStep}
-                      onBack={prevStep}
-                    />
-                  )}
-                  
-                  {currentStep === 6 && currentModel && (
-                    <StepExterior
-                      model={currentModel}
-                      exteriorSelection={selection.exteriorSelection}
-                      onUpdateExterior={updateExteriorSelection}
-                      onNext={nextStep}
-                      onBack={prevStep}
-                    />
-                  )}
-                  
-                  {currentStep === 7 && currentModel && selection.buildType && (
-                    <StepSummary
-                      model={currentModel}
-                      buildType={selection.buildType}
-                      breakdown={breakdown}
-                      exteriorSelection={selection.exteriorSelection}
-                      intent={selection.intent}
-                      formatPrice={formatPrice}
-                      onCopyLink={copyShareableLink}
-                      onBack={prevStep}
-                    />
-                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
-            
-            {/* Buyer-Facing Pricing Panel (Desktop) */}
-            {!isMobile && (
-              <div className="hidden lg:block">
-                <div className="sticky top-32">
-                  <BuyerPricingDisplay
-                    breakdown={pricing.buyerFacingBreakdown}
-                    flags={pricingFlags}
-                    variant="full"
-                    showPlaceholder={currentStep <= 3 && !selection.modelSlug}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </main>
         
-        {/* Mobile Pricing Bar */}
-        {isMobile && (
+        {/* Mobile Pricing Bar - Only show on steps 4+ */}
+        {isMobile && showPricingRail && (
           <BuyerPricingDisplay
             breakdown={pricing.buyerFacingBreakdown}
             flags={pricingFlags}
             variant="mobile"
-            showPlaceholder={currentStep <= 3 && !selection.modelSlug}
+            showPlaceholder={false}
           />
         )}
       </div>

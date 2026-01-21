@@ -188,7 +188,7 @@ export function StepModel({
     : null;
   
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="w-full py-6 space-y-6">
       {/* Header - Centered, clean */}
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
