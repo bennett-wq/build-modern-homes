@@ -27,7 +27,8 @@ import {
   DollarSign,
   ShieldCheck,
   ClipboardCheck,
-  Sparkles
+  Sparkles,
+  MessageCircle
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
@@ -37,6 +38,8 @@ import { HawthornePackage, HawthorneGarage } from '@/data/hawthorne-exteriors';
 import { BelmontPackage } from '@/data/belmont-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
+import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +57,8 @@ interface Step4ReviewProps {
   shareableUrl: string;
   onBack: () => void;
   isMobile: boolean;
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
 }
 
 export function Step4Review({
@@ -66,11 +71,25 @@ export function Step4Review({
   shareableUrl,
   onBack,
   isMobile,
+  buyerFacingBreakdown,
+  pricingFlags,
 }: Step4ReviewProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
+
+  // Default fallback flags if not provided
+  const defaultFlags: BuyerPricingFlags = {
+    freightPending: false,
+    basementSelectedRequiresQuote: false,
+    estimateConfidence: 'medium',
+    hasPricing: false,
+    pricingMode: 'delivered_installed',
+  };
+  
+  const flags = pricingFlags || defaultFlags;
+  const hasPricing = buyerFacingBreakdown && flags.hasPricing;
 
   const handleCopyLink = async () => {
     try {
@@ -176,30 +195,53 @@ export function Step4Review({
                   />
                 </div>
 
-                {/* Price Estimate */}
-                {model && (
-                  <div className="mt-6 pt-5 border-t border-border">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground font-medium">Est. Starting Price</span>
-                      <span className="text-2xl font-bold text-accent">
-                        ${model.price.toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      * Final pricing determined during consultation
-                    </p>
-                    
-                    {/* Appraisal Reassurance */}
-                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/50">
-                      <ClipboardCheck className="h-4 w-4 text-accent shrink-0" />
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        This home is designed to support conventional appraisal and financing pathways.
-                      </p>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
+          </motion.div>
+
+          {/* Pricing Section - uses BuyerPricingDisplay */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.2 }}
+          >
+            {hasPricing && buyerFacingBreakdown ? (
+              <BuyerPricingDisplay
+                breakdown={buyerFacingBreakdown}
+                flags={flags}
+                variant={isMobile ? 'compact' : 'full'}
+                className="shadow-lg"
+              />
+            ) : (
+              <Card className="border-amber-200/50 bg-amber-50/30 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <MessageCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-foreground mb-1">Pricing available by request</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        We'll provide a detailed quote based on your selections during your consultation.
+                      </p>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setShowScheduleModal(true)}
+                      >
+                        Request Quote
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Appraisal Reassurance */}
+            <div className="flex items-center gap-2 mt-4 px-1">
+              <ClipboardCheck className="h-4 w-4 text-accent shrink-0" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                This home is designed to support conventional appraisal and financing pathways.
+              </p>
+            </div>
           </motion.div>
 
           {/* Share Link */}

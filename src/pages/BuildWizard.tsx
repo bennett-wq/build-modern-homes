@@ -19,6 +19,7 @@ import { getAspenPackageById } from '@/data/aspen-exteriors';
 import { getBelmontPackageById } from '@/data/belmont-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePricingEngine, defaultBuildSelection, type BuildSelection } from '@/hooks/usePricingEngine';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
 import { Step2Model } from '@/components/wizard/Step2Model';
 import { Step3Design } from '@/components/wizard/Step3Design';
@@ -109,6 +110,19 @@ export default function BuildWizard() {
         ? getHawthorneGarageById(selection.garageDoorId) 
         : getGarageDoorById(selection.garageDoorId)) || null 
     : null;
+
+  // Build pricing selection for the engine
+  const pricingSelection: BuildSelection = useMemo(() => ({
+    ...defaultBuildSelection,
+    modelSlug: normalizedModelSlug,
+    buildType: 'xmod' as const, // Default to XMOD for community wizard
+    pricingMode: 'community_all_in',
+    includeUtilityFees: true,
+    includePermitsCosts: true,
+  }), [normalizedModelSlug]);
+
+  // Get pricing from the engine
+  const { pricing } = usePricingEngine(pricingSelection);
 
   const goToStep = useCallback((step: number) => {
     if (step < currentStep || step === currentStep) {
@@ -316,6 +330,14 @@ export default function BuildWizard() {
                 shareableUrl={getShareableUrl()}
                 onBack={() => setCurrentStep(3)}
                 isMobile={isMobile}
+                buyerFacingBreakdown={pricing.buyerFacingBreakdown}
+                pricingFlags={{
+                  freightPending: pricing.freightPending,
+                  basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
+                  estimateConfidence: pricing.estimateConfidence,
+                  hasPricing: pricing.hasPricing,
+                  pricingMode: pricing.pricingMode,
+                }}
               />
             </motion.div>
           )}
