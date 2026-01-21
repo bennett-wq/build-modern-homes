@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { useConfiguratorState } from '@/hooks/useConfiguratorState';
 import { usePricingEngine } from '@/hooks/usePricingEngine';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useToast } from '@/hooks/use-toast';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { ResumePrompt } from '@/components/configurator/ResumePrompt';
@@ -84,10 +83,11 @@ export default function Configurator() {
   } = useConfiguratorState();
   
   const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
-  const { toast } = useToast();
   
   // Track previous model for undo functionality
   const previousModelRef = useRef<string | null>(null);
+  // Track model change for inline feedback (non-blocking)
+  const [modelJustChanged, setModelJustChanged] = useState(false);
   
   // Build buyer-facing pricing flags from full pricing output
   const pricingFlags: BuyerPricingFlags = {
@@ -102,7 +102,7 @@ export default function Configurator() {
   // Only show on steps 4+ when there's meaningful pricing context
   const showPricingRail = currentStep >= 4;
   
-  // Handle model selection - immediate, no blocking confirmation
+  // Handle model selection - immediate, non-blocking inline feedback
   const handleModelSelect = useCallback((modelSlug: string) => {
     const prevSlug = selection.modelSlug;
     const prevModel = prevSlug ? getModelBySlug(prevSlug) : null;
@@ -114,28 +114,24 @@ export default function Configurator() {
     // Immediately update model
     setModelSlug(modelSlug);
     
-    // Show non-blocking toast if changing models
+    // Trigger inline feedback if changing models (no toast)
     if (prevModel && newModel && prevSlug !== modelSlug) {
-      toast({
-        title: 'Model changed',
-        description: `Switched to ${newModel.name}. Price updated.`,
-        action: (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (previousModelRef.current) {
-                setModelSlug(previousModelRef.current);
-              }
-            }}
-          >
-            Undo
-          </Button>
-        ),
-        duration: 5000,
-      });
+      setModelJustChanged(true);
     }
-  }, [selection.modelSlug, setModelSlug, toast]);
+  }, [selection.modelSlug, setModelSlug]);
+  
+  // Undo model change handler
+  const handleUndoModelChange = useCallback(() => {
+    if (previousModelRef.current) {
+      setModelSlug(previousModelRef.current);
+      setModelJustChanged(false);
+    }
+  }, [setModelSlug]);
+  
+  // Clear feedback flag when it's consumed
+  const clearModelChangeFeedback = useCallback(() => {
+    setModelJustChanged(false);
+  }, []);
   
   // Scroll to top on step change
   useEffect(() => {
@@ -353,6 +349,9 @@ export default function Configurator() {
                       onBack={prevStep}
                       includeUtilityFees={selection.includeUtilityFees}
                       includePermitsCosts={selection.includePermitsCosts}
+                      showUpdatedIndicator={modelJustChanged}
+                      onUndo={handleUndoModelChange}
+                      onFeedbackShown={clearModelChangeFeedback}
                     />
                   )}
                 </motion.div>

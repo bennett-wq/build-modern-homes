@@ -86,6 +86,12 @@ interface StepModelProps {
   onBack: () => void;
   includeUtilityFees: boolean;
   includePermitsCosts: boolean;
+  /** Show inline "Updated" indicator in footer */
+  showUpdatedIndicator?: boolean;
+  /** Callback for undo action */
+  onUndo?: () => void;
+  /** Callback when feedback has been shown (to clear parent state) */
+  onFeedbackShown?: () => void;
 }
 
 // ============================================================================
@@ -172,6 +178,9 @@ export function StepModel({
   onBack,
   includeUtilityFees,
   includePermitsCosts,
+  showUpdatedIndicator = false,
+  onUndo,
+  onFeedbackShown,
 }: StepModelProps) {
   // Dev-only: Verify all model hero images are served on mount
   const hasVerified = useRef(false);
@@ -263,12 +272,14 @@ export function StepModel({
       {/* Footer spacer */}
       <WizardFooterSpacer />
       
-      {/* Sticky Footer */}
+      {/* Sticky Footer with inline feedback */}
       <WizardStickyFooter
         onBack={onBack}
         onContinue={onNext}
         canContinue={!!selectedModelSlug}
         continueLabel="Continue to Build Type"
+        showUpdatedIndicator={showUpdatedIndicator}
+        onUndo={onUndo}
       >
         {selectedModel && selectedPrice && (
           <div className="flex items-center gap-3">
