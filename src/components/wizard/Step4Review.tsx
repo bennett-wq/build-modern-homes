@@ -34,13 +34,14 @@ import { Lot } from '@/data/lots/grand-haven';
 import { HomeModel } from '@/data/models';
 import { ExteriorPackage, GarageDoor } from '@/data/packages';
 import { HawthornePackage, HawthorneGarage } from '@/data/hawthorne-exteriors';
+import { BelmontPackage } from '@/data/belmont-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 // Union types for package and garage door
-type AnyPackage = ExteriorPackage | HawthornePackage;
+type AnyPackage = ExteriorPackage | HawthornePackage | BelmontPackage;
 type AnyGarageDoor = GarageDoor | HawthorneGarage;
 
 interface Step4ReviewProps {
