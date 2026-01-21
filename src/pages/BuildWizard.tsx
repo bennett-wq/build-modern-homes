@@ -20,6 +20,7 @@ import { getBelmontPackageById } from '@/data/belmont-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePricingEngine, defaultBuildSelection, type BuildSelection } from '@/hooks/usePricingEngine';
+import { derivePricingMode } from '@/lib/pricing-mode-utils';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
 import { Step2Model } from '@/components/wizard/Step2Model';
 import { Step3Design } from '@/components/wizard/Step3Design';
@@ -111,18 +112,42 @@ export default function BuildWizard() {
         : getGarageDoorById(selection.garageDoorId)) || null 
     : null;
 
+  // Derive correct pricing mode based on context
+  // BuildWizard is always in a BaseMod Community context
+  const derivedPricingMode = useMemo(() => {
+    return derivePricingMode({
+      buildIntent: 'basemod-community',
+      hasLotSelected: selection.lotId !== null,
+      servicePackage: 'delivered_installed', // Default for community
+    });
+  }, [selection.lotId]);
+
   // Build pricing selection for the engine
   const pricingSelection: BuildSelection = useMemo(() => ({
     ...defaultBuildSelection,
     modelSlug: normalizedModelSlug,
     buildType: 'xmod' as const, // Default to XMOD for community wizard
-    pricingMode: 'community_all_in',
+    pricingMode: derivedPricingMode,
     includeUtilityFees: true,
     includePermitsCosts: true,
-  }), [normalizedModelSlug]);
+  }), [normalizedModelSlug, derivedPricingMode]);
 
   // Get pricing from the engine
   const { pricing } = usePricingEngine(pricingSelection);
+
+  // Build selection summary for quote forms
+  const selectionSummary = useMemo(() => ({
+    developmentSlug: development?.slug,
+    developmentName: development?.name,
+    lotId: selection.lotId ?? undefined,
+    lotLabel: selectedLot?.label,
+    modelSlug: normalizedModelSlug ?? undefined,
+    modelName: selectedModel?.name,
+    packageId: selection.packageId ?? undefined,
+    packageName: selectedPackage?.name,
+    garageDoorId: selection.garageDoorId ?? undefined,
+    garageDoorName: selectedGarageDoor?.name,
+  }), [development, selection, selectedLot, selectedModel, selectedPackage, selectedGarageDoor, normalizedModelSlug]);
 
   const goToStep = useCallback((step: number) => {
     if (step < currentStep || step === currentStep) {
@@ -338,6 +363,7 @@ export default function BuildWizard() {
                   hasPricing: pricing.hasPricing,
                   pricingMode: pricing.pricingMode,
                 }}
+                selectionSummary={selectionSummary}
               />
             </motion.div>
           )}
