@@ -15,6 +15,7 @@ import {
   isPhotoBasedModel,
   normalizeModelSlug 
 } from '@/data/hawthorne-exteriors';
+import { getAspenPackageById } from '@/data/aspen-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
@@ -85,13 +86,20 @@ export default function BuildWizard() {
   const normalizedModelSlug = normalizeModelSlug(selection.modelSlug);
   const selectedModel = normalizedModelSlug ? getModelBySlug(normalizedModelSlug) || null : null;
   
-  // Use Hawthorne-specific package/garage data if Hawthorne is selected
-  const isHawthorne = isPhotoBasedModel(selection.modelSlug);
+  // Determine model type for package/garage resolution
+  const isHawthorne = normalizedModelSlug === 'hawthorne';
+  const isAspen = normalizedModelSlug === 'aspen';
+  
+  // Resolve selected package based on model type
   const selectedPackage = selection.packageId 
     ? (isHawthorne 
-        ? getHawthornePackageById(selection.packageId) 
-        : getPackageById(selection.packageId)) || null 
+        ? getHawthornePackageById(selection.packageId)
+        : isAspen 
+          ? getAspenPackageById(selection.packageId)
+          : getPackageById(selection.packageId)) || null 
     : null;
+  
+  // Resolve garage door (Aspen uses standard doors, not Hawthorne-specific)
   const selectedGarageDoor = selection.garageDoorId 
     ? (isHawthorne 
         ? getHawthorneGarageById(selection.garageDoorId) 
