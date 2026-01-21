@@ -70,7 +70,7 @@ export const homeModels: HomeModel[] = [
     baths: 2,
     price: 225000,
     description: "The Laurel is an efficient, thoughtfully designed three-bedroom home with flexible garage options. At 1,065 square feet, the Laurel delivers strong livability in a compact footprint — ideal for first-time buyers, downsizers, and investors seeking an attainable price point without sacrificing quality. Choose from no garage, a two-car garage with two doors, or a two-car garage with a single modern door to match your site and lifestyle.",
-    heroImage: "/images/models/laurel/hero-no-garage.webp",
+    heroImage: "/images/models/laurel/hero-garage-two-door.webp",
     floorplanImage: "/floorplans/laurel/laurel-floorplan.pdf",
   },
   {
