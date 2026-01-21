@@ -112,7 +112,7 @@ export const models: ModelConfig[] = [
     sqft: 1620,
     length: 64,
     buildTypes: ['xmod', 'mod'],
-    heroImage: '/images/models/hawthorne/hawthorne-hero.jpg',
+    heroImage: '/images/models/hawthorne/hero.webp',
     floorPlanPdf: '/floorplans/hawthorne/hawthorne-floorplan.pdf',
     pricing: {
       xmod: {
@@ -163,7 +163,7 @@ export const models: ModelConfig[] = [
     sqft: 1620,
     length: 64,
     buildTypes: ['xmod', 'mod'],
-    heroImage: '/images/models/aspen/aspen-hero.jpg',
+    heroImage: '/images/models/aspen/hero.webp',
     floorPlanPdf: '/floorplans/aspen/aspen-floorplan.pdf',
     pricing: {
       xmod: {
@@ -199,7 +199,7 @@ export const models: ModelConfig[] = [
     sqft: 1620,
     length: 64,
     buildTypes: ['xmod', 'mod'],
-    heroImage: '/images/models/belmont/belmont-hero.jpg',
+    heroImage: '/images/models/belmont/hero.webp',
     floorPlanPdf: '/floorplans/belmont/belmont-floorplan.pdf',
     pricing: {
       xmod: {
@@ -235,6 +235,7 @@ export const models: ModelConfig[] = [
     sqft: 1200,
     length: 48,
     buildTypes: ['xmod', 'mod'],
+    heroImage: '/images/models/laurel/hero.webp',
     pricing: {
       xmod: {
         base_cost: 80500,
@@ -273,7 +274,7 @@ export const models: ModelConfig[] = [
     sqft: 1800,
     length: 58,
     buildTypes: ['xmod'],
-    heroImage: '/images/models/keeneland/keeneland-hero.jpg',
+    heroImage: '/images/models/keeneland/hero.webp',
     floorPlanPdf: '/floorplans/keeneland/keeneland-floorplan.pdf',
     pricing: {
       xmod: {
