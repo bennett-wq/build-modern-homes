@@ -1,8 +1,7 @@
 // Step 4: Review + Get Started - final summary with CTAs
 // Premium polish with proper Dialog handling and financing integration
-import { useState, forwardRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,10 +18,8 @@ import {
   DoorOpen, 
   Share2, 
   Calendar, 
-  ArrowRight,
   Copy,
   Check,
-  Phone,
   CheckCircle,
   DollarSign,
   ShieldCheck,
@@ -39,7 +36,9 @@ import { BelmontPackage } from '@/data/belmont-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import { NextStepCards } from '@/components/quote/QuoteRequestForms';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
+import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +58,7 @@ interface Step4ReviewProps {
   isMobile: boolean;
   buyerFacingBreakdown?: BuyerFacingBreakdown;
   pricingFlags?: BuyerPricingFlags;
+  selectionSummary?: SelectionSummary;
 }
 
 export function Step4Review({
@@ -73,6 +73,7 @@ export function Step4Review({
   isMobile,
   buyerFacingBreakdown,
   pricingFlags,
+  selectionSummary,
 }: Step4ReviewProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -296,36 +297,49 @@ export function Step4Review({
             </Card>
           </motion.div>
 
-          {/* CTA Buttons */}
+          {/* Next Step Conversion Cards */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.2 }}
+          >
+            <NextStepCards
+              selection={selectionSummary || {}}
+              buyerFacingBreakdown={buyerFacingBreakdown}
+              pricingFlags={flags}
+              pricingMode={flags.pricingMode}
+            />
+          </motion.div>
+
+          {/* Secondary CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.2 }}
             className="space-y-3 pt-2"
           >
-            {/* Two equal primary CTAs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 size="lg"
-                className="h-14 text-base font-semibold"
+                variant="outline"
+                className="h-12"
                 onClick={() => setShowScheduleModal(true)}
               >
-                <Calendar className="mr-2 h-5 w-5" />
+                <Calendar className="mr-2 h-4 w-4" />
                 Schedule a Call
               </Button>
 
               <Button
                 size="lg"
-                variant="secondary"
-                className="h-14 text-base font-semibold"
+                variant="outline"
+                className="h-12"
                 onClick={() => setShowFinancingModal(true)}
               >
-                <DollarSign className="mr-2 h-5 w-5" />
+                <DollarSign className="mr-2 h-4 w-4" />
                 Check Financing
               </Button>
             </div>
 
-            {/* Financing trust badge */}
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               <span>Conventional financing available — MH Advantage® & CHOICEHome® eligible</span>
