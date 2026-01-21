@@ -288,6 +288,11 @@ export default function Configurator() {
                         onBack={prevStep}
                         packageId={selection.packageId}
                         garageDoorId={selection.garageDoorId}
+                        zipCode={selection.zipCode}
+                        includeUtilityFees={selection.includeUtilityFees}
+                        includePermitsCosts={selection.includePermitsCosts}
+                        onUtilityFeesChange={setIncludeUtilityFees}
+                        onPermitsCostsChange={setIncludePermitsCosts}
                       />
                     )}
                   </motion.div>

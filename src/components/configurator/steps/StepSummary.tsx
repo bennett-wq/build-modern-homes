@@ -1,13 +1,13 @@
 // ============================================================================
-// Step 7: Summary + CTA
+// Step 8: Summary + CTA
 // Includes exterior design confirmation and pricing confidence
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ChevronDown, ChevronUp, Check, Copy, Home, MapPin, 
-  Search, Building2, Phone, Mail, AlertCircle, Download, Eye, Info
+  Search, Building2, Phone, Mail, AlertCircle, Download, Eye, Info, Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { type ModelConfig, type BuildIntent, exteriorConfig } from '@/data/pricing-config';
 import type { PriceBreakdown, ExteriorSelection } from '@/hooks/usePricingEngine';
@@ -36,6 +37,12 @@ interface StepSummaryProps {
   // New props for unified exterior design confirmation
   packageId?: string | null;
   garageDoorId?: string | null;
+  // Fee toggle props
+  zipCode: string;
+  includeUtilityFees: boolean;
+  includePermitsCosts: boolean;
+  onUtilityFeesChange: (value: boolean) => void;
+  onPermitsCostsChange: (value: boolean) => void;
 }
 
 export function StepSummary({
@@ -49,12 +56,31 @@ export function StepSummary({
   onBack,
   packageId,
   garageDoorId,
+  zipCode,
+  includeUtilityFees,
+  includePermitsCosts,
+  onUtilityFeesChange,
+  onPermitsCostsChange,
 }: StepSummaryProps) {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   const [leadFormOpen, setLeadFormOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
+  
+  // Determine if location is known (has valid ZIP)
+  const hasValidZip = zipCode && zipCode.length === 5;
+  
+  // Set default toggle values based on ZIP presence (only on mount)
+  useEffect(() => {
+    if (!hasValidZip) {
+      // No ZIP = turn off fees by default (preliminary estimate)
+      onUtilityFeesChange(false);
+      onPermitsCostsChange(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
   
   const handleCopyLink = async () => {
     await onCopyLink();
@@ -329,6 +355,76 @@ export function StepSummary({
               </CollapsibleContent>
             </Collapsible>
           </div>
+          
+          {/* Assumptions & Allowances Accordion */}
+          <Collapsible open={assumptionsOpen} onOpenChange={setAssumptionsOpen}>
+            <Card className="border-border/50">
+              <CollapsibleTrigger asChild>
+                <button className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <Settings2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm text-foreground">Assumptions & allowances</span>
+                  </div>
+                  {assumptionsOpen ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0 pb-4 px-4 space-y-4">
+                  {/* Utility Fees Toggle */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="space-y-0.5">
+                      <Label 
+                        htmlFor="utility-fees" 
+                        className="text-sm font-medium text-foreground cursor-pointer"
+                      >
+                        Typical local connection fees (allowance)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Water, sewer, and utility connections
+                      </p>
+                    </div>
+                    <Switch
+                      id="utility-fees"
+                      checked={includeUtilityFees}
+                      onCheckedChange={onUtilityFeesChange}
+                    />
+                  </div>
+                  
+                  <div className="border-t border-border" />
+                  
+                  {/* Permits Toggle */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="space-y-0.5">
+                      <Label 
+                        htmlFor="permits-costs" 
+                        className="text-sm font-medium text-foreground cursor-pointer"
+                      >
+                        Permits & soft costs (allowance)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Building permits and related fees
+                      </p>
+                    </div>
+                    <Switch
+                      id="permits-costs"
+                      checked={includePermitsCosts}
+                      onCheckedChange={onPermitsCostsChange}
+                    />
+                  </div>
+                  
+                  {/* Disclaimer */}
+                  <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+                    These vary by municipality. Final costs confirmed during site review.
+                  </p>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
           
           {/* Pricing Confidence Card */}
           <Card className="border-border/50 bg-muted/30">
