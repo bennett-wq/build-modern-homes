@@ -3,7 +3,7 @@
 // UI STABILIZATION: Clean layout, centered grid, no overflow issues
 // ============================================================================
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Ruler, 
@@ -31,6 +31,7 @@ import {
   type PricingOutput,
 } from '@/hooks/usePricingEngine';
 import { getModelHeroImageBySlug, HERO_PLACEHOLDER } from '@/lib/model-images';
+import { getHeroImageFallbackChain, verifyModelHeroImages } from '@/lib/image-utils';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
 
@@ -172,6 +173,15 @@ export function StepModel({
   includeUtilityFees,
   includePermitsCosts,
 }: StepModelProps) {
+  // Dev-only: Verify all model hero images are served on mount
+  const hasVerified = useRef(false);
+  useEffect(() => {
+    if (!hasVerified.current && import.meta.env.DEV) {
+      hasVerified.current = true;
+      verifyModelHeroImages(models, 'StepModel');
+    }
+  }, []);
+
   // Pre-calculate buyer-facing prices for all models
   const modelPrices = useMemo(() => {
     const prices: Record<string, { price: number; hasPricing: boolean }> = {};
@@ -300,8 +310,15 @@ function ModelCard({
   onSelect: () => void;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const heroImage = model.heroImage || getModelHeroImageBySlug(model.slug);
+  // Build fallback chain: heroImage -> /slug/hero.webp -> /slug/hero.png -> placeholder
+  const fallbackChain = useMemo(
+    () => getHeroImageFallbackChain(model.slug, model.heroImage),
+    [model.slug, model.heroImage]
+  );
+  
+  const currentSrc = fallbackChain[currentImageIndex];
   
   // Badge styling based on variant - enhanced for popular/value
   const getBadgeClasses = (variant: string) => {
@@ -347,7 +364,7 @@ function ModelCard({
         )}
         
         <img
-          src={heroImage}
+          src={currentSrc}
           alt={`${model.name} exterior`}
           loading="lazy"
           decoding="async"
@@ -357,16 +374,17 @@ function ModelCard({
             imageLoaded ? 'opacity-100' : 'opacity-0',
           )}
           onLoad={() => setImageLoaded(true)}
-          onError={(e) => {
-            const target = e.currentTarget;
+          onError={() => {
             // Dev-only warning for missing assets
-            if (process.env.NODE_ENV === 'development' && target.src !== HERO_PLACEHOLDER) {
-              console.warn(`[ModelCard] Hero image missing for "${model.slug}". Expected: ${heroImage}`);
+            if (import.meta.env.DEV && currentSrc !== HERO_PLACEHOLDER) {
+              console.warn(`[ModelCard] Image failed for "${model.slug}": ${currentSrc}`);
             }
-            // Fallback to SVG placeholder (no debug text shown)
-            if (target.src !== HERO_PLACEHOLDER) {
-              target.src = HERO_PLACEHOLDER;
-              setImageLoaded(true); // Show placeholder without layout shift
+            // Try next fallback in chain
+            if (currentImageIndex < fallbackChain.length - 1) {
+              setCurrentImageIndex(prev => prev + 1);
+            } else {
+              // Final fallback reached, show placeholder
+              setImageLoaded(true);
             }
           }}
         />
