@@ -369,7 +369,7 @@ export const exteriorConfig: ExteriorConfig = {
 export const zones: ZoneConfig[] = [
   {
     id: 'zone-3',
-    name: 'Ypsilanti / Washtenaw (Zone 3)',
+    name: 'Regional Baseline (Zone 3)',
     sitework: {
       crane: 8750,
       home_set: 13750,

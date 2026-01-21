@@ -1,6 +1,7 @@
 // ============================================================================
 // Pricing Mode Derivation Utility
 // Derives correct pricing mode from user intent and selection state
+// Includes ZIP-to-Zone mapping for location-based estimates
 // ============================================================================
 
 import type { PricingMode } from '@/data/pricing-layers';
@@ -13,6 +14,74 @@ export interface PricingModeContext {
   buildIntent: BuildIntent | null;
   hasLotSelected: boolean;
   servicePackage?: ServicePackageType;
+}
+
+// ============================================================================
+// ZIP → Zone Mapping
+// ============================================================================
+
+export interface ZipZoneResult {
+  zoneId: string;
+  isKnownZip: boolean;
+  regionLabel: string | null; // e.g., "481xx" for display
+}
+
+/**
+ * Maps a ZIP code to a pricing zone.
+ * Currently all ZIPs map to zone-3 (baseline).
+ * Future: Add actual ZIP prefix → zone mappings.
+ */
+export function getZoneForZip(zip: string): ZipZoneResult {
+  const cleanZip = zip.replace(/\D/g, '').slice(0, 5);
+  
+  // No ZIP provided
+  if (!cleanZip || cleanZip.length < 5) {
+    return {
+      zoneId: 'zone-3',
+      isKnownZip: false,
+      regionLabel: null,
+    };
+  }
+  
+  // Extract ZIP prefix for display (e.g., "48103" → "481xx")
+  const zipPrefix = cleanZip.slice(0, 3);
+  const regionLabel = `${zipPrefix}xx`;
+  
+  // Future: Add actual zone mappings here
+  // const zipPrefixMappings: Record<string, string> = {
+  //   '481': 'zone-3', // Washtenaw
+  //   '482': 'zone-3', // Detroit area
+  //   '483': 'zone-2', // ...etc
+  // };
+  
+  // For now, all valid ZIPs map to zone-3
+  return {
+    zoneId: 'zone-3',
+    isKnownZip: true,
+    regionLabel,
+  };
+}
+
+/**
+ * Determines estimate confidence based on location knowledge
+ */
+export function getLocationConfidence(
+  zipCode: string,
+  locationKnown: boolean | null
+): 'high' | 'medium' | 'low' {
+  // User explicitly said they don't know their location
+  if (locationKnown === false) {
+    return 'low';
+  }
+  
+  // Valid ZIP entered
+  const { isKnownZip } = getZoneForZip(zipCode);
+  if (isKnownZip) {
+    return 'high';
+  }
+  
+  // No location info yet
+  return 'low';
 }
 
 /**

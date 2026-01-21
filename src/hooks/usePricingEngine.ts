@@ -420,11 +420,19 @@ export function calculateFullPricing(
     selection.buildType !== null && 
     (model.pricing[selection.buildType]?.factory_quote_total ?? 0) > 0;
 
-  // Determine estimate confidence
+  // Determine estimate confidence based on multiple factors
   let estimateConfidence: 'high' | 'medium' | 'low' = 'high';
-  if (freightPending) {
+  
+  // Location confidence: if user doesn't know location or no ZIP, lower confidence
+  const hasValidZip = selection.zipCode && selection.zipCode.length === 5;
+  const locationUnknown = selection.locationKnown === false || (!hasValidZip && selection.locationKnown === null);
+  
+  if (locationUnknown) {
+    estimateConfidence = 'low';
+  } else if (freightPending) {
     estimateConfidence = 'medium';
   }
+  
   if (!hasPricing) {
     estimateConfidence = 'low';
   }
