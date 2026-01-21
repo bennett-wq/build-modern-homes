@@ -25,7 +25,9 @@ import {
   ShieldCheck,
   ClipboardCheck,
   Sparkles,
-  MessageCircle
+  MessageCircle,
+  Eye,
+  Info
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
@@ -38,6 +40,7 @@ import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { NextStepCards } from '@/components/quote/QuoteRequestForms';
 import { WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
+import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
@@ -201,7 +204,18 @@ export function Step4Review({
             </Card>
           </motion.div>
 
-          {/* Pricing Section - uses BuyerPricingDisplay */}
+          {/* Exterior Design Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.03, duration: 0.2 }}
+          >
+            <ExteriorPreviewCard
+              modelSlug={model?.slug || null}
+              packageId={package_?.id || null}
+              garageDoorId={garageDoor?.id || null}
+            />
+          </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -425,6 +439,88 @@ function SummaryRow({ icon, label, value, subValue, colorSwatch, badge }: Summar
         {subValue && <p className="text-xs text-muted-foreground mt-0.5">{subValue}</p>}
       </div>
     </div>
+  );
+}
+
+// Exterior Preview Card - shows final exterior render with selection confirmation
+interface ExteriorPreviewCardProps {
+  modelSlug: string | null;
+  packageId: string | null;
+  garageDoorId: string | null;
+}
+
+function ExteriorPreviewCard({ modelSlug, packageId, garageDoorId }: ExteriorPreviewCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const exteriorInfo = getExteriorPreviewInfo(modelSlug, packageId, garageDoorId);
+  
+  // If nothing selected, don't render
+  if (!exteriorInfo.packageName && !exteriorInfo.garageName) {
+    return null;
+  }
+
+  return (
+    <Card className="overflow-hidden shadow-md">
+      <CardContent className="p-0">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Eye className="h-4 w-4 text-accent" />
+            <h3 className="font-semibold text-foreground">Exterior Design</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Your selected look</p>
+        </div>
+        
+        {/* Preview Image */}
+        <div className="relative aspect-video bg-muted">
+          <img
+            src={imageError ? `/images/models/${modelSlug}/${modelSlug}-hero.jpg` : exteriorInfo.imageSrc}
+            alt="Final exterior preview"
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+            <p className="text-xs text-white/80">Final exterior preview</p>
+          </div>
+        </div>
+        
+        {/* Selection Summary */}
+        <div className="px-5 py-4 space-y-3">
+          {exteriorInfo.packageName && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Exterior package</span>
+              <div className="flex items-center gap-2">
+                {exteriorInfo.packageColor && (
+                  <div 
+                    className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                    style={{ backgroundColor: exteriorInfo.packageColor }}
+                  />
+                )}
+                <span className="font-medium text-foreground">{exteriorInfo.packageName}</span>
+              </div>
+            </div>
+          )}
+          {exteriorInfo.garageName && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Garage style</span>
+              <div className="flex items-center gap-2">
+                {exteriorInfo.garageColor && (
+                  <div 
+                    className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                    style={{ backgroundColor: exteriorInfo.garageColor }}
+                  />
+                )}
+                <span className="font-medium text-foreground">{exteriorInfo.garageName}</span>
+                {exteriorInfo.isUpgradeGarage && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    Upgrade
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

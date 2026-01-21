@@ -1,14 +1,17 @@
 // ============================================================================
 // Step 7: Summary + CTA
+// Includes exterior design confirmation and pricing confidence
 // ============================================================================
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ChevronDown, ChevronUp, Check, Copy, Home, MapPin, 
-  Search, Building2, Phone, Mail, AlertCircle, Download 
+  Search, Building2, Phone, Mail, AlertCircle, Download, Eye, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +21,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { type ModelConfig, type BuildIntent, exteriorConfig } from '@/data/pricing-config';
 import type { PriceBreakdown, ExteriorSelection } from '@/hooks/usePricingEngine';
+import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
 import { cn } from '@/lib/utils';
 
 interface StepSummaryProps {
@@ -29,6 +33,9 @@ interface StepSummaryProps {
   formatPrice: (price: number) => string;
   onCopyLink: () => Promise<string>;
   onBack: () => void;
+  // New props for unified exterior design confirmation
+  packageId?: string | null;
+  garageDoorId?: string | null;
 }
 
 export function StepSummary({
@@ -40,10 +47,13 @@ export function StepSummary({
   formatPrice,
   onCopyLink,
   onBack,
+  packageId,
+  garageDoorId,
 }: StepSummaryProps) {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [leadFormOpen, setLeadFormOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
   
   const handleCopyLink = async () => {
@@ -56,9 +66,14 @@ export function StepSummary({
     setTimeout(() => setCopied(false), 2000);
   };
   
+  // Get legacy exterior selections
   const selectedSiding = exteriorConfig.sidingColors.find(c => c.id === exteriorSelection.sidingColorId);
   const selectedShingle = exteriorConfig.shingleColors.find(c => c.id === exteriorSelection.shingleColorId);
   const selectedDoor = exteriorConfig.doorStyles.find(d => d.id === exteriorSelection.doorStyleId);
+  
+  // Get unified exterior preview info (if packageId/garageDoorId are provided)
+  const exteriorInfo = getExteriorPreviewInfo(model.slug, packageId || null, garageDoorId || null);
+  const hasUnifiedExterior = packageId || garageDoorId;
   
   return (
     <div className="space-y-8">
@@ -111,43 +126,108 @@ export function StepSummary({
             </div>
           </div>
           
-          {/* Exterior Selections */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Exterior Style</h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Siding</span>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-5 h-5 rounded border border-border"
-                    style={{ backgroundColor: selectedSiding?.hex }}
-                  />
-                  <span className="font-medium text-foreground">{selectedSiding?.name}</span>
+          {/* Exterior Design Card - Unified (if available) or Legacy */}
+          {hasUnifiedExterior ? (
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-accent" />
+                    <h3 className="font-semibold text-foreground">Exterior Design</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Your selected look</p>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Shingles</span>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-5 h-5 rounded border border-border"
-                    style={{ backgroundColor: selectedShingle?.hex }}
+                
+                {/* Preview Image */}
+                <div className="relative aspect-video bg-muted">
+                  <img
+                    src={imageError ? `/images/models/${model.slug}/${model.slug}-hero.jpg` : exteriorInfo.imageSrc}
+                    alt="Final exterior preview"
+                    className="w-full h-full object-cover"
+                    onError={() => setImageError(true)}
                   />
-                  <span className="font-medium text-foreground">{selectedShingle?.name}</span>
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                    <p className="text-xs text-white/80">Final exterior preview</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Door Style</span>
-                <span className="font-medium text-foreground">{selectedDoor?.name}</span>
-              </div>
-              {exteriorSelection.blackFasciaPackage && (
+                
+                {/* Selection Summary */}
+                <div className="px-5 py-4 space-y-3">
+                  {exteriorInfo.packageName && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Exterior package</span>
+                      <div className="flex items-center gap-2">
+                        {exteriorInfo.packageColor && (
+                          <div 
+                            className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                            style={{ backgroundColor: exteriorInfo.packageColor }}
+                          />
+                        )}
+                        <span className="font-medium text-foreground">{exteriorInfo.packageName}</span>
+                      </div>
+                    </div>
+                  )}
+                  {exteriorInfo.garageName && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Garage style</span>
+                      <div className="flex items-center gap-2">
+                        {exteriorInfo.garageColor && (
+                          <div 
+                            className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                            style={{ backgroundColor: exteriorInfo.garageColor }}
+                          />
+                        )}
+                        <span className="font-medium text-foreground">{exteriorInfo.garageName}</span>
+                        {exteriorInfo.isUpgradeGarage && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            Upgrade
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Exterior Style</h3>
+              
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Black Trim Package</span>
-                  <Check className="w-4 h-4 text-accent" />
+                  <span className="text-muted-foreground">Siding</span>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-5 h-5 rounded border border-border"
+                      style={{ backgroundColor: selectedSiding?.hex }}
+                    />
+                    <span className="font-medium text-foreground">{selectedSiding?.name}</span>
+                  </div>
                 </div>
-              )}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Shingles</span>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-5 h-5 rounded border border-border"
+                      style={{ backgroundColor: selectedShingle?.hex }}
+                    />
+                    <span className="font-medium text-foreground">{selectedShingle?.name}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Door Style</span>
+                  <span className="font-medium text-foreground">{selectedDoor?.name}</span>
+                </div>
+                {exteriorSelection.blackFasciaPackage && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Black Trim Package</span>
+                    <Check className="w-4 h-4 text-accent" />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
           
           {/* Floor Plan Options */}
           {breakdown.floorPlanAdderDetails.length > 0 && (
@@ -250,7 +330,20 @@ export function StepSummary({
             </Collapsible>
           </div>
           
-          {/* CTAs */}
+          {/* Pricing Confidence Card */}
+          <Card className="border-border/50 bg-muted/30">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-sm text-foreground">Estimated price range</h4>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Estimates exclude land and site-specific costs. Final pricing is confirmed after design review.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <div className="space-y-3">
             <Button
               size="lg"

@@ -269,6 +269,8 @@ export default function Configurator() {
                         formatPrice={formatPrice}
                         onCopyLink={copyShareableLink}
                         onBack={prevStep}
+                        packageId={selection.packageId}
+                        garageDoorId={selection.garageDoorId}
                       />
                     )}
                   </motion.div>
