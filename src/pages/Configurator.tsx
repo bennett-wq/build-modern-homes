@@ -24,6 +24,7 @@ import { StepIntent } from '@/components/configurator/steps/StepIntent';
 import { StepLocation } from '@/components/configurator/steps/StepLocation';
 import { StepModel } from '@/components/configurator/steps/StepModel';
 import { StepBuildType } from '@/components/configurator/steps/StepBuildType';
+import { StepServicePackage } from '@/components/configurator/steps/StepServicePackage';
 import { StepFloorPlan } from '@/components/configurator/steps/StepFloorPlan';
 import { Step3Design } from '@/components/wizard/Step3Design';
 import { StepSummary } from '@/components/configurator/steps/StepSummary';
@@ -34,9 +35,10 @@ const STEPS: Step[] = [
   { id: 2, name: 'Location', shortName: 'Location' },
   { id: 3, name: 'Pick Model', shortName: 'Model' },
   { id: 4, name: 'Build Type', shortName: 'Type' },
-  { id: 5, name: 'Floor Plan', shortName: 'Plan' },
-  { id: 6, name: 'Exterior', shortName: 'Exterior' },
-  { id: 7, name: 'Summary', shortName: 'Summary' },
+  { id: 5, name: 'Service Package', shortName: 'Service' },
+  { id: 6, name: 'Floor Plan', shortName: 'Plan' },
+  { id: 7, name: 'Exterior', shortName: 'Exterior' },
+  { id: 8, name: 'Summary', shortName: 'Summary' },
 ];
 
 const stepVariants = {
@@ -57,6 +59,7 @@ export default function Configurator() {
     setIntent,
     setModelSlug,
     setBuildType,
+    setServicePackage,
     setIncludeUtilityFees,
     setIncludePermitsCosts,
     toggleFloorPlanOption,
@@ -235,7 +238,17 @@ export default function Configurator() {
                       />
                     )}
                     
-                    {currentStep === 5 && currentModel && selection.buildType && (
+                    {currentStep === 5 && (
+                      <StepServicePackage
+                        selectedPackage={selection.servicePackage}
+                        onSelectPackage={setServicePackage}
+                        onNext={nextStep}
+                        onBack={prevStep}
+                        hasLotSelected={false}
+                      />
+                    )}
+                    
+                    {currentStep === 6 && currentModel && selection.buildType && (
                       <StepFloorPlan
                         model={currentModel}
                         buildType={selection.buildType}
@@ -246,7 +259,7 @@ export default function Configurator() {
                       />
                     )}
                     
-                    {currentStep === 6 && currentModel && (
+                    {currentStep === 7 && currentModel && (
                       <Step3Design
                         selectedPackageId={selection.packageId}
                         selectedGarageDoorId={selection.garageDoorId}
@@ -259,7 +272,7 @@ export default function Configurator() {
                       />
                     )}
                     
-                    {currentStep === 7 && currentModel && selection.buildType && (
+                    {currentStep === 8 && currentModel && selection.buildType && (
                       <StepSummary
                         model={currentModel}
                         buildType={selection.buildType}

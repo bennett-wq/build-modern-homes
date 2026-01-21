@@ -51,6 +51,8 @@ export interface BuildSelection {
   floorPlanSelections: FloorPlanSelection[];
   exteriorSelection: ExteriorSelection;
   pricingMode?: PricingMode;
+  // Service package selection
+  servicePackage: 'delivered_installed' | 'supply_only' | 'community_all_in';
   // Unified exterior design selections (used by Step3Design)
   packageId: string | null;
   garageDoorId: string | null;
@@ -169,6 +171,7 @@ export const defaultBuildSelection: BuildSelection = {
   floorPlanSelections: [],
   exteriorSelection: defaultExteriorSelection,
   pricingMode: 'delivered_installed',
+  servicePackage: 'delivered_installed',
   packageId: null,
   garageDoorId: null,
 };

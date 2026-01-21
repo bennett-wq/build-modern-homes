@@ -6,22 +6,31 @@
 import type { PricingMode } from '@/data/pricing-layers';
 import type { BuildIntent } from '@/data/pricing-config';
 
+// Canonical service package types
+export type ServicePackageType = 'delivered_installed' | 'supply_only' | 'community_all_in';
+
 export interface PricingModeContext {
   buildIntent: BuildIntent | null;
   hasLotSelected: boolean;
-  servicePackage?: 'delivered_installed' | 'supply_only';
+  servicePackage?: ServicePackageType;
 }
 
 /**
  * Derives the correct pricing mode based on user intent and selection
  * 
  * Rules:
+ * - If servicePackage == "community_all_in" AND a lot is selected => "community_all_in"
  * - If buildIntent == "basemod-community" AND a lot is selected => "community_all_in"
- * - Else if user selected "Delivered & Installed" service package (default) => "delivered_installed"
- * - Else => "supply_only"
+ * - Else if user selected "supply_only" service package => "supply_only"
+ * - Else => "delivered_installed" (default)
  */
 export function derivePricingMode(context: PricingModeContext): PricingMode {
   const { buildIntent, hasLotSelected, servicePackage = 'delivered_installed' } = context;
+  
+  // User explicitly chose community all-in (requires lot)
+  if (servicePackage === 'community_all_in' && hasLotSelected) {
+    return 'community_all_in';
+  }
   
   // Community flow with lot selected = all-in pricing
   if (buildIntent === 'basemod-community' && hasLotSelected) {
