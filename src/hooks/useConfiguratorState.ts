@@ -401,6 +401,15 @@ export function useConfiguratorState() {
     }));
   }, []);
   
+  // Exterior package and garage door setters (for unified Step3Design component)
+  const setPackageId = useCallback((packageId: string | null) => {
+    setSelection(prev => ({ ...prev, packageId }));
+  }, []);
+  
+  const setGarageDoorId = useCallback((garageDoorId: string | null) => {
+    setSelection(prev => ({ ...prev, garageDoorId }));
+  }, []);
+  
   // Get current model from selection
   const currentModel = useMemo(() => {
     return selection.modelSlug ? getModelBySlug(selection.modelSlug) : null;
@@ -472,6 +481,9 @@ export function useConfiguratorState() {
     toggleFloorPlanOption,
     updateExteriorSelection,
     isFloorPlanOptionSelected,
+    // Exterior package/garage setters (unified Step3Design)
+    setPackageId,
+    setGarageDoorId,
     
     // Utilities
     getShareableUrl,

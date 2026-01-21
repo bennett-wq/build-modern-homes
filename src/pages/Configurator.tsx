@@ -25,7 +25,7 @@ import { StepLocation } from '@/components/configurator/steps/StepLocation';
 import { StepModel } from '@/components/configurator/steps/StepModel';
 import { StepBuildType } from '@/components/configurator/steps/StepBuildType';
 import { StepFloorPlan } from '@/components/configurator/steps/StepFloorPlan';
-import { StepExterior } from '@/components/configurator/steps/StepExterior';
+import { Step3Design } from '@/components/wizard/Step3Design';
 import { StepSummary } from '@/components/configurator/steps/StepSummary';
 import { getModelBySlug } from '@/data/pricing-config';
 
@@ -62,6 +62,8 @@ export default function Configurator() {
     toggleFloorPlanOption,
     updateExteriorSelection,
     isFloorPlanOptionSelected,
+    setPackageId,
+    setGarageDoorId,
     copyShareableLink,
     resetBuild,
     // Resume prompt
@@ -245,12 +247,15 @@ export default function Configurator() {
                     )}
                     
                     {currentStep === 6 && currentModel && (
-                      <StepExterior
-                        model={currentModel}
-                        exteriorSelection={selection.exteriorSelection}
-                        onUpdateExterior={updateExteriorSelection}
+                      <Step3Design
+                        selectedPackageId={selection.packageId}
+                        selectedGarageDoorId={selection.garageDoorId}
+                        onSelectPackage={setPackageId}
+                        onSelectGarageDoor={setGarageDoorId}
                         onNext={nextStep}
                         onBack={prevStep}
+                        isMobile={isMobile}
+                        modelSlug={selection.modelSlug}
                       />
                     )}
                     
