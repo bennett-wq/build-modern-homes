@@ -12,7 +12,7 @@ import { useConfiguratorState } from '@/hooks/useConfiguratorState';
 import { usePricingEngine } from '@/hooks/usePricingEngine';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
-import { PricingPanel } from '@/components/configurator/PricingPanel';
+import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { StepIntent } from '@/components/configurator/steps/StepIntent';
 import { StepLocation } from '@/components/configurator/steps/StepLocation';
 import { StepModel } from '@/components/configurator/steps/StepModel';
@@ -58,7 +58,16 @@ export default function Configurator() {
     resetBuild,
   } = useConfiguratorState();
   
-  const { breakdown, formatPrice, model } = usePricingEngine(selection);
+  const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
+  
+  // Build buyer-facing pricing flags from full pricing output
+  const pricingFlags: BuyerPricingFlags = {
+    freightPending: pricing.freightPending,
+    basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
+    estimateConfidence: pricing.estimateConfidence,
+    hasPricing: pricing.hasPricing,
+    pricingMode: pricing.pricingMode,
+  };
   
   // Scroll to top on step change
   useEffect(() => {
@@ -200,18 +209,14 @@ export default function Configurator() {
             </AnimatePresence>
           </div>
           
-          {/* Pricing Panel (Desktop) */}
+          {/* Buyer-Facing Pricing Panel (Desktop) */}
           {!isMobile && (
             <div className="hidden lg:block">
               <div className="sticky top-32">
-                <PricingPanel
-                  breakdown={breakdown}
-                  model={model || null}
-                  formatPrice={formatPrice}
-                  includeUtilityFees={selection.includeUtilityFees}
-                  includePermitsCosts={selection.includePermitsCosts}
-                  onCopyLink={copyShareableLink}
-                  onReset={resetBuild}
+                <BuyerPricingDisplay
+                  breakdown={pricing.buyerFacingBreakdown}
+                  flags={pricingFlags}
+                  variant="full"
                 />
               </div>
             </div>
@@ -221,15 +226,10 @@ export default function Configurator() {
       
       {/* Mobile Pricing Bar */}
       {isMobile && (
-        <PricingPanel
-          breakdown={breakdown}
-          model={model || null}
-          formatPrice={formatPrice}
-          includeUtilityFees={selection.includeUtilityFees}
-          includePermitsCosts={selection.includePermitsCosts}
-          onCopyLink={copyShareableLink}
-          onReset={resetBuild}
-          isMobile
+        <BuyerPricingDisplay
+          breakdown={pricing.buyerFacingBreakdown}
+          flags={pricingFlags}
+          variant="mobile"
         />
       )}
     </div>

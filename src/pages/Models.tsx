@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Home, Ruler, BedDouble, Bath } from "lucide-react";
+import { ArrowRight, Home, Ruler, BedDouble, Bath, AlertCircle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { homeModels } from "@/data/models";
 import { getModelHeroImage } from "@/lib/model-images";
+import { calculateFullPricing, defaultBuildSelection, type BuildSelection } from "@/hooks/usePricingEngine";
+import { getDefaultZone, getModelBySlug, type BuildType } from "@/data/pricing-config";
 
 // Trust chips - same as homepage
 const trustChips = [
@@ -194,7 +197,17 @@ export default function Models() {
   );
 }
 
-// Model Card Component - Premium, scannable
+// Format price helper
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+}
+
+// Model Card Component - Premium, scannable with buyer-facing pricing
 interface ModelCardProps {
   model: typeof homeModels[0];
   index: number;
@@ -204,6 +217,26 @@ function ModelCard({ model, index }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const heroImage = getModelHeroImage(model);
+
+  // Calculate buyer-facing pricing for the model
+  const buyerPricing = useMemo(() => {
+    const pricingModel = getModelBySlug(model.slug);
+    if (!pricingModel) return null;
+
+    // Get the first available build type for "starting from" pricing
+    const buildType: BuildType = pricingModel.buildTypes[0] || 'xmod';
+    
+    const selection: BuildSelection = {
+      ...defaultBuildSelection,
+      modelSlug: model.slug,
+      buildType,
+      includeUtilityFees: false,  // Show base price without optional fees
+      includePermitsCosts: false,
+    };
+    
+    const zone = getDefaultZone();
+    return calculateFullPricing(selection, pricingModel, zone);
+  }, [model.slug]);
 
   return (
     <motion.div
@@ -262,13 +295,29 @@ function ModelCard({ model, index }: ModelCardProps) {
             </span>
           </div>
 
-          {/* Price note */}
-          {model.price && (
-            <p className="text-xs text-muted-foreground mb-4">
-              Starting from ${model.price.toLocaleString()}
-              <span className="ml-1 opacity-70">· excludes land</span>
-            </p>
-          )}
+          {/* Buyer-facing pricing */}
+          <div className="mb-4 space-y-1">
+            {buyerPricing?.hasPricing ? (
+              <>
+                <p className="text-sm font-medium text-foreground">
+                  Starting from {formatPrice(buyerPricing.buyerFacingBreakdown.startingFromPrice)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Delivered & Installed · excludes land
+                </p>
+                {buyerPricing.freightPending && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Freight pending
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Contact for pricing
+              </p>
+            )}
+          </div>
 
           {/* CTA - always visible */}
           <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all duration-200">
