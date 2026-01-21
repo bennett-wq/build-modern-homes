@@ -51,6 +51,9 @@ export interface BuildSelection {
   floorPlanSelections: FloorPlanSelection[];
   exteriorSelection: ExteriorSelection;
   pricingMode?: PricingMode;
+  // Unified exterior design selections (used by Step3Design)
+  packageId: string | null;
+  garageDoorId: string | null;
 }
 
 // Internal cost breakdown (admin view only)
@@ -166,6 +169,8 @@ export const defaultBuildSelection: BuildSelection = {
   floorPlanSelections: [],
   exteriorSelection: defaultExteriorSelection,
   pricingMode: 'delivered_installed',
+  packageId: null,
+  garageDoorId: null,
 };
 
 // ============================================================================
