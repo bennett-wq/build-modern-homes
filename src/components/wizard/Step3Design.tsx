@@ -181,10 +181,10 @@ export function Step3Design({
         'flex-1 overflow-hidden',
         isMobile ? 'flex flex-col' : 'flex'
       )}>
-        {/* Live Preview */}
+        {/* Live Preview - full-bleed hero container */}
         <div className={cn(
-          'bg-gradient-to-b from-muted to-muted/50 flex items-center justify-center p-6 sm:p-8',
-          isMobile ? 'h-56 shrink-0' : 'flex-1'
+          'bg-gradient-to-b from-muted/30 to-muted/10 flex items-center justify-center p-3 sm:p-4',
+          isMobile ? 'h-72 shrink-0' : 'flex-1 min-h-0'
         )}>
           {isKeeneland ? (
             <KeenelandPhotoPreview 
@@ -660,17 +660,15 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full max-w-lg relative"
+      className="w-full h-full flex flex-col"
     >
-      {/* Fixed aspect ratio container - prevents layout jumps */}
-      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
-        {/* Always show the current image (stale-while-revalidate) */}
+      {/* Full-bleed hero container */}
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+        {/* Image fills the container */}
         <img
           src={displayedSrc}
           alt={`Hawthorne exterior with ${packageId || 'default'} package and ${garageId || 'standard'} garage`}
-          className="w-full h-full object-contain"
-          width={640}
-          height={400}
+          className="absolute inset-0 w-full h-full object-cover object-center"
           decoding="async"
           loading="eager"
           onLoad={handleImageLoad}
@@ -694,7 +692,7 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
         </AnimatePresence>
       </div>
       
-      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 mt-3 text-xs text-muted-foreground shrink-0">
         <Eye className="h-3.5 w-3.5" />
         <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
@@ -772,16 +770,16 @@ function AspenPhotoPreview({ packageId }: AspenPhotoPreviewProps) {
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full max-w-lg relative"
+      className="w-full h-full flex flex-col"
     >
-      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
             key={displayedSrc}
             src={displayedSrc}
             alt={`Aspen exterior with ${packageId || 'classic-navy'} package`}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -797,7 +795,7 @@ function AspenPhotoPreview({ packageId }: AspenPhotoPreviewProps) {
         )}
       </div>
       
-      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 mt-3 text-xs text-muted-foreground shrink-0">
         <Eye className="h-3.5 w-3.5" />
         <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
@@ -829,14 +827,15 @@ function ExteriorPreview({ package_, garageDoor }: ExteriorPreviewProps) {
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full max-w-md"
+      className="w-full h-full flex flex-col items-center justify-center max-w-2xl mx-auto"
     >
-      <svg 
-        viewBox="0 0 400 280" 
-        className="w-full h-auto filter drop-shadow-lg"
-        role="img"
-        aria-label="Home exterior preview showing selected colors"
-      >
+      <div className="w-full rounded-xl overflow-hidden shadow-lg bg-gradient-to-b from-sky-100 to-white">
+        <svg 
+          viewBox="0 0 400 280" 
+          className="w-full h-auto"
+          role="img"
+          aria-label="Home exterior preview showing selected colors"
+        >
         {/* Sky/Background */}
         <rect x="0" y="0" width="400" height="280" fill="hsl(200, 30%, 95%)" />
         
@@ -1064,9 +1063,10 @@ function ExteriorPreview({ package_, garageDoor }: ExteriorPreviewProps) {
           animate={{ fill: roof }}
           transition={{ duration: 0.2 }}
         />
-      </svg>
+        </svg>
+      </div>
       
-      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 mt-3 text-xs text-muted-foreground shrink-0">
         <Eye className="h-3.5 w-3.5" />
         <span>Live Preview</span>
       </div>
@@ -1292,16 +1292,16 @@ function BelmontPhotoPreview({ packageId }: BelmontPhotoPreviewProps) {
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full max-w-lg relative"
+      className="w-full h-full flex flex-col"
     >
-      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
             key={displayedSrc}
             src={displayedSrc}
             alt={`Belmont exterior with ${packageId || 'modern-charcoal'} package`}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1317,7 +1317,7 @@ function BelmontPhotoPreview({ packageId }: BelmontPhotoPreviewProps) {
         )}
       </div>
       
-      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 mt-3 text-xs text-muted-foreground shrink-0">
         <Eye className="h-3.5 w-3.5" />
         <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
@@ -1494,16 +1494,16 @@ function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewPro
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full max-w-lg relative"
+      className="w-full h-full flex flex-col"
     >
-      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
             key={displayedSrc}
             src={displayedSrc}
             alt={`Keeneland exterior with ${packageId || 'modern-charcoal'} package and ${garageId || 'standard'} garage`}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1536,7 +1536,7 @@ function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewPro
         </AnimatePresence>
       </div>
       
-      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 mt-3 text-xs text-muted-foreground shrink-0">
         <Eye className="h-3.5 w-3.5" />
         <span>{EXTERIOR_COPY.preview.label}</span>
       </div>
