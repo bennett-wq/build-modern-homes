@@ -47,6 +47,13 @@ function parseUrlParams(searchParams: URLSearchParams): Partial<BuildSelection> 
   const permitsCosts = searchParams.get('permitsCosts');
   if (permitsCosts !== null) partial.includePermitsCosts = permitsCosts === 'true';
   
+  // Parse exterior package/garage selections (unified Step3Design)
+  const packageId = searchParams.get('package');
+  if (packageId) partial.packageId = packageId;
+  
+  const garageDoorId = searchParams.get('garage');
+  if (garageDoorId) partial.garageDoorId = garageDoorId;
+  
   // Parse floor plan selections
   const floorPlan = searchParams.get('floorPlan');
   if (floorPlan) {
@@ -56,7 +63,7 @@ function parseUrlParams(searchParams: URLSearchParams): Partial<BuildSelection> 
     }));
   }
   
-  // Parse exterior selections
+  // Parse legacy exterior selections (siding/shingle/door)
   const siding = searchParams.get('siding');
   const shingle = searchParams.get('shingle');
   const door = searchParams.get('door');
@@ -133,6 +140,10 @@ function generateShareableParams(state: BuildSelection): URLSearchParams {
   if (!state.includeUtilityFees) params.set('utilityFees', 'false');
   if (!state.includePermitsCosts) params.set('permitsCosts', 'false');
   
+  // Exterior package/garage selections (unified Step3Design)
+  if (state.packageId) params.set('package', state.packageId);
+  if (state.garageDoorId) params.set('garage', state.garageDoorId);
+  
   // Floor plan selections
   const selectedFloorPlans = state.floorPlanSelections
     .filter(s => s.selected)
@@ -141,7 +152,7 @@ function generateShareableParams(state: BuildSelection): URLSearchParams {
     params.set('floorPlan', selectedFloorPlans.join(','));
   }
   
-  // Exterior selections (only if different from defaults)
+  // Legacy exterior selections (only if different from defaults)
   const ext = state.exteriorSelection;
   if (ext.sidingColorId !== defaultExteriorSelection.sidingColorId) {
     params.set('siding', ext.sidingColorId);
