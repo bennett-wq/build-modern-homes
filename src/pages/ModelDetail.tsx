@@ -110,36 +110,6 @@ const modelData: Record<string, {
     ],
     foundationType: "Slab or crawl foundation (site-specific)",
   },
-  maple: {
-    tagline: "Expansive living with a flexible bonus room and covered porch.",
-    footprint: "32' x 68'",
-    highlights: [
-      "Expansive kitchen with island",
-      "Covered porch for outdoor living",
-      "Flexible bonus room",
-      "1,950 sq ft of well-designed space",
-    ],
-    layoutOptions: [
-      "Bonus room can be office, playroom, or 4th bedroom",
-      "Open entertaining spaces",
-    ],
-    foundationType: "Basement or slab foundation (site-specific)",
-  },
-  birch: {
-    tagline: "Balanced design with split-bedroom layout and open entertaining spaces.",
-    footprint: "32' x 62'",
-    highlights: [
-      "Split-bedroom layout for privacy",
-      "Open entertaining spaces",
-      "Well-balanced 1,750 sq ft design",
-      "Three bedrooms with two full baths",
-    ],
-    layoutOptions: [
-      "Split-bedroom configuration for added privacy",
-      "Open-concept living and dining",
-    ],
-    foundationType: "Basement or slab foundation (site-specific)",
-  },
 };
 
 // Models with floor plan PDFs available

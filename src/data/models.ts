@@ -2,9 +2,6 @@
 // Each model includes specs and optional hero image
 // Hero images use canonical paths: /images/models/{slug}/hero.webp
 
-import mapleHero from "@/assets/homes/maple-hero.png";
-import birchHero from "@/assets/homes/birch-hero.png";
-
 export interface HomeModel {
   slug: string;
   name: string;
@@ -17,6 +14,7 @@ export interface HomeModel {
   floorplanImage?: string;
 }
 
+// Only real, sellable models with complete assets
 export const homeModels: HomeModel[] = [
   {
     slug: "aspen",
@@ -83,26 +81,6 @@ export const homeModels: HomeModel[] = [
     description: "The Cypress is an efficient 990 sq ft two-bedroom design with a flexible den/office space. At just 16' × 66', it's the most compact CrossMod® option in the BaseMod lineup — ideal for narrow lots, accessory dwelling units, or buyers seeking maximum efficiency without sacrificing quality. The open-concept living area and smart circulation deliver surprising livability in a streamlined footprint.",
     heroImage: "/images/models/cypress/hero-v2.webp",
     floorplanImage: "/floorplans/cypress/cypress-floorplan.pdf",
-  },
-  {
-    slug: "maple",
-    name: "Maple",
-    sqft: 1950,
-    beds: 3,
-    baths: 2.5,
-    price: 305000,
-    description: "Features an expansive kitchen, covered porch, and flexible bonus room.",
-    heroImage: mapleHero,
-  },
-  {
-    slug: "birch",
-    name: "Birch",
-    sqft: 1750,
-    beds: 3,
-    baths: 2,
-    price: 275000,
-    description: "A balanced design with split-bedroom layout and open entertaining spaces.",
-    heroImage: birchHero,
   },
 ];
 
