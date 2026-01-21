@@ -4,10 +4,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, X, FileText, ExternalLink, Info } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, X, FileText, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FloorPlanViewer } from '@/components/FloorPlanViewer';
 import { type ModelConfig, type BuildType, getAvailableFloorPlanOptions } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
 
@@ -205,33 +205,13 @@ export function StepFloorPlan({
         </Button>
       </motion.div>
       
-      {/* Floor Plan Dialog */}
-      <Dialog open={floorPlanOpen} onOpenChange={setFloorPlanOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>{model.name} Floor Plan</DialogTitle>
-          </DialogHeader>
-          <div className="aspect-[4/3] w-full">
-            {model.floorPlanPdf && (
-              <iframe
-                src={model.floorPlanPdf}
-                className="w-full h-full rounded-lg"
-                title={`${model.name} floor plan`}
-              />
-            )}
-          </div>
-          {model.floorPlanPdf && (
-            <div className="flex justify-end">
-              <Button variant="outline" asChild>
-                <a href={model.floorPlanPdf} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open in New Tab
-                </a>
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Floor Plan Viewer - uses react-pdf, no iframe */}
+      <FloorPlanViewer
+        open={floorPlanOpen}
+        onOpenChange={setFloorPlanOpen}
+        pdfUrl={model.floorPlanPdf}
+        modelName={model.name}
+      />
     </div>
   );
 }
