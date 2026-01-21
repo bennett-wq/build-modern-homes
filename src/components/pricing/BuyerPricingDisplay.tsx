@@ -34,6 +34,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { InlineInclusionsAccordion } from './InclusionsAccordion';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { PricingMode } from '@/data/pricing-layers';
 
@@ -475,6 +476,11 @@ export function BuyerPricingDisplay({
             </div>
           </CollapsibleContent>
         </Collapsible>
+      )}
+      
+      {/* What's Included / Not Included Accordions */}
+      {flags.hasPricing && (
+        <InlineInclusionsAccordion />
       )}
       
       {/* Disclaimers */}
