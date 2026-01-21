@@ -11,6 +11,7 @@ export interface ModelPricing {
   freight: number;
   mhi_dues: number;
   factory_quote_total: number;
+  freightPending?: boolean; // True if freight cost is not yet confirmed
 }
 
 export interface FloorPlanOption {
@@ -114,7 +115,20 @@ export const models: ModelConfig[] = [
     heroImage: '/images/models/hawthorne/hawthorne-hero.jpg',
     floorPlanPdf: '/floorplans/hawthorne/hawthorne-floorplan.pdf',
     pricing: {
-      // Pricing pending - placeholder for flow
+      xmod: {
+        base_cost: 94200,
+        options_adjustment: -1902,
+        freight: 4754,
+        mhi_dues: 35,
+        factory_quote_total: 97087,
+      },
+      mod: {
+        base_cost: 100700,
+        options_adjustment: -1857,
+        freight: 5312,
+        mhi_dues: 35,
+        factory_quote_total: 104190,
+      },
     },
     floorPlanOptions: [
       {
@@ -223,18 +237,20 @@ export const models: ModelConfig[] = [
     buildTypes: ['xmod', 'mod'],
     pricing: {
       xmod: {
-        base_cost: 80030,
+        base_cost: 80500,
         options_adjustment: 0,
-        freight: 0, // Freight pending
+        freight: 0,
         mhi_dues: 35,
-        factory_quote_total: 80065,
+        factory_quote_total: 80535,
+        freightPending: true,
       },
       mod: {
-        base_cost: 87000,
+        base_cost: 87500,
         options_adjustment: 0,
-        freight: 0, // Freight pending
+        freight: 0,
         mhi_dues: 35,
-        factory_quote_total: 87035,
+        factory_quote_total: 87535,
+        freightPending: true,
       },
     },
     pricingSource: 'Ballpark estimate - freight pending',

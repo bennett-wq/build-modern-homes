@@ -1,6 +1,6 @@
 // ============================================================================
 // BaseMod Pricing Engine Hook
-// Real-time price calculation based on user selections
+// Real-time price calculation with internal costs and buyer-facing retail prices
 // ============================================================================
 
 import { useMemo, useCallback } from 'react';
@@ -14,6 +14,14 @@ import {
   getPlygremUpgradePrice,
   exteriorConfig,
 } from '@/data/pricing-config';
+import {
+  type PricingMode,
+  type MarkupConfig,
+  pricingLayerConfig,
+  applyMarkup,
+  getMarkupAmount,
+  buyerPackageLabels,
+} from '@/data/pricing-layers';
 
 // ============================================================================
 // TYPES
@@ -42,16 +50,17 @@ export interface BuildSelection {
   includePermitsCosts: boolean;
   floorPlanSelections: FloorPlanSelection[];
   exteriorSelection: ExteriorSelection;
+  pricingMode?: PricingMode;
 }
 
-export interface PriceBreakdown {
+// Internal cost breakdown (admin view only)
+export interface InternalCostBreakdown {
   // Factory pricing
   baseCost: number;
   optionsAdjustment: number;
   freight: number;
   mhiDues: number;
   factoryTotal: number;
-  freightPending: boolean;
 
   // BaseMod sitework
   crane: number;
@@ -73,9 +82,67 @@ export interface PriceBreakdown {
 
   // Totals
   homeAndSiteworkTotal: number;
-  allInEstimateTotal: number;
+  allInCostTotal: number;
+}
 
-  // Meta
+// Buyer-facing price breakdown (no cost-plus visible)
+export interface BuyerFacingBreakdown {
+  // Packaged prices (what buyers see)
+  homePackagePrice: number;        // BaseMod Home Package
+  installPackagePrice: number;     // Professional Installation
+  communityAdder: number;          // Community & Land (only for community_all_in)
+  optionsUpgradesTotal: number;    // Floor plan + exterior adders
+  feesPermitsTotal: number;        // Utility fees + permits
+
+  // Line item details for options
+  optionDetails: { name: string; price: number }[];
+
+  // Grand total
+  startingFromPrice: number;
+
+  // Labels for display
+  labels: typeof buyerPackageLabels;
+}
+
+// Combined pricing output
+export interface PricingOutput {
+  // Meta flags
+  hasPricing: boolean;
+  freightPending: boolean;
+  basementSelectedRequiresQuote: boolean;
+  estimateConfidence: 'high' | 'medium' | 'low';
+  pricingSource?: string;
+  pricingMode: PricingMode;
+
+  // Internal costs (admin only - do not expose to buyers)
+  internalCostBreakdown: InternalCostBreakdown;
+
+  // Buyer-facing prices (safe to show)
+  buyerFacingBreakdown: BuyerFacingBreakdown;
+}
+
+// Legacy type for backward compatibility
+export interface PriceBreakdown {
+  baseCost: number;
+  optionsAdjustment: number;
+  freight: number;
+  mhiDues: number;
+  factoryTotal: number;
+  freightPending: boolean;
+  crane: number;
+  homeSet: number;
+  deliverySetupTotal: number;
+  onSitePortionTotal: number;
+  basemodSiteworkTotal: number;
+  utilityAuthorityFees: number;
+  permitsAndSoftCosts: number;
+  optionalFeesTotal: number;
+  floorPlanAddersTotal: number;
+  floorPlanAdderDetails: { name: string; price: number }[];
+  exteriorAddersTotal: number;
+  exteriorAdderDetails: { name: string; price: number }[];
+  homeAndSiteworkTotal: number;
+  allInEstimateTotal: number;
   hasPricing: boolean;
   pricingSource?: string;
 }
@@ -98,24 +165,24 @@ export const defaultBuildSelection: BuildSelection = {
   includePermitsCosts: true,
   floorPlanSelections: [],
   exteriorSelection: defaultExteriorSelection,
+  pricingMode: 'delivered_installed',
 };
 
 // ============================================================================
 // PRICING ENGINE
 // ============================================================================
 
-export function calculatePriceBreakdown(
+function calculateInternalCosts(
   selection: BuildSelection,
   model: ModelConfig | null,
   zone: ZoneConfig
-): PriceBreakdown {
-  const emptyBreakdown: PriceBreakdown = {
+): InternalCostBreakdown & { freightPending: boolean } {
+  const empty: InternalCostBreakdown & { freightPending: boolean } = {
     baseCost: 0,
     optionsAdjustment: 0,
     freight: 0,
     mhiDues: 0,
     factoryTotal: 0,
-    freightPending: false,
     crane: 0,
     homeSet: 0,
     deliverySetupTotal: 0,
@@ -129,20 +196,17 @@ export function calculatePriceBreakdown(
     exteriorAddersTotal: 0,
     exteriorAdderDetails: [],
     homeAndSiteworkTotal: 0,
-    allInEstimateTotal: 0,
-    hasPricing: false,
+    allInCostTotal: 0,
+    freightPending: false,
   };
 
   if (!model || !selection.buildType) {
-    return emptyBreakdown;
+    return empty;
   }
 
   const buildType = selection.buildType;
   const pricing = model.pricing[buildType];
-
-  // Check if we have factory pricing
-  const hasPricing = !!pricing && pricing.factory_quote_total > 0;
-  const freightPending = pricing?.freight === 0;
+  const freightPending = pricing?.freightPending ?? (pricing?.freight === 0);
 
   // Factory pricing
   const baseCost = pricing?.base_cost ?? 0;
@@ -169,14 +233,10 @@ export function calculatePriceBreakdown(
 
   model.floorPlanOptions.forEach((option) => {
     if (!option.available) return;
-    
-    // Check if option is selected
     const selected = selection.floorPlanSelections.find(
       (s) => s.optionId === option.id && s.selected
     );
-    
     if (selected) {
-      // Check if option applies to current build type
       if (!option.buildTypes || option.buildTypes.includes(buildType)) {
         floorPlanAdderDetails.push({ name: option.name, price: option.price });
         floorPlanAddersTotal += option.price;
@@ -244,7 +304,7 @@ export function calculatePriceBreakdown(
 
   // Calculate totals
   const homeAndSiteworkTotal = factoryTotal + basemodSiteworkTotal + floorPlanAddersTotal + exteriorAddersTotal;
-  const allInEstimateTotal = homeAndSiteworkTotal + optionalFeesTotal;
+  const allInCostTotal = homeAndSiteworkTotal + optionalFeesTotal;
 
   return {
     baseCost,
@@ -252,7 +312,6 @@ export function calculatePriceBreakdown(
     freight,
     mhiDues,
     factoryTotal,
-    freightPending,
     crane,
     homeSet,
     deliverySetupTotal,
@@ -266,9 +325,146 @@ export function calculatePriceBreakdown(
     exteriorAddersTotal,
     exteriorAdderDetails,
     homeAndSiteworkTotal,
-    allInEstimateTotal,
+    allInCostTotal,
+    freightPending,
+  };
+}
+
+function calculateBuyerFacingPrices(
+  internalCosts: InternalCostBreakdown,
+  pricingMode: PricingMode,
+  markups: MarkupConfig = pricingLayerConfig.defaults
+): BuyerFacingBreakdown {
+  const modeConfig = pricingLayerConfig.modes[pricingMode];
+
+  // Factory cost for markup = base factory total + adders
+  const factoryCostForMarkup = internalCosts.factoryTotal + 
+    internalCosts.floorPlanAddersTotal + 
+    internalCosts.exteriorAddersTotal;
+
+  // Home package = factory cost with dealer markup
+  const homePackagePrice = modeConfig.appliesDealer
+    ? applyMarkup(factoryCostForMarkup, markups.dealerMarkupPct)
+    : factoryCostForMarkup;
+
+  // Install package = sitework with installer markup
+  const installPackagePrice = modeConfig.appliesInstaller
+    ? applyMarkup(internalCosts.basemodSiteworkTotal, markups.installerMarkupPct)
+    : 0;
+
+  // Community adder = developer markup on subtotal
+  const subtotalBeforeDeveloper = homePackagePrice + installPackagePrice;
+  const communityAdder = modeConfig.appliesDeveloper
+    ? getMarkupAmount(subtotalBeforeDeveloper, markups.developerMarkupPct)
+    : 0;
+
+  // Options/upgrades - shown as line items (already included in homePackagePrice)
+  // We calculate the retail value of upgrades for display
+  const optionsUpgradesTotal = modeConfig.appliesDealer
+    ? applyMarkup(internalCosts.floorPlanAddersTotal + internalCosts.exteriorAddersTotal, markups.dealerMarkupPct)
+    : internalCosts.floorPlanAddersTotal + internalCosts.exteriorAddersTotal;
+
+  // Combine option details with marked-up prices
+  const optionDetails = [
+    ...internalCosts.floorPlanAdderDetails,
+    ...internalCosts.exteriorAdderDetails,
+  ].map((detail) => ({
+    name: detail.name,
+    price: modeConfig.appliesDealer ? applyMarkup(detail.price, markups.dealerMarkupPct) : detail.price,
+  }));
+
+  // Fees pass through without markup
+  const feesPermitsTotal = internalCosts.optionalFeesTotal;
+
+  // Grand total
+  const startingFromPrice = homePackagePrice + installPackagePrice + communityAdder + feesPermitsTotal;
+
+  return {
+    homePackagePrice,
+    installPackagePrice,
+    communityAdder,
+    optionsUpgradesTotal,
+    feesPermitsTotal,
+    optionDetails,
+    startingFromPrice,
+    labels: buyerPackageLabels,
+  };
+}
+
+export function calculateFullPricing(
+  selection: BuildSelection,
+  model: ModelConfig | null,
+  zone: ZoneConfig
+): PricingOutput {
+  const pricingMode = selection.pricingMode || 'delivered_installed';
+  const internalCostsWithFreight = calculateInternalCosts(selection, model, zone);
+  const { freightPending, ...internalCostBreakdown } = internalCostsWithFreight;
+
+  const hasPricing = model !== null && 
+    selection.buildType !== null && 
+    (model.pricing[selection.buildType]?.factory_quote_total ?? 0) > 0;
+
+  // Determine estimate confidence
+  let estimateConfidence: 'high' | 'medium' | 'low' = 'high';
+  if (freightPending) {
+    estimateConfidence = 'medium';
+  }
+  if (!hasPricing) {
+    estimateConfidence = 'low';
+  }
+
+  // Check for basement selection (would require custom quote)
+  const basementSelectedRequiresQuote = false; // TODO: add basement detection if needed
+
+  const buyerFacingBreakdown = calculateBuyerFacingPrices(
+    internalCostBreakdown,
+    pricingMode
+  );
+
+  return {
     hasPricing,
-    pricingSource: model.pricingSource,
+    freightPending,
+    basementSelectedRequiresQuote,
+    estimateConfidence,
+    pricingSource: model?.pricingSource,
+    pricingMode,
+    internalCostBreakdown,
+    buyerFacingBreakdown,
+  };
+}
+
+// Legacy function for backward compatibility
+export function calculatePriceBreakdown(
+  selection: BuildSelection,
+  model: ModelConfig | null,
+  zone: ZoneConfig
+): PriceBreakdown {
+  const output = calculateFullPricing(selection, model, zone);
+  const ic = output.internalCostBreakdown;
+
+  return {
+    baseCost: ic.baseCost,
+    optionsAdjustment: ic.optionsAdjustment,
+    freight: ic.freight,
+    mhiDues: ic.mhiDues,
+    factoryTotal: ic.factoryTotal,
+    freightPending: output.freightPending,
+    crane: ic.crane,
+    homeSet: ic.homeSet,
+    deliverySetupTotal: ic.deliverySetupTotal,
+    onSitePortionTotal: ic.onSitePortionTotal,
+    basemodSiteworkTotal: ic.basemodSiteworkTotal,
+    utilityAuthorityFees: ic.utilityAuthorityFees,
+    permitsAndSoftCosts: ic.permitsAndSoftCosts,
+    optionalFeesTotal: ic.optionalFeesTotal,
+    floorPlanAddersTotal: ic.floorPlanAddersTotal,
+    floorPlanAdderDetails: ic.floorPlanAdderDetails,
+    exteriorAddersTotal: ic.exteriorAddersTotal,
+    exteriorAdderDetails: ic.exteriorAdderDetails,
+    homeAndSiteworkTotal: ic.homeAndSiteworkTotal,
+    allInEstimateTotal: ic.allInCostTotal + ic.optionalFeesTotal,
+    hasPricing: output.hasPricing,
+    pricingSource: output.pricingSource,
   };
 }
 
@@ -287,6 +483,13 @@ export function usePricingEngine(selection: BuildSelection) {
     []
   );
 
+  // Full pricing output (new API)
+  const pricing = useMemo(
+    () => calculateFullPricing(selection, model, zone),
+    [selection, model, zone]
+  );
+
+  // Legacy breakdown for backward compatibility
   const breakdown = useMemo(
     () => calculatePriceBreakdown(selection, model, zone),
     [selection, model, zone]
@@ -304,7 +507,8 @@ export function usePricingEngine(selection: BuildSelection) {
   return {
     model,
     zone,
-    breakdown,
+    breakdown,        // Legacy API
+    pricing,          // New full pricing API
     formatPrice,
   };
 }
