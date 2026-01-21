@@ -37,6 +37,7 @@ import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { NextStepCards } from '@/components/quote/QuoteRequestForms';
+import { WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
@@ -345,6 +346,9 @@ export function Step4Review({
               <span>Conventional financing available — MH Advantage® & CHOICEHome® eligible</span>
             </div>
           </motion.div>
+
+          {/* Footer spacer for scroll safety */}
+          <WizardFooterSpacer className="h-8" />
         </div>
       </div>
 

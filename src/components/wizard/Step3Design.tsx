@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, ArrowRight, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle } from 'lucide-react';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { EXTERIOR_COPY, getPackageDescription, getGarageDescription } from '@/content/exteriorMicrocopy';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
 import { getDevelopmentBySlug } from '@/data/developments';
@@ -307,6 +308,8 @@ export function Step3Design({
                   ))
                 )}
               </div>
+              {/* Safe bottom padding for sticky footer */}
+              <WizardFooterSpacer />
             </TabsContent>
 
             <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0">
@@ -354,89 +357,65 @@ export function Step3Design({
                   ))
                 )}
               </div>
+              {/* Safe bottom padding for sticky footer */}
+              <WizardFooterSpacer />
             </TabsContent>
           </Tabs>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 sm:px-6 py-4 border-t border-border bg-card shrink-0">
-        <AnimatePresence mode="wait">
-          {canProceed ? (
-            <motion.div
-              key="proceed"
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                {selectedPackage && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                    <div 
-                      className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                      style={{ 
-                        backgroundColor: 'swatches' in selectedPackage 
-                          ? selectedPackage.swatches[0] 
-                          : 'primaryColor' in selectedPackage 
-                            ? selectedPackage.primaryColor 
-                            : selectedPackage.sidingColor 
-                      }}
-                    />
-                    <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
-                      {selectedPackage.name}
-                    </span>
-                  </div>
-                )}
-                {selectedDoor && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                    <div 
-                      className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                      style={{ 
-                        backgroundColor: 'color' in selectedDoor 
-                          ? selectedDoor.color 
-                          : 'swatches' in selectedDoor && selectedDoor.swatches 
-                            ? selectedDoor.swatches[0] 
-                            : '#666666'
-                      }}
-                    />
-                    <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
-                      {selectedDoor.name}
-                    </span>
-                    {'isUpgrade' in selectedDoor && selectedDoor.isUpgrade && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        Upgrade
-                      </Badge>
-                    )}
-                  </div>
+      {/* Sticky Footer */}
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={onNext}
+        canContinue={!!canProceed}
+        continueLabel="Review Your Build"
+      >
+        {/* Selection summary */}
+        {(selectedPackage || selectedDoor) && (
+          <div className="flex items-center gap-3">
+            {selectedPackage && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                <div 
+                  className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                  style={{ 
+                    backgroundColor: 'swatches' in selectedPackage 
+                      ? selectedPackage.swatches[0] 
+                      : 'primaryColor' in selectedPackage 
+                        ? selectedPackage.primaryColor 
+                        : selectedPackage.sidingColor 
+                  }}
+                />
+                <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                  {selectedPackage.name}
+                </span>
+              </div>
+            )}
+            {selectedDoor && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                <div 
+                  className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                  style={{ 
+                    backgroundColor: 'color' in selectedDoor 
+                      ? selectedDoor.color 
+                      : 'swatches' in selectedDoor && selectedDoor.swatches 
+                        ? selectedDoor.swatches[0] 
+                        : '#666666'
+                  }}
+                />
+                <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                  {selectedDoor.name}
+                </span>
+                {'isUpgrade' in selectedDoor && selectedDoor.isUpgrade && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    Upgrade
+                  </Badge>
                 )}
               </div>
-              <Button 
-                onClick={onNext} 
-                className="shrink-0"
-              >
-                {EXTERIOR_COPY.footer.cta}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="incomplete"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-2"
-            >
-              <p className="text-muted-foreground text-sm">
-                Select {!selectedPackageId && EXTERIOR_COPY.footer.incomplete.package}
-                {!selectedPackageId && !selectedGarageDoorId && EXTERIOR_COPY.footer.incomplete.connector}
-                {!selectedGarageDoorId && EXTERIOR_COPY.footer.incomplete.garage}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            )}
+          </div>
+        )}
+      </WizardStickyFooter>
 
       {/* Financing Modal */}
       <FinancingModal

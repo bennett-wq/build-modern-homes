@@ -6,8 +6,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, 
-  ArrowLeft, 
   Ruler, 
   BedDouble, 
   Bath, 
@@ -18,8 +16,8 @@ import {
   Sparkles,
   Users,
   Info,
+  Home,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { 
   models, 
   type ModelConfig, 
@@ -33,6 +31,7 @@ import {
   type PricingOutput,
 } from '@/hooks/usePricingEngine';
 import { getModelHeroImageBySlug } from '@/lib/model-images';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -247,42 +246,30 @@ export function StepModel({
         })}
       </div>
       
-      {/* Navigation Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="flex items-center justify-between pt-4 border-t border-border"
+      {/* Footer spacer */}
+      <WizardFooterSpacer />
+      
+      {/* Sticky Footer */}
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={onNext}
+        canContinue={!!selectedModelSlug}
+        continueLabel="Continue to Build Type"
       >
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-4">
-            {selectedModel && selectedPrice && (
-              <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{selectedModel.name}</span>
-                <span>•</span>
-                <span className="text-foreground font-semibold">{formatPrice(selectedPrice.price)}</span>
-              </div>
-            )}
-            <Button
-              size="lg"
-              onClick={onNext}
-              disabled={!selectedModelSlug}
-              className="min-w-[180px]"
-            >
-              Continue to Build Type
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+        {selectedModel && selectedPrice && (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <Home className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">{selectedModel.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatPrice(selectedPrice.price)}
+              </p>
+            </div>
           </div>
-          <span className="text-xs text-muted-foreground/70">
-            You can change this later.
-          </span>
-        </div>
-      </motion.div>
+        )}
+      </WizardStickyFooter>
     </div>
   );
 }
