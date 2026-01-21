@@ -69,6 +69,10 @@ export default function Configurator() {
     setGarageDoorId,
     copyShareableLink,
     resetBuild,
+    // Location setters
+    setZipCode,
+    setAddress,
+    setLocationKnown,
     // Resume prompt
     showResumePrompt,
     pendingResumeState,
@@ -340,12 +344,13 @@ export default function Configurator() {
                   
                   {currentStep === 2 && (
                     <StepLocation
-                      zoneId={selection.zoneId}
-                      includeUtilityFees={selection.includeUtilityFees}
-                      includePermitsCosts={selection.includePermitsCosts}
-                      onZoneChange={() => {}}
-                      onUtilityFeesChange={setIncludeUtilityFees}
-                      onPermitsCostsChange={setIncludePermitsCosts}
+                      buildIntent={selection.intent}
+                      zipCode={selection.zipCode}
+                      address={selection.address}
+                      locationKnown={selection.locationKnown}
+                      onZipCodeChange={setZipCode}
+                      onAddressChange={setAddress}
+                      onLocationKnownChange={setLocationKnown}
                       onNext={nextStep}
                       onBack={prevStep}
                     />

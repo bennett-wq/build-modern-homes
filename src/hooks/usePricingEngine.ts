@@ -56,6 +56,10 @@ export interface BuildSelection {
   // Unified exterior design selections (used by Step3Design)
   packageId: string | null;
   garageDoorId: string | null;
+  // Location fields (Step 2)
+  zipCode: string;
+  address: string;
+  locationKnown: boolean | null; // null = not answered, true = known, false = "I don't know yet"
 }
 
 // Internal cost breakdown (admin view only)
@@ -174,6 +178,10 @@ export const defaultBuildSelection: BuildSelection = {
   servicePackage: 'delivered_installed',
   packageId: null,
   garageDoorId: null,
+  // Location fields
+  zipCode: '',
+  address: '',
+  locationKnown: null,
 };
 
 // ============================================================================

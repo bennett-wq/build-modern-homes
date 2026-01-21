@@ -82,6 +82,18 @@ function parseUrlParams(searchParams: URLSearchParams): Partial<BuildSelection> 
     };
   }
   
+  // Parse location fields
+  const zipCode = searchParams.get('zip');
+  if (zipCode) partial.zipCode = zipCode;
+  
+  const address = searchParams.get('address');
+  if (address) partial.address = address;
+  
+  const locationKnown = searchParams.get('locationKnown');
+  if (locationKnown !== null) {
+    partial.locationKnown = locationKnown === 'true' ? true : locationKnown === 'false' ? false : null;
+  }
+  
   return partial;
 }
 
@@ -166,6 +178,11 @@ function generateShareableParams(state: BuildSelection): URLSearchParams {
   if (ext.blackFasciaPackage) params.set('fascia', 'true');
   if (ext.blackExteriorDoorCount > 0) params.set('blackDoors', String(ext.blackExteriorDoorCount));
   if (ext.stormDoorCount > 0) params.set('stormDoors', String(ext.stormDoorCount));
+  
+  // Location fields
+  if (state.zipCode) params.set('zip', state.zipCode);
+  if (state.address) params.set('address', state.address);
+  if (state.locationKnown !== null) params.set('locationKnown', String(state.locationKnown));
   
   return params;
 }
@@ -426,6 +443,19 @@ export function useConfiguratorState() {
     setSelection(prev => ({ ...prev, servicePackage }));
   }, []);
   
+  // Location setters (Step 2)
+  const setZipCode = useCallback((zipCode: string) => {
+    setSelection(prev => ({ ...prev, zipCode }));
+  }, []);
+  
+  const setAddress = useCallback((address: string) => {
+    setSelection(prev => ({ ...prev, address }));
+  }, []);
+  
+  const setLocationKnown = useCallback((locationKnown: boolean | null) => {
+    setSelection(prev => ({ ...prev, locationKnown }));
+  }, []);
+  
   // Get current model from selection
   const currentModel = useMemo(() => {
     return selection.modelSlug ? getModelBySlug(selection.modelSlug) : null;
@@ -501,6 +531,10 @@ export function useConfiguratorState() {
     // Exterior package/garage setters (unified Step3Design)
     setPackageId,
     setGarageDoorId,
+    // Location setters (Step 2)
+    setZipCode,
+    setAddress,
+    setLocationKnown,
     
     // Utilities
     getShareableUrl,
