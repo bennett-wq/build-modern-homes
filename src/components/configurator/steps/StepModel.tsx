@@ -68,6 +68,10 @@ const modelMeta: Record<string, ModelMeta> = {
     badge: { label: 'Most Affordable', icon: DollarSign, variant: 'affordable' },
     descriptor: 'Attainable price, quality construction',
   },
+  cypress: {
+    badge: { label: 'Most Compact', icon: Home, variant: 'value' },
+    descriptor: 'Efficient two-bedroom design with a flexible den',
+  },
 };
 
 // ============================================================================
