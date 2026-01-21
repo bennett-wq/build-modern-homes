@@ -20,6 +20,12 @@ import {
   HawthornePackage,
   HawthorneGarage 
 } from '@/data/hawthorne-exteriors';
+import { 
+  aspenPackages, 
+  getAspenPackageImage,
+  getAspenHeroImage,
+  AspenPackage 
+} from '@/data/aspen-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
@@ -58,9 +64,15 @@ export function Step3Design({
   const arbReadyPackages = development?.arbReadyPackages;
   const isArbCommunity = arbReadyPackages && arbReadyPackages.length > 0;
   
+  // Determine model type for package/garage selection
+  const isAspen = normalizedModel === 'aspen';
+  const isHawthorne = normalizedModel === 'hawthorne';
+  
   // Get the appropriate packages/garages based on model
-  const allPackages = usePhotoPreview ? hawthornePackages : exteriorPackages;
-  const garages = usePhotoPreview ? hawthorneGarages : garageDoors;
+  const allPackages = isAspen 
+    ? aspenPackages 
+    : (isHawthorne ? hawthornePackages : exteriorPackages);
+  const garages = isHawthorne ? hawthorneGarages : garageDoors;
   
   // Filter packages if development has ARB restrictions
   const packages = isArbCommunity 
@@ -133,7 +145,9 @@ export function Step3Design({
           'bg-gradient-to-b from-muted to-muted/50 flex items-center justify-center p-6 sm:p-8',
           isMobile ? 'h-56 shrink-0' : 'flex-1'
         )}>
-          {usePhotoPreview ? (
+          {isAspen ? (
+            <AspenPhotoPreview packageId={selectedPackageId} />
+          ) : isHawthorne ? (
             <HawthornePhotoPreview
               packageId={selectedPackageId}
               garageId={selectedGarageDoorId}
@@ -181,7 +195,16 @@ export function Step3Design({
 
             <TabsContent value="package" className="flex-1 overflow-auto p-4 mt-0">
               <div className="grid gap-3">
-                {usePhotoPreview ? (
+                {isAspen ? (
+                  aspenPackages.map((pkg) => (
+                    <AspenPackageCard
+                      key={pkg.id}
+                      package_={pkg}
+                      isSelected={pkg.id === selectedPackageId}
+                      onSelect={() => handleSelectPackage(pkg.id)}
+                    />
+                  ))
+                ) : isHawthorne ? (
                   hawthornePackages.map((pkg) => (
                     <HawthornePackageCard
                       key={pkg.id}
@@ -205,7 +228,17 @@ export function Step3Design({
 
             <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0">
               <div className="grid gap-3">
-                {usePhotoPreview ? (
+                {isAspen ? (
+                  // Aspen doesn't have photo-based garage variants - use standard doors
+                  garageDoors.map((door) => (
+                    <GarageDoorCard
+                      key={door.id}
+                      door={door}
+                      isSelected={door.id === selectedGarageDoorId}
+                      onSelect={() => onSelectGarageDoor(door.id)}
+                    />
+                  ))
+                ) : isHawthorne ? (
                   hawthorneGarages.map((door) => (
                     <HawthorneGarageCard
                       key={door.id}
@@ -605,6 +638,109 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
   );
 }
 
+// Photo-based preview for Aspen model with crossfade transitions
+interface AspenPhotoPreviewProps {
+  packageId: string | null;
+}
+
+function AspenPhotoPreview({ packageId }: AspenPhotoPreviewProps) {
+  const [displayedSrc, setDisplayedSrc] = useState<string>(getAspenHeroImage());
+  const [isLoading, setIsLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(true);
+  const preloadCacheRef = useRef<Set<string>>(new Set());
+  
+  // Target image based on package selection
+  const targetImage = useMemo(() => getAspenPackageImage(packageId), [packageId]);
+  
+  // Preload all Aspen package images once
+  useEffect(() => {
+    aspenPackages.forEach((pkg) => {
+      if (!preloadCacheRef.current.has(pkg.previewImage)) {
+        const img = new Image();
+        img.onload = () => preloadCacheRef.current.add(pkg.previewImage);
+        img.src = pkg.previewImage;
+      }
+    });
+  }, []);
+  
+  // Handle package changes with crossfade
+  useEffect(() => {
+    if (targetImage === displayedSrc) return;
+    
+    // Check if already preloaded
+    if (preloadCacheRef.current.has(targetImage)) {
+      setDisplayedSrc(targetImage);
+      return;
+    }
+    
+    // Load new image with transition
+    setIsLoading(true);
+    const img = new Image();
+    img.onload = () => {
+      preloadCacheRef.current.add(targetImage);
+      setDisplayedSrc(targetImage);
+      setIsLoading(false);
+    };
+    img.onerror = () => {
+      // Silent fallback to hero
+      if (import.meta.env.DEV) {
+        console.warn(`[Aspen] Failed to load: ${targetImage}`);
+      }
+      setDisplayedSrc(getAspenHeroImage());
+      setIsLoading(false);
+    };
+    img.src = targetImage;
+  }, [targetImage, displayedSrc]);
+  
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+  
+  const handleImageError = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.warn(`[Aspen] Image element error: ${displayedSrc}`);
+    }
+    setDisplayedSrc(getAspenHeroImage());
+  }, [displayedSrc]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0.8, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="w-full max-w-lg relative"
+    >
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-lg overflow-hidden shadow-lg">
+        {/* Crossfade container */}
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={displayedSrc}
+            src={displayedSrc}
+            alt={`Aspen exterior with ${packageId || 'classic-navy'} package`}
+            className="w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        </AnimatePresence>
+        
+        {/* Subtle loading skeleton */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-muted animate-pulse" />
+        )}
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+        <Eye className="h-3.5 w-3.5" />
+        <span>Photo Preview</span>
+      </div>
+    </motion.div>
+  );
+}
+
 // Live exterior preview SVG - for non-Hawthorne models
 interface ExteriorPreviewProps {
   package_?: ExteriorPackage;
@@ -882,6 +1018,78 @@ interface HawthornePackageCardProps {
 }
 
 function HawthornePackageCard({ package_, isSelected, onSelect }: HawthornePackageCardProps) {
+  return (
+    <Card
+      className={cn(
+        'cursor-pointer transition-all duration-200',
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        isSelected 
+          ? 'ring-2 ring-accent border-accent shadow-md' 
+          : 'hover:border-accent/40 hover:shadow-sm'
+      )}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={isSelected}
+      aria-label={`Select ${package_.name} exterior package`}
+    >
+      <CardContent className="p-3 flex items-center gap-3">
+        {/* Color swatches */}
+        <div className="flex gap-1">
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.primaryColor }}
+            title="Primary"
+          />
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.secondaryColor }}
+            title="Secondary"
+          />
+          <div 
+            className="w-8 h-8 rounded-md border border-border shadow-sm"
+            style={{ backgroundColor: package_.accentColor }}
+            title="Accent"
+          />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-foreground text-sm">{package_.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{package_.description}</p>
+        </div>
+        
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Package card for Aspen model
+interface AspenPackageCardProps {
+  package_: AspenPackage;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function AspenPackageCard({ package_, isSelected, onSelect }: AspenPackageCardProps) {
   return (
     <Card
       className={cn(

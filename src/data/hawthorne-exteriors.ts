@@ -127,7 +127,7 @@ export function getHawthorneGarageById(id: string): HawthorneGarage | undefined 
 export function isPhotoBasedModel(modelSlug: string | null | undefined): boolean {
   // Normalize "hawthorn" to "hawthorne" for backward compatibility
   const normalized = normalizeModelSlug(modelSlug);
-  return normalized === 'hawthorne';
+  return normalized === 'hawthorne' || normalized === 'aspen';
 }
 
 // Normalize model slug (handle "hawthorn" vs "hawthorne")
