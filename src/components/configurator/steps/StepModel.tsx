@@ -345,6 +345,8 @@ function ModelCard({
         <img
           src={heroImage}
           alt={`${model.name} exterior`}
+          loading="lazy"
+          decoding="async"
           className={cn(
             'w-full h-full object-cover transition-all duration-500',
             'group-hover:scale-[1.02]',
@@ -352,10 +354,15 @@ function ModelCard({
           )}
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
-            // Single fallback to SVG placeholder
             const target = e.currentTarget;
+            // Dev-only warning for missing assets
+            if (process.env.NODE_ENV === 'development' && target.src !== HERO_PLACEHOLDER) {
+              console.warn(`[ModelCard] Hero image missing for "${model.slug}". Expected: ${heroImage}`);
+            }
+            // Fallback to SVG placeholder (no debug text shown)
             if (target.src !== HERO_PLACEHOLDER) {
               target.src = HERO_PLACEHOLDER;
+              setImageLoaded(true); // Show placeholder without layout shift
             }
           }}
         />

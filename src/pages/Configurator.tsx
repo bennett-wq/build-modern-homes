@@ -8,7 +8,7 @@
 // - Steps 4-7 (Build Type, Floor Plan, Exterior, Summary): Two-column with pricing rail
 // ============================================================================
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Home } from 'lucide-react';
@@ -16,10 +16,10 @@ import { Button } from '@/components/ui/button';
 import { useConfiguratorState } from '@/hooks/useConfiguratorState';
 import { usePricingEngine } from '@/hooks/usePricingEngine';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { ResumePrompt } from '@/components/configurator/ResumePrompt';
-import { ModelChangeConfirm } from '@/components/configurator/ModelChangeConfirm';
 import { StepIntent } from '@/components/configurator/steps/StepIntent';
 import { StepLocation } from '@/components/configurator/steps/StepLocation';
 import { StepModel } from '@/components/configurator/steps/StepModel';
@@ -84,13 +84,10 @@ export default function Configurator() {
   } = useConfiguratorState();
   
   const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
+  const { toast } = useToast();
   
-  // Model change confirmation state
-  const [pendingModelChange, setPendingModelChange] = useState<{
-    newSlug: string;
-    newName: string;
-    previousName: string;
-  } | null>(null);
+  // Track previous model for undo functionality
+  const previousModelRef = useRef<string | null>(null);
   
   // Build buyer-facing pricing flags from full pricing output
   const pricingFlags: BuyerPricingFlags = {
@@ -105,37 +102,40 @@ export default function Configurator() {
   // Only show on steps 4+ when there's meaningful pricing context
   const showPricingRail = currentStep >= 4;
   
-  // Handle model selection with change confirmation
+  // Handle model selection - immediate, no blocking confirmation
   const handleModelSelect = useCallback((modelSlug: string) => {
-    // Check if this is a change from a preselected model
-    if (isModelChangeFromPreselected(modelSlug)) {
-      const newModel = getModelBySlug(modelSlug);
-      const prevModel = preselectedModel ? getModelBySlug(preselectedModel) : null;
-      
-      if (newModel && prevModel) {
-        setPendingModelChange({
-          newSlug: modelSlug,
-          newName: newModel.name,
-          previousName: prevModel.name,
-        });
-        return;
-      }
-    }
+    const prevSlug = selection.modelSlug;
+    const prevModel = prevSlug ? getModelBySlug(prevSlug) : null;
+    const newModel = getModelBySlug(modelSlug);
     
-    // No confirmation needed, proceed
+    // Store previous for undo
+    previousModelRef.current = prevSlug;
+    
+    // Immediately update model
     setModelSlug(modelSlug);
-  }, [isModelChangeFromPreselected, preselectedModel, setModelSlug]);
-  
-  const confirmModelChange = useCallback(() => {
-    if (pendingModelChange) {
-      setModelSlug(pendingModelChange.newSlug);
+    
+    // Show non-blocking toast if changing models
+    if (prevModel && newModel && prevSlug !== modelSlug) {
+      toast({
+        title: 'Model changed',
+        description: `Switched to ${newModel.name}. Price updated.`,
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (previousModelRef.current) {
+                setModelSlug(previousModelRef.current);
+              }
+            }}
+          >
+            Undo
+          </Button>
+        ),
+        duration: 5000,
+      });
     }
-    setPendingModelChange(null);
-  }, [pendingModelChange, setModelSlug]);
-  
-  const cancelModelChange = useCallback(() => {
-    setPendingModelChange(null);
-  }, []);
+  }, [selection.modelSlug, setModelSlug, toast]);
   
   // Scroll to top on step change
   useEffect(() => {
@@ -212,14 +212,6 @@ export default function Configurator() {
             <div className={isMobile ? '' : 'grid lg:grid-cols-[1fr_360px] gap-8'}>
               {/* Step Content */}
               <div className={isMobile ? 'pb-24' : ''}>
-                {/* Model Change Confirmation */}
-                <ModelChangeConfirm
-                  isOpen={!!pendingModelChange}
-                  previousModelName={pendingModelChange?.previousName || ''}
-                  newModelName={pendingModelChange?.newName || ''}
-                  onConfirm={confirmModelChange}
-                  onCancel={cancelModelChange}
-                />
                 
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -321,14 +313,6 @@ export default function Configurator() {
           ) : (
             // Single-column centered layout for steps 1-3
             <div className="max-w-4xl mx-auto">
-              {/* Model Change Confirmation */}
-              <ModelChangeConfirm
-                isOpen={!!pendingModelChange}
-                previousModelName={pendingModelChange?.previousName || ''}
-                newModelName={pendingModelChange?.newName || ''}
-                onConfirm={confirmModelChange}
-                onCancel={cancelModelChange}
-              />
               
               <AnimatePresence mode="wait">
                 <motion.div
