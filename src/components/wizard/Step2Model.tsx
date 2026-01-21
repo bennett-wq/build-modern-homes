@@ -5,14 +5,32 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Home, BedDouble, Bath, Maximize, FileText, Check, ShieldCheck } from 'lucide-react';
+import { BedDouble, Bath, Maximize, FileText, Check, ShieldCheck, Home as HomeIcon } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
+import { getModelHeroImage } from '@/lib/model-images';
 import { cn } from '@/lib/utils';
+
+/**
+ * Premium placeholder for model cards when hero image fails to load
+ * Displays branded gradient with architectural pattern
+ */
+function PremiumPlaceholder({ modelName }: { modelName: string }) {
+  return (
+    <div className="w-full h-full bg-gradient-to-br from-muted via-muted to-muted-foreground/5 flex flex-col items-center justify-center gap-2">
+      <div className="w-16 h-16 rounded-full bg-background/60 flex items-center justify-center shadow-inner">
+        <HomeIcon className="w-8 h-8 text-muted-foreground/40" />
+      </div>
+      <span className="text-xs text-muted-foreground/60 font-medium">
+        {modelName}
+      </span>
+    </div>
+  );
+}
 
 interface Step2ModelProps {
   selectedModelSlug: string | null;
@@ -118,7 +136,7 @@ export function Step2Model({
         {selectedModel && (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Home className="h-5 w-5 text-accent" />
+              <HomeIcon className="h-5 w-5 text-accent" />
             </div>
             <div>
               <p className="font-semibold text-foreground">The {selectedModel.name}</p>
@@ -151,6 +169,10 @@ interface ModelCardProps {
 
 function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
+  // Use canonical hero image path from model-images utility
+  const heroImage = getModelHeroImage(model);
 
   return (
     <Card 
@@ -173,16 +195,16 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
       aria-pressed={isSelected}
       aria-label={`Select The ${model.name} - ${model.sqft} square feet, ${model.beds} bedrooms, ${model.baths} bathrooms`}
     >
-      {/* Image with skeleton loading */}
-      <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-        {/* Skeleton */}
-        {!imageLoaded && model.heroImage && (
-          <div className="absolute inset-0 bg-muted animate-pulse" />
+      {/* Image with skeleton loading - aspect-video for premium 16:9 feel */}
+      <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
+        {/* Loading skeleton - no layout shift */}
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
         )}
         
-        {model.heroImage ? (
+        {!imageError ? (
           <img 
-            src={model.heroImage} 
+            src={heroImage} 
             alt={`The ${model.name} home exterior`}
             className={cn(
               'w-full h-full object-cover transition-all duration-500',
@@ -190,12 +212,11 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
               imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
             onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Home className="h-12 w-12 text-muted-foreground/30" />
-          </div>
+          <PremiumPlaceholder modelName={model.name} />
         )}
         
         {/* Selection indicator - pointer-events-none so it never blocks clicks */}

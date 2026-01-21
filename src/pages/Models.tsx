@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Home, Ruler, BedDouble, Bath, AlertCircle } from "lucide-react";
+import { ArrowRight, Home as HomeIcon, Ruler, BedDouble, Bath, AlertCircle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
@@ -147,7 +147,7 @@ export default function Models() {
             className="aspect-square bg-muted rounded-xl flex items-center justify-center border border-border order-1 lg:order-2"
           >
             <div className="text-center text-muted-foreground">
-              <Home size={64} className="mx-auto mb-4 opacity-30" />
+              <HomeIcon size={64} className="mx-auto mb-4 opacity-30" />
               <p className="text-sm">CrossMod® Construction Diagram</p>
             </div>
           </motion.div>
@@ -254,12 +254,12 @@ function ModelCard({ model, index }: ModelCardProps) {
       transition={{ duration: 0.5, delay: index * 0.08 }}
     >
       <div className="group bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all duration-200">
-        {/* Image Container - Links to detail */}
+        {/* Image Container - Links to detail - aspect-video for premium 16:9 feel */}
         <Link to={`/models/${model.slug}`}>
-          <div className="aspect-[4/3] bg-muted overflow-hidden relative">
+          <div className="aspect-video bg-muted overflow-hidden relative rounded-t-xl">
             {/* Skeleton loader */}
             {!imageLoaded && !imageError && (
-              <div className="absolute inset-0 skeleton-shimmer" />
+              <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
             )}
             
             {!imageError ? (
@@ -273,8 +273,13 @@ function ModelCard({ model, index }: ModelCardProps) {
                 onError={() => setImageError(true)}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <Home className="w-12 h-12 text-muted-foreground/30" />
+              <div className="w-full h-full bg-gradient-to-br from-muted via-muted to-muted-foreground/5 flex flex-col items-center justify-center gap-2">
+                <div className="w-16 h-16 rounded-full bg-background/60 flex items-center justify-center shadow-inner">
+                  <HomeIcon className="w-8 h-8 text-muted-foreground/40" />
+                </div>
+                <span className="text-xs text-muted-foreground/60 font-medium">
+                  {model.name}
+                </span>
               </div>
             )}
           </div>

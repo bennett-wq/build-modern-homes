@@ -1,6 +1,12 @@
 import { HomeModel } from "@/data/models";
 
 /**
+ * Premium placeholder fallback for when no image is available
+ * Used as ultimate fallback in all model card contexts
+ */
+export const MODEL_PLACEHOLDER = "/placeholder.svg";
+
+/**
  * Get the canonical hero image URL for a model.
  * Single source of truth for hero images across the app:
  * - /models grid cards
@@ -9,12 +15,12 @@ import { HomeModel } from "@/data/models";
  * 
  * Resolution order:
  * 1. model.heroImage if defined
- * 2. Convention-based path: /images/models/{slug}/{slug}-hero.jpg
+ * 2. Convention-based path: /images/models/{slug}/hero.webp
  * 3. Placeholder fallback
  */
 export function getModelHeroImage(model: HomeModel | null | undefined): string {
   if (!model) {
-    return "/placeholder.svg";
+    return MODEL_PLACEHOLDER;
   }
 
   // 1. Use explicit heroImage if defined
@@ -22,21 +28,34 @@ export function getModelHeroImage(model: HomeModel | null | undefined): string {
     return model.heroImage;
   }
 
-  // 2. Convention-based path
-  const slug = model.slug;
-  return `/images/models/${slug}/${slug}-hero.jpg`;
+  // 2. Convention-based path using canonical hero.webp naming
+  const slug = normalizeModelSlug(model.slug);
+  return `/images/models/${slug}/hero.webp`;
+}
+
+/**
+ * Normalize model slugs for consistent path resolution
+ */
+function normalizeModelSlug(slug: string): string {
+  return slug === "hawthorn" ? "hawthorne" : slug;
 }
 
 /**
  * Get hero image URL by slug (for cases where full model object isn't available)
  */
 export function getModelHeroImageBySlug(slug: string): string {
-  // Normalize slug (handle "hawthorn" -> "hawthorne")
-  const normalizedSlug = slug === "hawthorn" ? "hawthorne" : slug;
-  return `/images/models/${normalizedSlug}/${normalizedSlug}-hero.jpg`;
+  const normalizedSlug = normalizeModelSlug(slug);
+  return `/images/models/${normalizedSlug}/hero.webp`;
 }
 
 /**
- * Placeholder fallback for when no image is available
+ * Fallback chain for model images - returns array of paths to try in order
  */
-export const MODEL_PLACEHOLDER = "/placeholder.svg";
+export function getModelImageFallbacks(slug: string): string[] {
+  const normalizedSlug = normalizeModelSlug(slug);
+  return [
+    `/images/models/${normalizedSlug}/hero.webp`,
+    `/images/models/${normalizedSlug}/${normalizedSlug}-hero.jpg`,
+    MODEL_PLACEHOLDER,
+  ];
+}
