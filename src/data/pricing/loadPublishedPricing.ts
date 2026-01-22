@@ -52,7 +52,11 @@ export async function loadPublishedPricing(): Promise<PricingConfigData | null> 
       return null;
     }
 
-    return rawConfig;
+    // Add effective_at to the config for display purposes
+    return {
+      ...rawConfig,
+      effectiveAt: data.effective_at || data.created_at,
+    };
   } catch (err) {
     if (import.meta.env.DEV) {
       console.warn('[loadPublishedPricing] Exception:', err);

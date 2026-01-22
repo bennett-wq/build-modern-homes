@@ -86,6 +86,8 @@ export interface PricingConfigData {
   markups: MarkupConfig;
   pricingModes: Record<PricingMode, PricingModeConfig>;
   disclaimers: DisclaimersConfig;
+  /** ISO timestamp when this config became effective (from DB) */
+  effectiveAt?: string;
 }
 
 /**
