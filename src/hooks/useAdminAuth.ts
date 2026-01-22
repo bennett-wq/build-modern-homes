@@ -1,64 +1,99 @@
 // ============================================================================
 // Admin Authentication Hook
-// Manages admin login state and access control
+// Manages admin/builder login state and role-based access control
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
+export type AppRole = 'admin' | 'builder';
+
 interface AdminAuthState {
   user: User | null;
   session: Session | null;
+  role: AppRole | null;
   isAdmin: boolean;
+  isBuilder: boolean;
+  hasAccess: boolean; // admin OR builder
   isLoading: boolean;
   error: string | null;
 }
 
 interface UseAdminAuthReturn extends AdminAuthState {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  checkAdminStatus: () => Promise<boolean>;
+  checkRole: () => Promise<AppRole | null>;
 }
 
 export function useAdminAuth(): UseAdminAuthReturn {
   const [state, setState] = useState<AdminAuthState>({
     user: null,
     session: null,
+    role: null,
     isAdmin: false,
+    isBuilder: false,
+    hasAccess: false,
     isLoading: true,
     error: null,
   });
 
-  // Check if the current user is an admin
-  const checkAdminStatus = useCallback(async (): Promise<boolean> => {
+  // Check user's role from user_roles table
+  const checkRole = useCallback(async (): Promise<AppRole | null> => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      return false;
+      return null;
     }
 
     try {
-      const { data, error } = await supabase
+      // First check user_roles table (new RBAC system)
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!roleError && roleData?.role) {
+        return roleData.role as AppRole;
+      }
+
+      // Fallback: check legacy admin_users table for backwards compatibility
+      const { data: legacyData, error: legacyError } = await supabase
         .from('admin_users')
         .select('user_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) {
-        if (import.meta.env.DEV) {
-          console.warn('[useAdminAuth] Admin check error:', error.message);
-        }
-        return false;
+      if (!legacyError && legacyData) {
+        // User is in legacy admin_users table, treat as admin
+        return 'admin';
       }
 
-      return !!data;
+      return null;
     } catch (err) {
       if (import.meta.env.DEV) {
-        console.error('[useAdminAuth] Admin check exception:', err);
+        console.error('[useAdminAuth] Role check exception:', err);
       }
-      return false;
+      return null;
     }
+  }, []);
+
+  // Update state based on role
+  const updateStateWithRole = useCallback((role: AppRole | null) => {
+    const isAdmin = role === 'admin';
+    const isBuilder = role === 'builder';
+    const hasAccess = isAdmin || isBuilder;
+    
+    setState(prev => ({
+      ...prev,
+      role,
+      isAdmin,
+      isBuilder,
+      hasAccess,
+      isLoading: false,
+    }));
   }, []);
 
   // Initialize auth state
@@ -72,14 +107,14 @@ export function useAdminAuth(): UseAdminAuthReturn {
           user: session?.user ?? null,
         }));
 
-        // Defer admin check to avoid deadlock
+        // Defer role check to avoid deadlock
         if (session?.user) {
           setTimeout(async () => {
-            const isAdmin = await checkAdminStatus();
-            setState(prev => ({ ...prev, isAdmin, isLoading: false }));
+            const role = await checkRole();
+            updateStateWithRole(role);
           }, 0);
         } else {
-          setState(prev => ({ ...prev, isAdmin: false, isLoading: false }));
+          updateStateWithRole(null);
         }
       }
     );
@@ -93,15 +128,15 @@ export function useAdminAuth(): UseAdminAuthReturn {
       }));
 
       if (session?.user) {
-        const isAdmin = await checkAdminStatus();
-        setState(prev => ({ ...prev, isAdmin, isLoading: false }));
+        const role = await checkRole();
+        updateStateWithRole(role);
       } else {
         setState(prev => ({ ...prev, isLoading: false }));
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [checkAdminStatus]);
+  }, [checkRole, updateStateWithRole]);
 
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -118,16 +153,19 @@ export function useAdminAuth(): UseAdminAuthReturn {
       }
 
       if (data.user) {
-        const isAdmin = await checkAdminStatus();
+        const role = await checkRole();
         
-        if (!isAdmin) {
-          // Sign out if not an admin
+        if (!role) {
+          // Sign out if not authorized
           await supabase.auth.signOut();
           const errorMsg = 'Access restricted. You are not authorized to access the admin console.';
           setState(prev => ({ 
             ...prev, 
             isLoading: false, 
+            role: null,
             isAdmin: false,
+            isBuilder: false,
+            hasAccess: false,
             user: null,
             session: null,
             error: errorMsg,
@@ -138,7 +176,10 @@ export function useAdminAuth(): UseAdminAuthReturn {
         setState(prev => ({ 
           ...prev, 
           isLoading: false, 
-          isAdmin: true,
+          role,
+          isAdmin: role === 'admin',
+          isBuilder: role === 'builder',
+          hasAccess: true,
           user: data.user,
           session: data.session,
         }));
@@ -153,12 +194,43 @@ export function useAdminAuth(): UseAdminAuthReturn {
     }
   };
 
+  const signUp = async (email: string, password: string): Promise<{ error: string | null }> => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      const redirectUrl = `${window.location.origin}/admin/pricing`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+
+      if (error) {
+        setState(prev => ({ ...prev, isLoading: false, error: error.message }));
+        return { error: error.message };
+      }
+
+      setState(prev => ({ ...prev, isLoading: false }));
+      return { error: null };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Sign up failed';
+      setState(prev => ({ ...prev, isLoading: false, error: errorMsg }));
+      return { error: errorMsg };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setState({
       user: null,
       session: null,
+      role: null,
       isAdmin: false,
+      isBuilder: false,
+      hasAccess: false,
       isLoading: false,
       error: null,
     });
@@ -167,7 +239,8 @@ export function useAdminAuth(): UseAdminAuthReturn {
   return {
     ...state,
     signIn,
+    signUp,
     signOut,
-    checkAdminStatus,
+    checkRole,
   };
 }

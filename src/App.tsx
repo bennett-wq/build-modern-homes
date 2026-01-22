@@ -22,6 +22,7 @@ import Configurator from "./pages/Configurator";
 import QuoteSummary from "./pages/QuoteSummary";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminPricing from "./pages/admin/AdminPricing";
+import AdminUsers from "./pages/admin/AdminUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
           {/* Admin routes (not in public nav) */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/pricing" element={<AdminPricing />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
