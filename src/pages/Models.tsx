@@ -1,17 +1,15 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Home as HomeIcon, Ruler, BedDouble, Bath, AlertCircle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { homeModels } from "@/data/models";
-import { getModelHeroImage, HERO_PLACEHOLDER } from "@/lib/model-images";
-import { getHeroImageFallbackChain, verifyModelHeroImages } from "@/lib/image-utils";
-import { calculateFullPricing, defaultBuildSelection, type BuildSelection } from "@/hooks/usePricingEngine";
-import { getDefaultZone, getModelBySlug, type BuildType } from "@/data/pricing-config";
-import { getPricingModeLabel } from "@/lib/pricing-mode-utils";
+import { HERO_PLACEHOLDER } from "@/lib/model-images";
+import { getHeroImageFallbackChain } from "@/lib/image-utils";
+// New canonical pricing engine
+import { getStartingFromPrice, getPricingModeLabel } from "@/data/pricing";
 
 // Trust chips - same as homepage
 const trustChips = [
@@ -224,27 +222,9 @@ function ModelCard({ model, index }: ModelCardProps) {
   
   const currentSrc = fallbackChain[currentImageIndex];
 
-  // Calculate buyer-facing pricing for the model
-  // Uses delivered_installed as default teaser pricing mode
-  const buyerPricing = useMemo(() => {
-    const pricingModel = getModelBySlug(model.slug);
-    if (!pricingModel) return null;
-
-    // Get the first available build type for "starting from" pricing
-    const buildType: BuildType = pricingModel.buildTypes[0] || 'xmod';
-    
-    // Use delivered_installed as the default pricing mode for /models teasers
-    const selection: BuildSelection = {
-      ...defaultBuildSelection,
-      modelSlug: model.slug,
-      buildType,
-      pricingMode: 'delivered_installed', // Canonical default for model cards
-      includeUtilityFees: false,  // Show base price without optional fees
-      includePermitsCosts: false,
-    };
-    
-    const zone = getDefaultZone();
-    return calculateFullPricing(selection, pricingModel, zone);
+  // Calculate buyer-facing pricing using new canonical calculator
+  const priceResult = useMemo(() => {
+    return getStartingFromPrice(model.slug);
   }, [model.slug]);
 
   const handleGetQuote = (e: React.MouseEvent) => {
@@ -320,15 +300,15 @@ function ModelCard({ model, index }: ModelCardProps) {
 
           {/* Buyer-facing pricing */}
           <div className="mb-4 space-y-1">
-            {buyerPricing?.hasPricing ? (
+            {priceResult.total !== null ? (
               <>
                 <p className="text-sm font-medium text-foreground">
-                  Starting from {formatPrice(buyerPricing.buyerFacingBreakdown.startingFromPrice)}
+                  Starting from {formatPrice(priceResult.total)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {getPricingModeLabel(buyerPricing.pricingMode)}
+                  {getPricingModeLabel(priceResult.pricingMode)}
                 </p>
-                {buyerPricing.freightPending && (
+                {priceResult.freightPending && (
                   <p className="text-xs text-amber-600 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     Freight pending

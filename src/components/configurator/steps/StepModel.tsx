@@ -18,19 +18,13 @@ import {
   Info,
   Home,
 } from 'lucide-react';
+// Use canonical pricing engine
 import { 
-  models, 
-  type ModelConfig, 
-  type BuildType, 
-  getDefaultZone,
-} from '@/data/pricing-config';
-import { 
-  calculateFullPricing, 
-  defaultBuildSelection, 
-  defaultExteriorSelection,
-  type PricingOutput,
-} from '@/hooks/usePricingEngine';
-import { getModelHeroImageBySlug, HERO_PLACEHOLDER } from '@/lib/model-images';
+  MODELS, 
+  getStartingFromPrice,
+  type ModelConfig,
+} from '@/data/pricing';
+import { HERO_PLACEHOLDER } from '@/lib/model-images';
 import { getHeroImageFallbackChain, verifyModelHeroImages } from '@/lib/image-utils';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
@@ -95,66 +89,17 @@ interface StepModelProps {
 }
 
 // ============================================================================
-// UNIFIED PRICING HELPER
-// Uses the same buyerFacingBreakdown logic as the pricing rail
+// UNIFIED PRICING HELPER - Uses canonical pricing engine
 // ============================================================================
 
-function getBuyerFacingStartingPrice(
-  model: ModelConfig,
-  includeUtilityFees: boolean,
-  includePermitsCosts: boolean
-): {
+function getModelPriceForCard(modelSlug: string): {
   price: number;
   hasPricing: boolean;
-  buildType: BuildType;
-  pricingOutput: PricingOutput | null;
 } {
-  const zone = getDefaultZone();
-  let lowestPrice = Infinity;
-  let hasPricing = false;
-  let bestBuildType: BuildType = model.buildTypes[0];
-  let bestPricingOutput: PricingOutput | null = null;
-  
-  for (const buildType of model.buildTypes) {
-    const selection = {
-      ...defaultBuildSelection,
-      modelSlug: model.slug,
-      buildType,
-      includeUtilityFees,
-      includePermitsCosts,
-      exteriorSelection: defaultExteriorSelection,
-      pricingMode: 'delivered_installed' as const,
-    };
-    
-    const pricingOutput = calculateFullPricing(selection, model, zone);
-    
-    if (pricingOutput.hasPricing && pricingOutput.buyerFacingBreakdown.startingFromPrice < lowestPrice) {
-      lowestPrice = pricingOutput.buyerFacingBreakdown.startingFromPrice;
-      hasPricing = true;
-      bestBuildType = buildType;
-      bestPricingOutput = pricingOutput;
-    }
-  }
-  
-  if (!hasPricing) {
-    const selection = {
-      ...defaultBuildSelection,
-      modelSlug: model.slug,
-      buildType: model.buildTypes[0],
-      includeUtilityFees,
-      includePermitsCosts,
-      pricingMode: 'delivered_installed' as const,
-    };
-    const pricingOutput = calculateFullPricing(selection, model, zone);
-    lowestPrice = pricingOutput.buyerFacingBreakdown.startingFromPrice;
-    bestPricingOutput = pricingOutput;
-  }
-  
+  const result = getStartingFromPrice(modelSlug);
   return {
-    price: lowestPrice === Infinity ? 0 : lowestPrice,
-    hasPricing,
-    buildType: bestBuildType,
-    pricingOutput: bestPricingOutput,
+    price: result.total ?? 0,
+    hasPricing: result.total !== null,
   };
 }
 
@@ -166,6 +111,13 @@ function formatPrice(price: number): string {
     maximumFractionDigits: 0,
   }).format(price);
 }
+
+// Map MODELS to include heroImage and buildTypes for compatibility
+const modelsWithHero = MODELS.map(m => ({
+  ...m,
+  heroImage: `/images/models/${m.slug}/hero.webp`,
+  buildTypes: [...new Set(m.pricing.map(p => p.buildType))],
+}));
 
 // ============================================================================
 // MAIN COMPONENT
@@ -187,23 +139,23 @@ export function StepModel({
   useEffect(() => {
     if (!hasVerified.current && import.meta.env.DEV) {
       hasVerified.current = true;
-      verifyModelHeroImages(models, 'StepModel');
+      verifyModelHeroImages(modelsWithHero, 'StepModel');
     }
   }, []);
 
-  // Pre-calculate buyer-facing prices for all models
+  // Pre-calculate buyer-facing prices for all models using canonical engine
   const modelPrices = useMemo(() => {
     const prices: Record<string, { price: number; hasPricing: boolean }> = {};
-    models.forEach(model => {
-      const result = getBuyerFacingStartingPrice(model, includeUtilityFees, includePermitsCosts);
+    modelsWithHero.forEach(model => {
+      const result = getModelPriceForCard(model.slug);
       prices[model.slug] = { price: result.price, hasPricing: result.hasPricing };
     });
     return prices;
-  }, [includeUtilityFees, includePermitsCosts]);
+  }, []);
   
   // Get selected model details
   const selectedModel = selectedModelSlug 
-    ? models.find(m => m.slug === selectedModelSlug) 
+    ? modelsWithHero.find(m => m.slug === selectedModelSlug) 
     : null;
   const selectedPrice = selectedModelSlug 
     ? modelPrices[selectedModelSlug] 
@@ -241,7 +193,7 @@ export function StepModel({
       
       {/* Model Grid - Responsive, constrained */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-        {models.map((model, index) => {
+        {modelsWithHero.map((model, index) => {
           const isSelected = selectedModelSlug === model.slug;
           const { price, hasPricing } = modelPrices[model.slug] || { price: 0, hasPricing: false };
           const meta = modelMeta[model.slug] || { descriptor: 'Modern floor plan' };
@@ -312,7 +264,7 @@ function ModelCard({
   hasPricing,
   onSelect,
 }: {
-  model: ModelConfig;
+  model: ModelConfig & { heroImage: string; buildTypes: string[] };
   meta: ModelMeta;
   isSelected: boolean;
   isRecommended: boolean;
