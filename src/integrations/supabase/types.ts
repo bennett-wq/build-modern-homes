@@ -14,13 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_users: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pricing_configs: {
+        Row: {
+          config: Json
+          created_at: string
+          created_by: string | null
+          effective_at: string | null
+          id: string
+          label: string | null
+          status: string
+        }
+        Insert: {
+          config: Json
+          created_at?: string
+          created_by?: string | null
+          effective_at?: string | null
+          id?: string
+          label?: string | null
+          status: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          effective_at?: string | null
+          id?: string
+          label?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
