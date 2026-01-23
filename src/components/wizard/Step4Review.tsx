@@ -1,6 +1,6 @@
 // Step 4: Review + Get Started - final summary with CTAs
 // Premium polish with proper Dialog handling and financing integration
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,7 +27,8 @@ import {
   Sparkles,
   MessageCircle,
   Eye,
-  Info
+  Info,
+  RotateCcw
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
@@ -44,6 +45,7 @@ import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
 import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 
 // Union types for package and garage door
 type AnyPackage = ExteriorPackage | HawthornePackage | BelmontPackage;
@@ -78,6 +80,12 @@ export function Step4Review({
   const [copied, setCopied] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
+
+  // Start over handler - clears saved selections and returns to step 1
+  const handleStartOver = useCallback(() => {
+    useConfiguratorStore.getState().resetBuild();
+    onBack(); // Return to previous step (wizard will be at step 1 after reset)
+  }, [onBack]);
 
   // Fallback pricing flags - pricing will be computed by parent or pricing rail
   const flags: BuyerPricingFlags = {
@@ -125,15 +133,26 @@ export function Step4Review({
             <AppraisalInfoLink />
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onBack}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Back
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleStartOver}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Start Over
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Back
+          </Button>
+        </div>
       </div>
 
       {/* Content */}
