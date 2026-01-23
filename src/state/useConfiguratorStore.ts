@@ -4,17 +4,17 @@ import { create } from 'zustand';
 // Configurator Store - Single source of truth for wizard configuration state
 // ============================================================================
 
-// Type definitions (standalone, no external imports needed)
+// Type definitions
 type BuildIntent = 'my-land' | 'find-land' | 'basemod-community';
 
 type BuildType = 'xmod' | 'mod';
 
 type ServicePackage = 'delivered_installed' | 'supply_only' | 'community_all_in';
 
-interface ExteriorSelection {
+type ExteriorSelection = {
   packageId: string | null;
   garageDoorId: string | null;
-}
+};
 
 // State interface
 interface ConfiguratorState {
@@ -63,53 +63,58 @@ const initialState: ConfiguratorState = {
 
 // Create the store with proper typing
 export const useConfiguratorStore = create<ConfiguratorState & ConfiguratorActions>((set) => ({
-  // Initial state
   ...initialState,
 
-  // Actions
-  setCurrentStep: (step: number) => set({ currentStep: step }),
+  setCurrentStep: (step) => set({ currentStep: step }),
 
-  markStepComplete: (step: number) =>
+  markStepComplete: (step) =>
     set((state) => ({
       completedSteps: state.completedSteps.includes(step)
         ? state.completedSteps
         : [...state.completedSteps, step].sort((a, b) => a - b),
     })),
 
-  setIntent: (intent: BuildIntent | null) => set({ intent }),
+  setIntent: (intent) => set({ intent }),
 
-  setLocationZip: (zip: string) =>
+  setLocationZip: (zip) =>
     set((state) => ({
       location: { ...state.location, zipCode: zip },
     })),
 
-  setLocationAddress: (address: string) =>
+  setLocationAddress: (address) =>
     set((state) => ({
       location: { ...state.location, address },
     })),
 
-  setLocationKnown: (known: boolean | null) =>
+  setLocationKnown: (known) =>
     set((state) => ({
       location: { ...state.location, known },
     })),
 
-  setModelSlug: (slug: string | null) => set({ modelSlug: slug }),
+  setModelSlug: (slug) => set({ modelSlug: slug }),
 
-  setBuildType: (type: BuildType | null) => set({ buildType: type }),
+  setBuildType: (type) => set({ buildType: type }),
 
-  setServicePackage: (pkg: ServicePackage) => set({ servicePackage: pkg }),
+  setServicePackage: (pkg) => set({ servicePackage: pkg }),
 
-  setExterior: (updates: Partial<ExteriorSelection>) =>
+  setExterior: (updates) =>
     set((state) => ({
       exterior: { ...state.exterior, ...updates },
     })),
 
-  setLotId: (lotId: number | null) => set({ lotId }),
+  setLotId: (lotId) => set({ lotId }),
 
-  setDevelopmentSlug: (slug: string | null) => set({ developmentSlug: slug }),
+  setDevelopmentSlug: (slug) => set({ developmentSlug: slug }),
 
   resetBuild: () => set(initialState),
 }));
 
 // Export types for consumers
-export type { BuildIntent, BuildType, ServicePackage, ExteriorSelection, ConfiguratorState, ConfiguratorActions };
+export type {
+  BuildIntent,
+  BuildType,
+  ServicePackage,
+  ExteriorSelection,
+  ConfiguratorState,
+  ConfiguratorActions,
+};
