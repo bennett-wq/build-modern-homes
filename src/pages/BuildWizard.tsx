@@ -279,9 +279,7 @@ export default function BuildWizard() {
             >
               <Step1Lot
                 lots={lots}
-                selectedLotId={selection.lotId}
                 sitePlanImagePath={development.sitePlanImagePath}
-                onSelectLot={setLot}
                 onNext={() => setCurrentStep(2)}
                 isMobile={isMobile}
               />
