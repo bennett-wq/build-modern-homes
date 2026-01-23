@@ -39,8 +39,8 @@ export interface PricingLayerConfig {
 
 export const pricingLayerConfig: PricingLayerConfig = {
   defaults: {
-    dealerMarkupPct: 0.20,      // 20% dealer markup on factory cost
-    installerMarkupPct: 0.08,   // 8% installer markup on sitework (editable)
+    dealerMarkupPct: 0.20,      // 20% markup on factory cost
+    installerMarkupPct: 0.20,   // 20% markup on sitework (consistent with home markup)
     developerMarkupPct: 0.05,   // 5% developer markup for community builds
   },
   modes: {

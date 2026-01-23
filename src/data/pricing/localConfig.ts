@@ -41,8 +41,8 @@ const MODELS = [
     pricing: [
       { buildType: 'xmod' as const, foundationType: 'slab' as const, baseHomePrice: 97087, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod' as const, foundationType: 'basement' as const, baseHomePrice: 97087, deliveryInstallAllowance: 28000 },
-      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 104190, deliveryInstallAllowance: 22500 },
-      { buildType: 'mod' as const, foundationType: 'basement' as const, baseHomePrice: 104190, deliveryInstallAllowance: 28000 },
+      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 107904, deliveryInstallAllowance: 22500 },
+      { buildType: 'mod' as const, foundationType: 'basement' as const, baseHomePrice: 107904, deliveryInstallAllowance: 28000 },
     ],
   },
   {
@@ -57,8 +57,8 @@ const MODELS = [
     pricing: [
       { buildType: 'xmod' as const, foundationType: 'slab' as const, baseHomePrice: 98246, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod' as const, foundationType: 'basement' as const, baseHomePrice: 98246, deliveryInstallAllowance: 28000 },
-      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 108493, deliveryInstallAllowance: 22500 },
-      { buildType: 'mod' as const, foundationType: 'basement' as const, baseHomePrice: 108493, deliveryInstallAllowance: 28000 },
+      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 112559, deliveryInstallAllowance: 22500 },
+      { buildType: 'mod' as const, foundationType: 'basement' as const, baseHomePrice: 112559, deliveryInstallAllowance: 28000 },
     ],
   },
   {
@@ -73,8 +73,8 @@ const MODELS = [
     pricing: [
       { buildType: 'xmod' as const, foundationType: 'slab' as const, baseHomePrice: 97182, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod' as const, foundationType: 'basement' as const, baseHomePrice: 97182, deliveryInstallAllowance: 28000 },
-      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 107429, deliveryInstallAllowance: 22500 },
-      { buildType: 'mod' as const, foundationType: 'basement' as const, baseHomePrice: 107429, deliveryInstallAllowance: 28000 },
+      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 111323, deliveryInstallAllowance: 22500 },
+      { buildType: 'mod' as const, foundationType: 'basement' as const, baseHomePrice: 111323, deliveryInstallAllowance: 28000 },
     ],
   },
   {
@@ -84,12 +84,11 @@ const MODELS = [
     baths: 2,
     sqft: 1065,
     length: 48,
-    defaultBuildType: 'xmod' as const,
+    defaultBuildType: 'mod' as const,
     defaultFoundationType: 'slab' as const,
-    pricingSource: 'Ballpark estimate - freight pending',
+    pricingSource: 'Laurel MOD Quote',
     pricing: [
-      { buildType: 'xmod' as const, foundationType: 'slab' as const, baseHomePrice: 80535, deliveryInstallAllowance: 22500, freightPending: true },
-      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 87535, deliveryInstallAllowance: 22500, freightPending: true },
+      { buildType: 'mod' as const, foundationType: 'slab' as const, baseHomePrice: 95245, deliveryInstallAllowance: 22500 },
     ],
   },
   {
@@ -115,9 +114,9 @@ const MODELS = [
     length: 66,
     defaultBuildType: 'xmod' as const,
     defaultFoundationType: 'slab' as const,
-    pricingSource: 'BaseMod Home Package (factory)',
+    pricingSource: 'BaseMod Home Package (placeholder)',
     pricing: [
-      { buildType: 'xmod' as const, foundationType: 'slab' as const, baseHomePrice: 56397, deliveryInstallAllowance: 18000, freightPending: true },
+      { buildType: 'xmod' as const, foundationType: 'slab' as const, baseHomePrice: 62213, deliveryInstallAllowance: 18000, freightPending: true },
     ],
   },
 ];
@@ -235,12 +234,13 @@ const FEES = {
 
 // ============================================================================
 // MARKUPS (Buyer-facing retail layer)
+// All markups are 20% for consistency and margin safety
 // ============================================================================
 
 const MARKUPS = {
-  dealerMarkupPct: 0.20,
-  installerMarkupPct: 0.08,
-  developerMarkupPct: 0.05,
+  dealerMarkupPct: 0.20,      // 20% markup on factory cost (home package)
+  installerMarkupPct: 0.20,   // 20% markup on sitework (installation)
+  developerMarkupPct: 0.05,   // 5% developer markup for community builds
 };
 
 // ============================================================================

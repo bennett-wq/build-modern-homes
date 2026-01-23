@@ -538,18 +538,37 @@ export default function AdminPricing() {
           </TabsList>
 
           <TabsContent value="editor" className="space-y-6">
+            {/* Show seed button if no versions exist */}
+            {!isLoadingVersions && versions.length === 0 && !currentDraft && (
+              <Alert className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  No pricing configurations found. The app is using local fallback pricing. 
+                  {isAdmin && " Create a draft from local config to seed the database."}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {!currentDraft ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Create New Draft</CardTitle>
                   <CardDescription>
-                    Start editing pricing by creating a draft from the current published configuration.
+                    {versions.length === 0 
+                      ? "Seed the database by creating a draft from the local pricing configuration."
+                      : "Start editing pricing by creating a draft from the current published configuration."}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <Button onClick={handleCreateDraft}>
-                    Create Draft from Published
+                    {versions.length === 0 ? "Seed from Local Config" : "Create Draft from Published"}
                   </Button>
+                  {versions.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      This will create a draft with the current spreadsheet-verified pricing. 
+                      After reviewing, publish it to make Supabase the source of truth.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ) : (
