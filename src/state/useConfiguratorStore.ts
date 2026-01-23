@@ -11,10 +11,10 @@ type BuildType = 'xmod' | 'mod';
 
 type ServicePackage = 'delivered_installed' | 'supply_only' | 'community_all_in';
 
-type ExteriorSelection = {
+interface ExteriorSelection {
   packageId: string | null;
   garageDoorId: string | null;
-};
+}
 
 // State interface
 interface ConfiguratorState {
@@ -61,52 +61,52 @@ const initialState: ConfiguratorState = {
   developmentSlug: null,
 };
 
-// Create the store
+// Create the store with proper typing
 export const useConfiguratorStore = create<ConfiguratorState & ConfiguratorActions>((set) => ({
   // Initial state
   ...initialState,
 
   // Actions
-  setCurrentStep: (step) => set({ currentStep: step }),
+  setCurrentStep: (step: number) => set({ currentStep: step }),
 
-  markStepComplete: (step) =>
+  markStepComplete: (step: number) =>
     set((state) => ({
       completedSteps: state.completedSteps.includes(step)
         ? state.completedSteps
         : [...state.completedSteps, step].sort((a, b) => a - b),
     })),
 
-  setIntent: (intent) => set({ intent }),
+  setIntent: (intent: BuildIntent | null) => set({ intent }),
 
-  setLocationZip: (zip) =>
+  setLocationZip: (zip: string) =>
     set((state) => ({
       location: { ...state.location, zipCode: zip },
     })),
 
-  setLocationAddress: (address) =>
+  setLocationAddress: (address: string) =>
     set((state) => ({
       location: { ...state.location, address },
     })),
 
-  setLocationKnown: (known) =>
+  setLocationKnown: (known: boolean | null) =>
     set((state) => ({
       location: { ...state.location, known },
     })),
 
-  setModelSlug: (slug) => set({ modelSlug: slug }),
+  setModelSlug: (slug: string | null) => set({ modelSlug: slug }),
 
-  setBuildType: (type) => set({ buildType: type }),
+  setBuildType: (type: BuildType | null) => set({ buildType: type }),
 
-  setServicePackage: (pkg) => set({ servicePackage: pkg }),
+  setServicePackage: (pkg: ServicePackage) => set({ servicePackage: pkg }),
 
-  setExterior: (updates) =>
+  setExterior: (updates: Partial<ExteriorSelection>) =>
     set((state) => ({
       exterior: { ...state.exterior, ...updates },
     })),
 
-  setLotId: (lotId) => set({ lotId }),
+  setLotId: (lotId: number | null) => set({ lotId }),
 
-  setDevelopmentSlug: (slug) => set({ developmentSlug: slug }),
+  setDevelopmentSlug: (slug: string | null) => set({ developmentSlug: slug }),
 
   resetBuild: () => set(initialState),
 }));
