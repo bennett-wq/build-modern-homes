@@ -1,6 +1,6 @@
 // Build Wizard Page - Lot → Model → Design → Review flow
 // Premium proptech-grade wizard with smooth transitions
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle } from 'lucide-react';
@@ -27,6 +27,8 @@ import { Step3Design } from '@/components/wizard/Step3Design';
 import { Step4Review } from '@/components/wizard/Step4Review';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useConfiguratorStore } from '@/state/useConfiguratorStore';
+import { ResumePrompt } from '@/components/configurator/ResumePrompt';
 
 const STEPS = [
   { id: 1, name: 'Pick a Lot', shortName: 'Lot', icon: MapPin },
@@ -65,6 +67,38 @@ export default function BuildWizard() {
 
   // Determine current step based on selections
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Resume prompt state
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const resumeCheckRef = useRef(false);
+  
+  // Get store values for detecting saved build
+  const storeState = useConfiguratorStore();
+  const savedBuildExists = !!(
+    storeState.lotId || 
+    storeState.modelSlug || 
+    storeState.exterior.packageId || 
+    storeState.exterior.garageDoorId
+  );
+  
+  // Show resume prompt on first load if saved build exists
+  useEffect(() => {
+    if (!resumeCheckRef.current && savedBuildExists) {
+      resumeCheckRef.current = true;
+      setShowResumePrompt(true);
+    }
+  }, [savedBuildExists]);
+  
+  // Resume handlers
+  const handleResume = useCallback(() => {
+    setShowResumePrompt(false);
+    // Keep selections, stay at step 1
+  }, []);
+  
+  const handleStartFresh = useCallback(() => {
+    useConfiguratorStore.getState().resetBuild();
+    setShowResumePrompt(false);
+  }, []);
 
   // Auto-advance to appropriate step based on URL params (only on mount)
   useEffect(() => {
@@ -169,7 +203,17 @@ export default function BuildWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <>
+      {/* Resume Prompt Overlay */}
+      <ResumePrompt
+        isOpen={showResumePrompt}
+        savedModelSlug={storeState.modelSlug || undefined}
+        savedStep={1}
+        onResume={handleResume}
+        onStartFresh={handleStartFresh}
+      />
+      
+      <div className="min-h-screen bg-background flex flex-col">
       {/* Progress Header - sticky and stable */}
       <header className="border-b border-border bg-card/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3">
@@ -354,5 +398,6 @@ export default function BuildWizard() {
         </AnimatePresence>
       </main>
     </div>
+    </>
   );
 }
