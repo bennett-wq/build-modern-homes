@@ -1,9 +1,9 @@
 // ============================================================================
 // Step 8: Summary + CTA
-// Includes exterior design confirmation and pricing confidence
+// Uses canonical pricing function for consistent totals
 // ============================================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ChevronDown, ChevronUp, Check, Copy, Home, MapPin, 
@@ -20,10 +20,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { type ModelConfig, type BuildIntent, exteriorConfig } from '@/data/pricing-config';
+import { type ModelConfig, type BuildIntent, type BuildType, exteriorConfig } from '@/data/pricing-config';
 import type { PriceBreakdown, ExteriorSelection } from '@/hooks/usePricingEngine';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
 import { cn } from '@/lib/utils';
+import { 
+  calculatePriceBreakdown as calcCanonicalPricing,
+  formatPrice as formatCanonicalPrice,
+  getServicePackageHeadline,
+  type ServicePackage,
+} from '@/lib/pricing/calculatePriceBreakdown';
 
 interface StepSummaryProps {
   model: ModelConfig;
@@ -45,6 +51,8 @@ interface StepSummaryProps {
   onPermitsCostsChange: (value: boolean) => void;
   // Service package selection
   servicePackage?: 'delivered_installed' | 'supply_only' | 'community_all_in';
+  // Selected option IDs for canonical pricing
+  selectedOptionIds?: string[];
 }
 
 export function StepSummary({
@@ -64,13 +72,30 @@ export function StepSummary({
   onUtilityFeesChange,
   onPermitsCostsChange,
   servicePackage = 'delivered_installed',
+  selectedOptionIds = [],
 }: StepSummaryProps) {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   const [leadFormOpen, setLeadFormOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showInstalledEstimate, setShowInstalledEstimate] = useState(false);
   const { toast } = useToast();
+  
+  // Map service package to canonical pricing format
+  const canonicalServicePackage: ServicePackage = servicePackage === 'supply_only' ? 'home_only' : 'installed';
+  
+  // Calculate canonical pricing - SINGLE SOURCE OF TRUTH
+  const canonicalPricing = useMemo(() => {
+    return calcCanonicalPricing({
+      modelSlug: model.slug,
+      buildType: buildType as BuildType,
+      servicePackage: canonicalServicePackage,
+      selectedOptionIds,
+      includeFeesAllowance: includeUtilityFees || includePermitsCosts,
+      includeSiteworkContingency: true,
+    });
+  }, [model.slug, buildType, canonicalServicePackage, selectedOptionIds, includeUtilityFees, includePermitsCosts]);
   
   // Determine if location is known (has valid ZIP)
   const hasValidZip = zipCode && zipCode.length === 5;
@@ -258,15 +283,15 @@ export function StepSummary({
             </div>
           )}
           
-          {/* Floor Plan Options */}
-          {breakdown.floorPlanAdderDetails.length > 0 && (
+          {/* Floor Plan Options - Use canonical pricing items */}
+          {canonicalPricing.options.items.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Floor Plan Options</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Selected Add-ons</h3>
               <ul className="space-y-2">
-                {breakdown.floorPlanAdderDetails.map((item, i) => (
+                {canonicalPricing.options.items.map((item, i) => (
                   <li key={i} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{item.name}</span>
-                    <span className="text-sm text-accent">+{formatPrice(item.price)}</span>
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="text-sm text-accent">+{formatCanonicalPrice(item.retailAmount)}</span>
                   </li>
                 ))}
               </ul>
@@ -280,42 +305,39 @@ export function StepSummary({
           animate={{ opacity: 1, x: 0 }}
           className="space-y-6"
         >
-          {/* Price Summary - Conditional based on service package */}
+          {/* Price Summary - Uses canonical pricing for reconciled totals */}
           <div className="bg-accent/5 rounded-xl border border-accent/20 p-6">
             <div className="text-center mb-6">
-              <span className="text-sm text-muted-foreground">
-                {servicePackage === 'supply_only' 
-                  ? 'Estimated Home Package Total' 
-                  : servicePackage === 'community_all_in'
-                    ? 'All-in Price (Includes Lot)'
-                    : 'Typical Installed Allowance (Preliminary)'}
-              </span>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <span className="text-sm text-muted-foreground">
+                  {getServicePackageHeadline(canonicalServicePackage)}
+                </span>
+                <Badge variant="secondary" className="text-xs">Preliminary</Badge>
+              </div>
               <AnimatePresence mode="wait">
                 <motion.p
-                  key={servicePackage === 'supply_only' ? breakdown.factoryTotal : breakdown.allInEstimateTotal}
+                  key={canonicalPricing.totals.displayedTotal}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
                   className="text-4xl font-semibold text-foreground"
                 >
-                  {formatPrice(
-                    servicePackage === 'supply_only' 
-                      ? Math.round((breakdown.factoryTotal + breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) * 1.20)
-                      : breakdown.allInEstimateTotal
-                  )}
+                  {formatCanonicalPrice(canonicalPricing.totals.displayedTotal)}
                 </motion.p>
               </AnimatePresence>
-              <span className="text-xs text-muted-foreground">Preliminary estimate</span>
+              <p className="text-xs text-muted-foreground mt-1">
+                {canonicalPricing.disclaimers.short}
+              </p>
             </div>
             
-            {breakdown.freightPending && (
+            {canonicalPricing.freightPending && (
               <div className="flex items-center gap-2 text-amber-600 text-sm mb-4 justify-center">
                 <AlertCircle className="w-4 h-4" />
-                <span>Freight pending — estimate shown without freight</span>
+                <span>Freight pending — estimate shown</span>
               </div>
             )}
             
-            {/* Expandable Breakdown */}
+            {/* Expandable Breakdown - Line items from canonical pricing */}
             <Collapsible open={breakdownOpen} onOpenChange={setBreakdownOpen}>
               <CollapsibleTrigger asChild>
                 <button className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
@@ -326,63 +348,58 @@ export function StepSummary({
               
               <CollapsibleContent>
                 <div className="mt-4 pt-4 border-t border-border space-y-3 text-sm">
-                  {/* Home Package - always shown */}
-                  {breakdown.factoryTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">BaseMod Home Package</span>
-                      <span className="text-foreground">{formatPrice(Math.round(breakdown.factoryTotal * 1.20))}</span>
+                  {/* Render all line items from canonical pricing */}
+                  {canonicalPricing.totals.lineItems.map((item) => (
+                    <div key={item.id} className="flex justify-between">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="text-foreground">
+                        {item.category === 'options' ? '+' : ''}{formatCanonicalPrice(item.retailAmount)}
+                      </span>
                     </div>
-                  )}
+                  ))}
                   
-                  {/* Selected Add-ons */}
-                  {(breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Selected Add-ons</span>
-                      <span className="text-foreground">+{formatPrice(Math.round((breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) * 1.20))}</span>
-                    </div>
-                  )}
-                  
-                  {/* Sitework - only for installed or community modes */}
-                  {servicePackage !== 'supply_only' && breakdown.basemodSiteworkTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Typical Sitework Allowance</span>
-                      <span className="text-foreground">{formatPrice(Math.round(breakdown.basemodSiteworkTotal * 1.20))}</span>
-                    </div>
-                  )}
-                  
-                  {/* Optional fees - only for installed or community modes */}
-                  {servicePackage !== 'supply_only' && breakdown.optionalFeesTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Typical Fees (allowance)</span>
-                      <span className="text-foreground">+{formatPrice(breakdown.optionalFeesTotal)}</span>
-                    </div>
-                  )}
-                  
+                  {/* Total - guaranteed to match sum of line items */}
                   <div className="pt-3 border-t border-border flex justify-between font-medium">
                     <span className="text-foreground">
-                      {servicePackage === 'supply_only' ? 'Home Package Total' : 'Estimated Total'}
+                      {canonicalServicePackage === 'home_only' ? 'Home Package Total' : 'Estimated Total'}
                     </span>
                     <span className="text-foreground">
-                      {formatPrice(
-                        servicePackage === 'supply_only' 
-                          ? Math.round((breakdown.factoryTotal + breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) * 1.20)
-                          : breakdown.allInEstimateTotal
-                      )}
+                      {formatCanonicalPrice(canonicalPricing.totals.displayedTotal)}
                     </span>
                   </div>
                 </div>
               </CollapsibleContent>
             </Collapsible>
             
-            {/* Supply-only: link to see installed allowance */}
-            {servicePackage === 'supply_only' && (
-              <div className="mt-4 pt-4 border-t border-border text-center">
-                <p className="text-xs text-muted-foreground">
-                  Want to see a typical installed estimate?{' '}
-                  <button className="text-accent underline hover:text-accent/80">
-                    View installed allowance
-                  </button>
-                </p>
+            {/* Supply-only: expandable installed allowance section */}
+            {canonicalServicePackage === 'home_only' && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <button 
+                  onClick={() => setShowInstalledEstimate(!showInstalledEstimate)}
+                  className="w-full text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      See typical installed allowance (optional)
+                    </p>
+                    {showInstalledEstimate ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                  </div>
+                </button>
+                {showInstalledEstimate && (
+                  <div className="mt-3 p-3 bg-muted/30 rounded-lg text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Typical Sitework Allowance</span>
+                      <span>{formatCanonicalPrice(canonicalPricing.sitework.retailTotal || Math.round(canonicalPricing.sitework.baseTotal * 1.20))}</span>
+                    </div>
+                    <div className="flex justify-between font-medium mt-2 pt-2 border-t border-border">
+                      <span>Installed Allowance Total</span>
+                      <span>{formatCanonicalPrice(canonicalPricing.totals.installedTypicalTotal)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Site-dependent. Varies by conditions, distance, and jurisdiction.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

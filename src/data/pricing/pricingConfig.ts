@@ -283,11 +283,12 @@ export const FEES: FeeConfig = {
 
 // ============================================================================
 // MARKUPS (Buyer-facing retail layer)
+// All markups are 20% for consistency and margin safety
 // ============================================================================
 
 export const MARKUPS: MarkupConfig = {
-  dealerMarkupPct: 0.20,      // 20% dealer markup on factory cost
-  installerMarkupPct: 0.08,   // 8% installer markup on sitework
+  dealerMarkupPct: 0.20,      // 20% markup on factory cost (home package)
+  installerMarkupPct: 0.20,   // 20% markup on sitework (installation)
   developerMarkupPct: 0.05,   // 5% developer markup for community builds
 };
 
