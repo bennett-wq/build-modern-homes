@@ -25,6 +25,7 @@ import {
 import { HERO_PLACEHOLDER } from '@/lib/model-images';
 import { getHeroImageFallbackChain, verifyModelHeroImages } from '@/lib/image-utils';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
+import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -72,8 +73,6 @@ const modelMeta: Record<string, ModelMeta> = {
 // ============================================================================
 
 interface StepModelProps {
-  selectedModelSlug: string | null;
-  onSelectModel: (slug: string) => void;
   onNext: () => void;
   onBack: () => void;
   /** Show inline "Updated" indicator in footer */
@@ -95,13 +94,14 @@ const modelsWithHero = MODELS.map(m => ({
 // ============================================================================
 
 export function StepModel({
-  selectedModelSlug,
-  onSelectModel,
   onNext,
   onBack,
   showUpdatedIndicator = false,
   onUndo,
 }: StepModelProps) {
+  // Get model selection from store
+  const selectedModelSlug = useConfiguratorStore(s => s.modelSlug);
+  const onSelectModel = (slug: string) => useConfiguratorStore.getState().setModelSlug(slug);
   // Dev-only: Verify all model hero images are served on mount
   const hasVerified = useRef(false);
   useEffect(() => {

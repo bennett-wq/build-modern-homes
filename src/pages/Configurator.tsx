@@ -361,8 +361,6 @@ export default function Configurator() {
                   
                   {currentStep === 3 && (
                     <StepModel
-                      selectedModelSlug={selection.modelSlug}
-                      onSelectModel={handleModelSelect}
                       onNext={nextStep}
                       onBack={prevStep}
                       showUpdatedIndicator={modelJustChanged}
