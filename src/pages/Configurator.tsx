@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useConfiguratorState } from '@/hooks/useConfiguratorState';
+import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 import { usePricingEngine } from '@/hooks/usePricingEngine';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
@@ -81,8 +82,14 @@ export default function Configurator() {
     isModelChangeFromPreselected,
     preselectedModel,
   } = useConfiguratorState();
+
+  // Read modelSlug from the canonical store (StepModel writes here)
+  const storeModelSlug = useConfiguratorStore(s => s.modelSlug);
   
-  const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
+  const { breakdown, formatPrice, model, pricing } = usePricingEngine({
+    ...selection,
+    modelSlug: storeModelSlug,
+  });
   
   // Step 4 override: Force supply_only pricing for MOD/XMOD comparison DISPLAY ONLY
   // This helps users compare home package costs before install is applied in Step 5
