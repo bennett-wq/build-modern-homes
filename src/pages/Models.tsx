@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { homeModels } from "@/data/models";
 import { HERO_PLACEHOLDER } from "@/lib/model-images";
 import { getHeroImageFallbackChain } from "@/lib/image-utils";
-// New canonical pricing engine
-import { getStartingFromPrice, getPricingModeLabel } from "@/data/pricing";
 
 // Trust chips - same as homepage
 const trustChips = [
@@ -194,16 +192,6 @@ export default function Models() {
   );
 }
 
-// Format price helper
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
-}
-
 // Model Card Component - Premium, scannable with buyer-facing pricing
 interface ModelCardProps {
   model: typeof homeModels[0];
@@ -221,11 +209,6 @@ function ModelCard({ model, index }: ModelCardProps) {
   );
   
   const currentSrc = fallbackChain[currentImageIndex];
-
-  // Calculate buyer-facing pricing using new canonical calculator
-  const priceResult = useMemo(() => {
-    return getStartingFromPrice(model.slug);
-  }, [model.slug]);
 
   const handleGetQuote = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -296,30 +279,6 @@ function ModelCard({ model, index }: ModelCardProps) {
               <Bath className="w-3.5 h-3.5" />
               {model.baths} bath
             </span>
-          </div>
-
-          {/* Buyer-facing pricing */}
-          <div className="mb-4 space-y-1">
-            {priceResult.total !== null ? (
-              <>
-                <p className="text-sm font-medium text-foreground">
-                  Starting from {formatPrice(priceResult.total)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {getPricingModeLabel(priceResult.pricingMode)}
-                </p>
-                {priceResult.freightPending && (
-                  <p className="text-xs text-amber-600 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    Freight pending
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Contact for pricing
-              </p>
-            )}
           </div>
 
           {/* CTAs - Get Quote primary, View Details secondary */}

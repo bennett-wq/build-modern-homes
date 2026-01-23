@@ -7,8 +7,7 @@ import { ArrowRight, ArrowLeft, Check, Info, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { type ModelConfig, type BuildType, getDefaultZone } from '@/data/pricing-config';
-import { calculatePriceBreakdown, defaultBuildSelection, defaultExteriorSelection } from '@/hooks/usePricingEngine';
+import { type ModelConfig, type BuildType } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
 
 interface StepBuildTypeProps {
@@ -17,8 +16,6 @@ interface StepBuildTypeProps {
   onSelectBuildType: (type: BuildType) => void;
   onNext: () => void;
   onBack: () => void;
-  includeUtilityFees: boolean;
-  includePermitsCosts: boolean;
 }
 
 const buildTypeInfo: Record<BuildType, {
@@ -51,45 +48,15 @@ const buildTypeInfo: Record<BuildType, {
   },
 };
 
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
-}
-
 export function StepBuildType({
   model,
   selectedBuildType,
   onSelectBuildType,
   onNext,
   onBack,
-  includeUtilityFees,
-  includePermitsCosts,
 }: StepBuildTypeProps) {
   // If only one build type, auto-select and show message
   const hasOnlyOne = model.buildTypes.length === 1;
-  const zone = getDefaultZone();
-  
-  // Calculate prices for each build type
-  const buildTypePrices = model.buildTypes.map(type => {
-    const selection = {
-      ...defaultBuildSelection,
-      modelSlug: model.slug,
-      buildType: type,
-      includeUtilityFees,
-      includePermitsCosts,
-      exteriorSelection: defaultExteriorSelection,
-    };
-    const breakdown = calculatePriceBreakdown(selection, model, zone);
-    return {
-      type,
-      price: breakdown.allInEstimateTotal,
-      hasPricing: breakdown.hasPricing,
-    };
-  });
   
   // Check for 9' walls option
   const has9ftWalls = model.floorPlanOptions.some(
@@ -173,13 +140,20 @@ export function StepBuildType({
         >
           Both options deliver quality factory-built construction with different features.
         </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-muted-foreground/70 text-xs mt-2"
+        >
+          Your estimate is shown in the pricing panel on the right.
+        </motion.p>
       </div>
       
       <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {model.buildTypes.map((type, index) => {
           const info = buildTypeInfo[type];
           const isSelected = selectedBuildType === type;
-          const priceInfo = buildTypePrices.find(p => p.type === type);
           
           return (
             <motion.button
@@ -218,7 +192,7 @@ export function StepBuildType({
               <p className="text-muted-foreground text-sm mb-4">{info.description}</p>
               
               {/* Features */}
-              <ul className="space-y-2 mb-4">
+              <ul className="space-y-2">
                 {info.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
@@ -240,20 +214,6 @@ export function StepBuildType({
                   </li>
                 )}
               </ul>
-              
-              {/* Price */}
-              <div className="pt-4 border-t border-border">
-                {priceInfo?.hasPricing ? (
-                  <div>
-                    <span className="text-lg font-semibold text-foreground">
-                      {formatPrice(priceInfo.price)}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-1">starting</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-amber-600">Pricing coming soon</span>
-                )}
-              </div>
             </motion.button>
           );
         })}

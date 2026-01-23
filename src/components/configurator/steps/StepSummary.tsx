@@ -299,195 +299,55 @@ export function StepSummary({
           )}
         </motion.div>
         
-        {/* Pricing & CTAs */}
+        {/* Next Steps Panel - REPLACES center pricing card */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           className="space-y-6"
         >
-          {/* Price Summary - Uses canonical pricing for reconciled totals */}
-          <div className="bg-accent/5 rounded-xl border border-accent/20 p-6">
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <span className="text-sm text-muted-foreground">
-                  {getServicePackageHeadline(canonicalServicePackage)}
-                </span>
-                <Badge variant="secondary" className="text-xs">Preliminary</Badge>
-              </div>
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={canonicalPricing.totals.displayedTotal}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="text-4xl font-semibold text-foreground"
-                >
-                  {formatCanonicalPrice(canonicalPricing.totals.displayedTotal)}
-                </motion.p>
-              </AnimatePresence>
-              <p className="text-xs text-muted-foreground mt-1">
-                {canonicalPricing.disclaimers.short}
-              </p>
-            </div>
-            
-            {canonicalPricing.freightPending && (
-              <div className="flex items-center gap-2 text-amber-600 text-sm mb-4 justify-center">
-                <AlertCircle className="w-4 h-4" />
-                <span>Freight pending — estimate shown</span>
-              </div>
-            )}
-            
-            {/* Expandable Breakdown - Line items from canonical pricing */}
-            <Collapsible open={breakdownOpen} onOpenChange={setBreakdownOpen}>
-              <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
-                  <span>View detailed breakdown</span>
-                  {breakdownOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <div className="mt-4 pt-4 border-t border-border space-y-3 text-sm">
-                  {/* Render all line items from canonical pricing */}
-                  {canonicalPricing.totals.lineItems.map((item) => (
-                    <div key={item.id} className="flex justify-between">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="text-foreground">
-                        {item.category === 'options' ? '+' : ''}{formatCanonicalPrice(item.retailAmount)}
-                      </span>
-                    </div>
-                  ))}
-                  
-                  {/* Total - guaranteed to match sum of line items */}
-                  <div className="pt-3 border-t border-border flex justify-between font-medium">
-                    <span className="text-foreground">
-                      {canonicalServicePackage === 'home_only' ? 'Home Package Total' : 'Estimated Total'}
-                    </span>
-                    <span className="text-foreground">
-                      {formatCanonicalPrice(canonicalPricing.totals.displayedTotal)}
-                    </span>
-                  </div>
+          {/* Next Steps Card - NO pricing, just guidance */}
+          <Card className="border-border/50">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-accent" />
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
-            
-            {/* Supply-only: expandable installed allowance section */}
-            {canonicalServicePackage === 'home_only' && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <button 
-                  onClick={() => setShowInstalledEstimate(!showInstalledEstimate)}
-                  className="w-full text-left"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      See typical installed allowance (optional)
-                    </p>
-                    {showInstalledEstimate ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                  </div>
-                </button>
-                {showInstalledEstimate && (
-                  <div className="mt-3 p-3 bg-muted/30 rounded-lg text-sm">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Typical Sitework Allowance</span>
-                      <span>{formatCanonicalPrice(canonicalPricing.sitework.retailTotal || Math.round(canonicalPricing.sitework.baseTotal * 1.20))}</span>
-                    </div>
-                    <div className="flex justify-between font-medium mt-2 pt-2 border-t border-border">
-                      <span>Installed Allowance Total</span>
-                      <span>{formatCanonicalPrice(canonicalPricing.totals.installedTypicalTotal)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Site-dependent. Varies by conditions, distance, and jurisdiction.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          
-          {/* Assumptions & Allowances Accordion */}
-          <Collapsible open={assumptionsOpen} onOpenChange={setAssumptionsOpen}>
-            <Card className="border-border/50">
-              <CollapsibleTrigger asChild>
-                <button className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <Settings2 className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-sm text-foreground">Assumptions & allowances</span>
-                  </div>
-                  {assumptionsOpen ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="pt-0 pb-4 px-4 space-y-4">
-                  {/* Utility Fees Toggle */}
-                  <div className="flex items-center justify-between py-2">
-                    <div className="space-y-0.5">
-                      <Label 
-                        htmlFor="utility-fees" 
-                        className="text-sm font-medium text-foreground cursor-pointer"
-                      >
-                        Typical local connection fees (allowance)
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Water, sewer, and utility connections
-                      </p>
-                    </div>
-                    <Switch
-                      id="utility-fees"
-                      checked={includeUtilityFees}
-                      onCheckedChange={onUtilityFeesChange}
-                    />
-                  </div>
-                  
-                  <div className="border-t border-border" />
-                  
-                  {/* Permits Toggle */}
-                  <div className="flex items-center justify-between py-2">
-                    <div className="space-y-0.5">
-                      <Label 
-                        htmlFor="permits-costs" 
-                        className="text-sm font-medium text-foreground cursor-pointer"
-                      >
-                        Permits & soft costs (allowance)
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Building permits and related fees
-                      </p>
-                    </div>
-                    <Switch
-                      id="permits-costs"
-                      checked={includePermitsCosts}
-                      onCheckedChange={onPermitsCostsChange}
-                    />
-                  </div>
-                  
-                  {/* Disclaimer */}
-                  <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-                    These vary by municipality. Final costs confirmed during site review.
-                  </p>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-          
-          {/* Pricing Confidence Card */}
-          <Card className="border-border/50 bg-muted/30">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-sm text-foreground">Estimated price range</h4>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Estimates exclude land and site-specific costs. Final pricing is confirmed after design review.
-                  </p>
+                  <h3 className="font-semibold text-foreground">Next steps</h3>
+                  <p className="text-sm text-muted-foreground">Review and take action</p>
                 </div>
+              </div>
+              
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-3 text-sm">
+                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-medium text-muted-foreground">1</span>
+                  </div>
+                  <span className="text-muted-foreground">Review your selections on the left.</span>
+                </li>
+                <li className="flex items-start gap-3 text-sm">
+                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-medium text-muted-foreground">2</span>
+                  </div>
+                  <span className="text-muted-foreground">Your estimate updates in the panel on the right.</span>
+                </li>
+                <li className="flex items-start gap-3 text-sm">
+                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-medium text-muted-foreground">3</span>
+                  </div>
+                  <span className="text-muted-foreground">Final pricing is confirmed in your written quote after site review.</span>
+                </li>
+              </ul>
+              
+              <div className="border-t border-border pt-4">
+                <p className="text-xs text-muted-foreground">
+                  Estimates exclude land and site-specific costs. Final pricing is confirmed after design review.
+                </p>
               </div>
             </CardContent>
           </Card>
+          
+          {/* CTAs */}
           <div className="space-y-3">
             <Button
               size="lg"

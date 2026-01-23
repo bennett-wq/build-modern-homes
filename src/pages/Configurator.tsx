@@ -225,8 +225,6 @@ export default function Configurator() {
                         onSelectBuildType={setBuildType}
                         onNext={nextStep}
                         onBack={prevStep}
-                        includeUtilityFees={selection.includeUtilityFees}
-                        includePermitsCosts={selection.includePermitsCosts}
                       />
                     )}
                     
@@ -347,11 +345,8 @@ export default function Configurator() {
                       onSelectModel={handleModelSelect}
                       onNext={nextStep}
                       onBack={prevStep}
-                      includeUtilityFees={selection.includeUtilityFees}
-                      includePermitsCosts={selection.includePermitsCosts}
                       showUpdatedIndicator={modelJustChanged}
                       onUndo={handleUndoModelChange}
-                      onFeedbackShown={clearModelChangeFeedback}
                     />
                   )}
                 </motion.div>

@@ -15,13 +15,11 @@ import {
   DollarSign,
   Sparkles,
   Users,
-  Info,
   Home,
 } from 'lucide-react';
 // Use canonical pricing engine
 import { 
   MODELS, 
-  getStartingFromPrice,
   type ModelConfig,
 } from '@/data/pricing';
 import { HERO_PLACEHOLDER } from '@/lib/model-images';
@@ -78,39 +76,12 @@ interface StepModelProps {
   onSelectModel: (slug: string) => void;
   onNext: () => void;
   onBack: () => void;
-  includeUtilityFees: boolean;
-  includePermitsCosts: boolean;
   /** Show inline "Updated" indicator in footer */
   showUpdatedIndicator?: boolean;
   /** Callback for undo action */
   onUndo?: () => void;
-  /** Callback when feedback has been shown (to clear parent state) */
-  onFeedbackShown?: () => void;
 }
 
-// ============================================================================
-// UNIFIED PRICING HELPER - Uses canonical pricing engine
-// ============================================================================
-
-function getModelPriceForCard(modelSlug: string): {
-  price: number;
-  hasPricing: boolean;
-} {
-  const result = getStartingFromPrice(modelSlug);
-  return {
-    price: result.total ?? 0,
-    hasPricing: result.total !== null,
-  };
-}
-
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
-}
 
 // Map MODELS to include heroImage and buildTypes for compatibility
 const modelsWithHero = MODELS.map(m => ({
@@ -128,11 +99,8 @@ export function StepModel({
   onSelectModel,
   onNext,
   onBack,
-  includeUtilityFees,
-  includePermitsCosts,
   showUpdatedIndicator = false,
   onUndo,
-  onFeedbackShown,
 }: StepModelProps) {
   // Dev-only: Verify all model hero images are served on mount
   const hasVerified = useRef(false);
@@ -142,23 +110,10 @@ export function StepModel({
       verifyModelHeroImages(modelsWithHero, 'StepModel');
     }
   }, []);
-
-  // Pre-calculate buyer-facing prices for all models using canonical engine
-  const modelPrices = useMemo(() => {
-    const prices: Record<string, { price: number; hasPricing: boolean }> = {};
-    modelsWithHero.forEach(model => {
-      const result = getModelPriceForCard(model.slug);
-      prices[model.slug] = { price: result.price, hasPricing: result.hasPricing };
-    });
-    return prices;
-  }, []);
   
   // Get selected model details
   const selectedModel = selectedModelSlug 
     ? modelsWithHero.find(m => m.slug === selectedModelSlug) 
-    : null;
-  const selectedPrice = selectedModelSlug 
-    ? modelPrices[selectedModelSlug] 
     : null;
   
   return (
@@ -180,14 +135,14 @@ export function StepModel({
         >
           Select a model to continue. You can change this later.
         </motion.p>
-        {/* Inline guidance */}
+        {/* Inline guidance - pricing rail notice */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
           className="text-muted-foreground/70 text-xs mt-2"
         >
-          Not sure which to choose? Start with our most popular or best value option.
+          Pricing updates in real time on the right as you make selections.
         </motion.p>
       </div>
       
@@ -195,7 +150,6 @@ export function StepModel({
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {modelsWithHero.map((model, index) => {
           const isSelected = selectedModelSlug === model.slug;
-          const { price, hasPricing } = modelPrices[model.slug] || { price: 0, hasPricing: false };
           const meta = modelMeta[model.slug] || { descriptor: 'Modern floor plan' };
           // Check if this is a recommended model (popular or value)
           const isRecommended = meta.badge?.variant === 'popular' || meta.badge?.variant === 'value';
@@ -212,8 +166,6 @@ export function StepModel({
                 meta={meta}
                 isSelected={isSelected}
                 isRecommended={isRecommended}
-                price={price}
-                hasPricing={hasPricing}
                 onSelect={() => onSelectModel(model.slug)}
               />
             </motion.div>
@@ -224,7 +176,7 @@ export function StepModel({
       {/* Footer spacer */}
       <WizardFooterSpacer />
       
-      {/* Sticky Footer with inline feedback */}
+      {/* Sticky Footer with inline feedback - NO price display */}
       <WizardStickyFooter
         onBack={onBack}
         onContinue={onNext}
@@ -233,7 +185,7 @@ export function StepModel({
         showUpdatedIndicator={showUpdatedIndicator}
         onUndo={onUndo}
       >
-        {selectedModel && selectedPrice && (
+        {selectedModel && (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
               <Home className="h-5 w-5 text-accent" />
@@ -241,7 +193,7 @@ export function StepModel({
             <div>
               <p className="font-semibold text-foreground">{selectedModel.name}</p>
               <p className="text-xs text-muted-foreground">
-                {formatPrice(selectedPrice.price)}
+                {selectedModel.sqft.toLocaleString()} sf • {selectedModel.beds} bed • {selectedModel.baths} bath
               </p>
             </div>
           </div>
@@ -260,16 +212,12 @@ function ModelCard({
   meta,
   isSelected,
   isRecommended,
-  price,
-  hasPricing,
   onSelect,
 }: {
   model: ModelConfig & { heroImage: string; buildTypes: string[] };
   meta: ModelMeta;
   isSelected: boolean;
   isRecommended: boolean;
-  price: number;
-  hasPricing: boolean;
   onSelect: () => void;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -415,27 +363,6 @@ function ModelCard({
           </span>
         </div>
         
-        {/* Spacer to push price to bottom */}
-        <div className="flex-1" />
-        
-        {/* Price row - At bottom, no button inside card */}
-        <div className="pt-3 border-t border-border/50">
-          {hasPricing ? (
-            <div>
-              <span className="text-xl font-bold text-foreground">
-                {formatPrice(price)}
-              </span>
-              <span className="block text-[10px] text-muted-foreground uppercase tracking-wide">
-                Installed from
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Info className="w-3.5 h-3.5" />
-              <span className="text-xs">Price coming soon</span>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
