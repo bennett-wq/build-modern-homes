@@ -211,6 +211,9 @@ export default function BuildWizard() {
         savedStep={1}
         onResume={handleResume}
         onStartFresh={handleStartFresh}
+        savedLotLabel={storeState.lotId ? lots.find(l => l.id === storeState.lotId)?.label : undefined}
+        savedPackageName={storeState.exterior.packageId || undefined}
+        savedGarageName={storeState.exterior.garageDoorId || undefined}
       />
       
       <div className="min-h-screen bg-background flex flex-col">
