@@ -9,25 +9,25 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, AlertCircle, X } from 'lucide-react';
 import { Lot } from '@/data/lots/grand-haven';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 import { cn } from '@/lib/utils';
 
 interface Step1LotProps {
   lots: Lot[];
+  selectedLotId: number | null;
   sitePlanImagePath: string;
+  onSelectLot: (lotId: number) => void;
   onNext: () => void;
   isMobile: boolean;
 }
 
 export function Step1Lot({
   lots,
+  selectedLotId,
   sitePlanImagePath,
+  onSelectLot,
   onNext,
   isMobile,
 }: Step1LotProps) {
-  // Get lot selection from store
-  const selectedLotId = useConfiguratorStore(s => s.lotId);
-  
   const selectedLot = lots.find(l => l.id === selectedLotId);
   const canProceed = selectedLot && selectedLot.status === 'available';
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
@@ -35,20 +35,20 @@ export function Step1Lot({
 
   const handleLotClick = useCallback((lot: Lot | null) => {
     if (lot) {
-      useConfiguratorStore.getState().setLotId(lot.id);
+      onSelectLot(lot.id);
       // Close mobile list when lot is selected
       if (isMobile) {
         setMobileListOpen(false);
       }
     }
-  }, [isMobile]);
+  }, [onSelectLot, isMobile]);
 
   const handleLotFromList = useCallback((lot: Lot) => {
-    useConfiguratorStore.getState().setLotId(lot.id);
+    onSelectLot(lot.id);
     if (isMobile) {
       setMobileListOpen(false);
     }
-  }, [isMobile]);
+  }, [onSelectLot, isMobile]);
 
   return (
     <div className="h-full flex flex-col">

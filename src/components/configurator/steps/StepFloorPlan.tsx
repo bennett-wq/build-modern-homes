@@ -10,7 +10,6 @@ import { Switch } from '@/components/ui/switch';
 import { FloorPlanImageViewer } from '@/components/FloorPlanImageViewer';
 import { type ModelConfig, type BuildType, getAvailableFloorPlanOptions } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 
 interface StepFloorPlanProps {
   model: ModelConfig;
@@ -118,13 +117,10 @@ export function StepFloorPlan({
                           <X className="w-4 h-4 text-muted-foreground" />
                         </div>
                       ) : (
-  <Switch
-    checked={isSelected}
-    onCheckedChange={() => {
-      onToggleOption(option.id);
-      useConfiguratorStore.getState().toggleFloorPlanOption(option.id);
-    }}
-  />
+                        <Switch
+                          checked={isSelected}
+                          onCheckedChange={() => onToggleOption(option.id)}
+                        />
                       )}
                     </div>
                   </motion.div>

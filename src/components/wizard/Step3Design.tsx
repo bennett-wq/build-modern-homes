@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowLeft, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle } from 'lucide-react';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 import { EXTERIOR_COPY, getPackageDescription, getGarageDescription } from '@/content/exteriorMicrocopy';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
 import { getDevelopmentBySlug } from '@/data/developments';
@@ -58,6 +57,10 @@ import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
 import { cn } from '@/lib/utils';
 
 interface Step3DesignProps {
+  selectedPackageId: string | null;
+  selectedGarageDoorId: string | null;
+  onSelectPackage: (id: string) => void;
+  onSelectGarageDoor: (id: string) => void;
   onNext: () => void;
   onBack: () => void;
   isMobile: boolean;
@@ -68,6 +71,10 @@ interface Step3DesignProps {
 }
 
 export function Step3Design({
+  selectedPackageId,
+  selectedGarageDoorId,
+  onSelectPackage,
+  onSelectGarageDoor,
   onNext,
   onBack,
   isMobile,
@@ -75,14 +82,6 @@ export function Step3Design({
   lotId,
   modelSlug,
 }: Step3DesignProps) {
-  // Get exterior selections from store
-  const selectedPackageId = useConfiguratorStore(s => s.exterior.packageId);
-  const selectedGarageDoorId = useConfiguratorStore(s => s.exterior.garageDoorId);
-  
-  // Store setters
-  const onSelectPackage = (id: string) => useConfiguratorStore.getState().setExterior({ packageId: id });
-  const onSelectGarageDoor = (id: string) => useConfiguratorStore.getState().setExterior({ garageDoorId: id });
-  
   const normalizedModel = normalizeModelSlug(modelSlug);
   const usePhotoPreview = isPhotoBasedModel(modelSlug);
   

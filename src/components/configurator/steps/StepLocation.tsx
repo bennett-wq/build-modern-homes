@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getZoneForZip } from '@/lib/pricing-mode-utils';
 import type { BuildIntent } from '@/data/pricing-config';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 
 interface StepLocationProps {
   buildIntent: BuildIntent | null;
@@ -66,11 +65,9 @@ export function StepLocation({
   const handleZipChange = (value: string) => {
     const digitsOnly = value.replace(/\D/g, '').slice(0, 5);
     onZipCodeChange(digitsOnly);
-    useConfiguratorStore.getState().setLocationZip(digitsOnly);
     // If user starts typing ZIP, they know their location
     if (digitsOnly.length > 0 && locationKnown !== true) {
       onLocationKnownChange(true);
-      useConfiguratorStore.getState().setLocationKnown(true);
     }
   };
   
@@ -79,9 +76,6 @@ export function StepLocation({
     onLocationKnownChange(false);
     onZipCodeChange('');
     onAddressChange('');
-    useConfiguratorStore.getState().setLocationKnown(false);
-    useConfiguratorStore.getState().setLocationZip('');
-    useConfiguratorStore.getState().setLocationAddress('');
     setShowAddressField(false);
   };
   
@@ -320,10 +314,7 @@ export function StepLocation({
                 type="text"
                 placeholder="123 Main St, City, State"
                 value={address}
-                onChange={(e) => {
-                  onAddressChange(e.target.value);
-                  useConfiguratorStore.getState().setLocationAddress(e.target.value);
-                }}
+                onChange={(e) => onAddressChange(e.target.value)}
                 className="h-11"
               />
               <p className="text-xs text-muted-foreground/70 mt-2">

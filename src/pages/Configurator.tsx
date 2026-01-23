@@ -14,7 +14,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useConfiguratorState } from '@/hooks/useConfiguratorState';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 import { usePricingEngine } from '@/hooks/usePricingEngine';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
@@ -82,29 +81,8 @@ export default function Configurator() {
     isModelChangeFromPreselected,
     preselectedModel,
   } = useConfiguratorState();
-
-  // Read pricing-relevant fields from the canonical store (step components write here)
-  const storeModelSlug = useConfiguratorStore(s => s.modelSlug);
-  const storeBuildType = useConfiguratorStore(s => s.buildType);
-  const storeServicePackage = useConfiguratorStore(s => s.servicePackage);
-  const storeExterior = useConfiguratorStore(s => s.exterior);
-  const storeLocation = useConfiguratorStore(s => s.location);
-  const storeIntent = useConfiguratorStore(s => s.intent);
-  const storeSelectedOptionIds = useConfiguratorStore(s => s.selectedOptionIds);
   
-  const { breakdown, formatPrice, model, pricing } = usePricingEngine({
-    ...selection,
-    // Override with canonical store values
-    modelSlug: storeModelSlug,
-    buildType: storeBuildType,
-    servicePackage: storeServicePackage,
-    packageId: storeExterior.packageId,
-    garageDoorId: storeExterior.garageDoorId,
-    intent: storeIntent,
-    zipCode: storeLocation.zipCode,
-    locationKnown: storeLocation.known,
-    floorPlanSelections: storeSelectedOptionIds.map(id => ({ optionId: id, selected: true })),
-  });
+  const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
   
   // Step 4 override: Force supply_only pricing for MOD/XMOD comparison DISPLAY ONLY
   // This helps users compare home package costs before install is applied in Step 5
@@ -269,6 +247,8 @@ export default function Configurator() {
                     
                     {currentStep === 5 && (
                       <StepServicePackage
+                        selectedPackage={selection.servicePackage}
+                        onSelectPackage={setServicePackage}
                         onNext={nextStep}
                         onBack={prevStep}
                         hasLotSelected={false}
@@ -288,6 +268,10 @@ export default function Configurator() {
                     
                     {currentStep === 7 && currentModel && (
                       <Step3Design
+                        selectedPackageId={selection.packageId}
+                        selectedGarageDoorId={selection.garageDoorId}
+                        onSelectPackage={setPackageId}
+                        onSelectGarageDoor={setGarageDoorId}
                         onNext={nextStep}
                         onBack={prevStep}
                         isMobile={isMobile}
@@ -381,6 +365,8 @@ export default function Configurator() {
                   
                   {currentStep === 3 && (
                     <StepModel
+                      selectedModelSlug={selection.modelSlug}
+                      onSelectModel={handleModelSelect}
                       onNext={nextStep}
                       onBack={prevStep}
                       showUpdatedIndicator={modelJustChanged}

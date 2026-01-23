@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { type ModelConfig, type BuildType } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 
 interface StepBuildTypeProps {
   model: ModelConfig;
@@ -162,10 +161,7 @@ export function StepBuildType({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              onClick={() => {
-                onSelectBuildType(type);
-                useConfiguratorStore.getState().setBuildType(type);
-              }}
+              onClick={() => onSelectBuildType(type)}
               className={cn(
                 'relative p-6 rounded-xl border-2 text-left transition-all duration-200',
                 'hover:border-accent/50 hover:shadow-md',

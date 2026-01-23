@@ -1,6 +1,6 @@
 // Build Wizard Page - Lot → Model → Design → Review flow
 // Premium proptech-grade wizard with smooth transitions
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle } from 'lucide-react';
@@ -17,7 +17,6 @@ import {
 } from '@/data/hawthorne-exteriors';
 import { getAspenPackageById } from '@/data/aspen-exteriors';
 import { getBelmontPackageById } from '@/data/belmont-exteriors';
-import { getKeenelandPackageById, getKeenelandGarageById } from '@/data/keeneland-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePricingEngine, defaultBuildSelection, type BuildSelection } from '@/hooks/usePricingEngine';
@@ -28,11 +27,6 @@ import { Step3Design } from '@/components/wizard/Step3Design';
 import { Step4Review } from '@/components/wizard/Step4Review';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
-
-// Store selector for pricing - single source of truth
-const useStoreModelSlug = () => useConfiguratorStore(s => s.modelSlug);
-import { ResumePrompt } from '@/components/configurator/ResumePrompt';
 
 const STEPS = [
   { id: 1, name: 'Pick a Lot', shortName: 'Lot', icon: MapPin },
@@ -54,8 +48,6 @@ const stepTransition = {
 };
 
 export default function BuildWizard() {
-  // Single source of truth for model selection - read from store
-  const storeModelSlug = useConfiguratorStore(s => s.modelSlug);
   const { slug = 'grand-haven' } = useParams<{ slug: string }>();
   const isMobile = useIsMobile();
   const development = getDevelopmentBySlug(slug);
@@ -73,65 +65,6 @@ export default function BuildWizard() {
 
   // Determine current step based on selections
   const [currentStep, setCurrentStep] = useState(1);
-  
-  // Resume prompt state
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const resumeCheckRef = useRef(false);
-  
-  // Get store values for detecting saved build
-  const storeState = useConfiguratorStore();
-  const savedBuildExists = !!(
-    storeState.lotId || 
-    storeState.modelSlug || 
-    storeState.exterior.packageId || 
-    storeState.exterior.garageDoorId
-  );
-  
-  // Show resume prompt on first load if saved build exists
-  useEffect(() => {
-    if (!resumeCheckRef.current && savedBuildExists) {
-      resumeCheckRef.current = true;
-      setShowResumePrompt(true);
-    }
-  }, [savedBuildExists]);
-  
-  // Resume handlers
-  const handleResume = useCallback(() => {
-    setShowResumePrompt(false);
-    // Keep selections, stay at step 1
-  }, []);
-  
-  const handleStartFresh = useCallback(() => {
-    useConfiguratorStore.getState().resetBuild();
-    setShowResumePrompt(false);
-  }, []);
-
-  // Helper functions to get friendly names for resume prompt
-  const getPackageNameById = (modelSlug: string | null, packageId: string | null): string | undefined => {
-    if (!packageId) return undefined;
-    const normalized = modelSlug ? normalizeModelSlug(modelSlug) : null;
-    const pkg = normalized === 'hawthorne' 
-      ? getHawthornePackageById(packageId)
-      : normalized === 'aspen'
-        ? getAspenPackageById(packageId)
-        : normalized === 'belmont'
-          ? getBelmontPackageById(packageId)
-          : normalized === 'keeneland'
-            ? getKeenelandPackageById(packageId)
-            : getPackageById(packageId);
-    return pkg?.name ?? packageId;
-  };
-
-  const getGarageNameById = (modelSlug: string | null, garageId: string | null): string | undefined => {
-    if (!garageId) return undefined;
-    const normalized = modelSlug ? normalizeModelSlug(modelSlug) : null;
-    const garage = normalized === 'hawthorne'
-      ? getHawthorneGarageById(garageId)
-      : normalized === 'keeneland'
-        ? getKeenelandGarageById(garageId)
-        : getGarageDoorById(garageId);
-    return garage?.name ?? garageId;
-  };
 
   // Auto-advance to appropriate step based on URL params (only on mount)
   useEffect(() => {
@@ -192,12 +125,12 @@ export default function BuildWizard() {
   // Build pricing selection for the engine
   const pricingSelection: BuildSelection = useMemo(() => ({
     ...defaultBuildSelection,
-    modelSlug: storeModelSlug,
+    modelSlug: normalizedModelSlug,
     buildType: 'xmod' as const, // Default to XMOD for community wizard
     pricingMode: derivedPricingMode,
     includeUtilityFees: true,
     includePermitsCosts: true,
-  }), [storeModelSlug, derivedPricingMode]);
+  }), [normalizedModelSlug, derivedPricingMode]);
 
   // Get pricing from the engine
   const { pricing } = usePricingEngine(pricingSelection);
@@ -236,20 +169,7 @@ export default function BuildWizard() {
   }
 
   return (
-    <>
-      {/* Resume Prompt Overlay */}
-      <ResumePrompt
-        isOpen={showResumePrompt}
-        savedModelSlug={storeState.modelSlug || undefined}
-        savedStep={1}
-        onResume={handleResume}
-        onStartFresh={handleStartFresh}
-        savedLotLabel={storeState.lotId ? lots.find(l => l.id === storeState.lotId)?.label : undefined}
-        savedPackageName={getPackageNameById(storeState.modelSlug, storeState.exterior.packageId)}
-        savedGarageName={getGarageNameById(storeState.modelSlug, storeState.exterior.garageDoorId)}
-      />
-      
-      <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Progress Header - sticky and stable */}
       <header className="border-b border-border bg-card/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3">
@@ -359,7 +279,9 @@ export default function BuildWizard() {
             >
               <Step1Lot
                 lots={lots}
+                selectedLotId={selection.lotId}
                 sitePlanImagePath={development.sitePlanImagePath}
+                onSelectLot={setLot}
                 onNext={() => setCurrentStep(2)}
                 isMobile={isMobile}
               />
@@ -377,6 +299,8 @@ export default function BuildWizard() {
               className="absolute inset-0"
             >
               <Step2Model
+                selectedModelSlug={selection.modelSlug}
+                onSelectModel={setModel}
                 onNext={() => setCurrentStep(3)}
                 onBack={() => setCurrentStep(1)}
                 isMobile={isMobile}
@@ -397,6 +321,10 @@ export default function BuildWizard() {
               className="absolute inset-0"
             >
               <Step3Design
+                selectedPackageId={selection.packageId}
+                selectedGarageDoorId={selection.garageDoorId}
+                onSelectPackage={setPackage}
+                onSelectGarageDoor={setGarageDoor}
                 onNext={() => setCurrentStep(4)}
                 onBack={() => setCurrentStep(2)}
                 isMobile={isMobile}
@@ -427,6 +355,14 @@ export default function BuildWizard() {
                 shareableUrl={getShareableUrl()}
                 onBack={() => setCurrentStep(3)}
                 isMobile={isMobile}
+                buyerFacingBreakdown={pricing.buyerFacingBreakdown}
+                pricingFlags={{
+                  freightPending: pricing.freightPending,
+                  basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
+                  estimateConfidence: pricing.estimateConfidence,
+                  hasPricing: pricing.hasPricing,
+                  pricingMode: pricing.pricingMode,
+                }}
                 selectionSummary={selectionSummary}
               />
             </motion.div>
@@ -434,6 +370,5 @@ export default function BuildWizard() {
         </AnimatePresence>
       </main>
     </div>
-    </>
   );
 }

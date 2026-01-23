@@ -1,6 +1,6 @@
 // Resume Quote Prompt - Shown when user has an in-progress build
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, RefreshCw, Home, Clock, MapPin, Palette, Car } from 'lucide-react';
+import { RotateCcw, RefreshCw, Home, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getModelBySlug } from '@/data/pricing-config';
@@ -11,9 +11,6 @@ interface ResumePromptProps {
   savedStep: number;
   onResume: () => void;
   onStartFresh: () => void;
-  savedLotLabel?: string;
-  savedPackageName?: string;
-  savedGarageName?: string;
 }
 
 export function ResumePrompt({
@@ -22,14 +19,8 @@ export function ResumePrompt({
   savedStep,
   onResume,
   onStartFresh,
-  savedLotLabel,
-  savedPackageName,
-  savedGarageName,
 }: ResumePromptProps) {
   const model = savedModelSlug ? getModelBySlug(savedModelSlug) : null;
-  
-  // Check if we have any selections to show
-  const hasSelections = model || savedLotLabel || savedPackageName || savedGarageName;
   
   return (
     <AnimatePresence>
@@ -59,56 +50,13 @@ export function ResumePrompt({
                 </h2>
                 
                 {/* Description */}
-                <p className="text-muted-foreground text-center mb-4">
+                <p className="text-muted-foreground text-center mb-6">
                   You have an in-progress build{model ? ` with the ${model.name}` : ''}.
                   Would you like to continue where you left off?
                 </p>
                 
-                {/* Selections Summary */}
-                {hasSelections && (
-                  <div className="bg-muted/50 rounded-lg p-4 mb-6 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                      Your selections
-                    </p>
-                    
-                    {savedLotLabel && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Lot:</span>
-                        <span className="text-foreground font-medium truncate">{savedLotLabel}</span>
-                      </div>
-                    )}
-                    
-                    {model && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Home className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Model:</span>
-                        <span className="text-foreground font-medium truncate">
-                          {model.name} • {model.sqft.toLocaleString()} sq ft
-                        </span>
-                      </div>
-                    )}
-                    
-                    {savedPackageName && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Palette className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Exterior:</span>
-                        <span className="text-foreground font-medium truncate">{savedPackageName}</span>
-                      </div>
-                    )}
-                    
-                    {savedGarageName && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Car className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Garage:</span>
-                        <span className="text-foreground font-medium truncate">{savedGarageName}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* Progress indicator - only show if step > 1 and no selections summary */}
-                {savedStep > 1 && !hasSelections && (
+                {/* Progress indicator */}
+                {savedStep > 1 && (
                   <div className="bg-muted rounded-lg p-3 mb-6">
                     <p className="text-sm text-muted-foreground text-center">
                       <span className="font-medium text-foreground">Step {savedStep} of 7</span>

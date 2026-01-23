@@ -1,6 +1,6 @@
 // Step 4: Review + Get Started - final summary with CTAs
 // Premium polish with proper Dialog handling and financing integration
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,8 +27,7 @@ import {
   Sparkles,
   MessageCircle,
   Eye,
-  Info,
-  RotateCcw
+  Info
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
@@ -42,10 +41,10 @@ import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricin
 import { NextStepCards } from '@/components/quote/QuoteRequestForms';
 import { WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
+import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 
 // Union types for package and garage door
 type AnyPackage = ExteriorPackage | HawthornePackage | BelmontPackage;
@@ -61,6 +60,8 @@ interface Step4ReviewProps {
   shareableUrl: string;
   onBack: () => void;
   isMobile: boolean;
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
   selectionSummary?: SelectionSummary;
 }
 
@@ -74,22 +75,17 @@ export function Step4Review({
   shareableUrl,
   onBack,
   isMobile,
+  buyerFacingBreakdown,
+  pricingFlags,
   selectionSummary,
 }: Step4ReviewProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
-  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
-  // Start over handler - clears saved selections and returns to step 1
-  const handleStartOver = useCallback(() => {
-    useConfiguratorStore.getState().resetBuild();
-    onBack(); // Return to previous step (wizard will be at step 1 after reset)
-  }, [onBack]);
-
-  // Fallback pricing flags - pricing will be computed by parent or pricing rail
-  const flags: BuyerPricingFlags = {
+  // Default fallback flags if not provided
+  const defaultFlags: BuyerPricingFlags = {
     freightPending: false,
     basementSelectedRequiresQuote: false,
     estimateConfidence: 'medium',
@@ -97,8 +93,8 @@ export function Step4Review({
     pricingMode: 'delivered_installed',
   };
   
-  // For now, pricing is handled by the pricing rail - Step4Review shows "pricing by request"
-  const hasPricing = false;
+  const flags = pricingFlags || defaultFlags;
+  const hasPricing = buyerFacingBreakdown && flags.hasPricing;
 
   const handleCopyLink = async () => {
     try {
@@ -134,26 +130,15 @@ export function Step4Review({
             <AppraisalInfoLink />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setConfirmResetOpen(true)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            Start Over
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onBack}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Back
-          </Button>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onBack}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          Back
+        </Button>
       </div>
 
       {/* Content */}
@@ -236,13 +221,13 @@ export function Step4Review({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05, duration: 0.2 }}
           >
-            {/* Pricing is now handled by the pricing rail - show "by request" card */}
-            {hasPricing ? (
-              <Card className="border-amber-200/50 bg-amber-50/30 shadow-sm">
-                <CardContent className="py-6 text-center">
-                  <p className="text-amber-800 font-medium">Pricing available in sidebar</p>
-                </CardContent>
-              </Card>
+            {hasPricing && buyerFacingBreakdown ? (
+              <BuyerPricingDisplay
+                breakdown={buyerFacingBreakdown}
+                flags={flags}
+                variant={isMobile ? 'compact' : 'full'}
+                className="shadow-lg"
+              />
             ) : (
               <Card className="border-amber-200/50 bg-amber-50/30 shadow-sm">
                 <CardContent className="p-5">
@@ -335,7 +320,7 @@ export function Step4Review({
           >
             <NextStepCards
               selection={selectionSummary || {}}
-              buyerFacingBreakdown={undefined}
+              buyerFacingBreakdown={buyerFacingBreakdown}
               pricingFlags={flags}
               pricingMode={flags.pricingMode}
             />
@@ -413,35 +398,6 @@ export function Step4Review({
             garageDoor={garageDoor}
             onSuccess={() => setShowScheduleModal(false)}
           />
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm Reset Dialog */}
-      <Dialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Start over?</DialogTitle>
-            <DialogDescription>
-              This will clear your saved selections.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setConfirmResetOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                handleStartOver();
-                setConfirmResetOpen(false);
-              }}
-            >
-              Start Over
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

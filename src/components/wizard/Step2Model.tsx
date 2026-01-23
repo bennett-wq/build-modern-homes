@@ -12,11 +12,12 @@ import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
-import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 import { getModelHeroImage, HERO_PLACEHOLDER } from '@/lib/model-images';
 import { cn } from '@/lib/utils';
 
 interface Step2ModelProps {
+  selectedModelSlug: string | null;
+  onSelectModel: (slug: string) => void;
   onNext: () => void;
   onBack: () => void;
   isMobile: boolean;
@@ -26,15 +27,14 @@ interface Step2ModelProps {
 }
 
 export function Step2Model({
+  selectedModelSlug,
+  onSelectModel,
   onNext,
   onBack,
   isMobile,
   developmentSlug,
   lotId,
 }: Step2ModelProps) {
-  // Get model selection from store
-  const selectedModelSlug = useConfiguratorStore(s => s.modelSlug);
-  
   // Get development to check for conforming model restrictions
   const development = developmentSlug ? getDevelopmentBySlug(developmentSlug) : null;
   const conformingModels = development?.conformingModels;
@@ -53,8 +53,8 @@ export function Step2Model({
   const [showFinancingModal, setShowFinancingModal] = useState(false);
 
   const handleSelect = useCallback((slug: string) => {
-    useConfiguratorStore.getState().setModelSlug(slug);
-  }, []);
+    onSelectModel(slug);
+  }, [onSelectModel]);
 
   return (
     <div className="h-full flex flex-col">
