@@ -80,6 +80,7 @@ export function Step4Review({
   const [copied, setCopied] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   // Start over handler - clears saved selections and returns to step 1
   const handleStartOver = useCallback(() => {
@@ -137,7 +138,7 @@ export function Step4Review({
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={handleStartOver}
+            onClick={() => setConfirmResetOpen(true)}
             className="text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
@@ -412,6 +413,35 @@ export function Step4Review({
             garageDoor={garageDoor}
             onSuccess={() => setShowScheduleModal(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Reset Dialog */}
+      <Dialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Start over?</DialogTitle>
+            <DialogDescription>
+              This will clear your saved selections.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmResetOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                handleStartOver();
+                setConfirmResetOpen(false);
+              }}
+            >
+              Start Over
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
