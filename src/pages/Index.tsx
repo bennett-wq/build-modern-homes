@@ -175,43 +175,35 @@ const Index = () => {
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-6xl mx-auto">
-            {featuredModels.map((model) => {
-              const startingPrice = model.pricing.xmod?.factory_quote_total;
-              return (
-                <Link
-                  key={model.slug}
-                  to={`/build?model=${model.slug}`}
-                  className="group block"
-                >
-                  <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted mb-4">
-                    <img
-                      src={model.heroImage || "/images/models/placeholders/hero-placeholder.svg"}
-                      alt={`${model.name} exterior`}
-                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/images/models/placeholders/hero-placeholder.svg";
-                      }}
-                    />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-1">
-                    {model.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {model.sqft.toLocaleString()} sq ft · {model.beds} bed · {model.baths} bath
-                  </p>
-                  {startingPrice && (
-                    <p className="text-sm text-muted-foreground/80">
-                      Installed from ${Math.round(startingPrice / 1000)}k
-                    </p>
-                  )}
-                  <span className="inline-flex items-center text-sm font-medium text-accent mt-3 group-hover:gap-2 transition-all">
-                    Get a Quote
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </span>
-                </Link>
-              );
-            })}
+            {featuredModels.map((model) => (
+              <Link
+                key={model.slug}
+                to={`/build?model=${model.slug}`}
+                className="group block"
+              >
+                <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted mb-4">
+                  <img
+                    src={model.heroImage || "/images/models/placeholders/hero-placeholder.svg"}
+                    alt={`${model.name} exterior`}
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/images/models/placeholders/hero-placeholder.svg";
+                    }}
+                  />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-1">
+                  {model.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {model.sqft.toLocaleString()} sq ft · {model.beds} bed · {model.baths} bath
+                </p>
+                <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all">
+                  Get a Quote
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </span>
+              </Link>
+            ))}
           </div>
 
           <div className="text-center mt-12">
