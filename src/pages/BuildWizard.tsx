@@ -355,14 +355,6 @@ export default function BuildWizard() {
                 shareableUrl={getShareableUrl()}
                 onBack={() => setCurrentStep(3)}
                 isMobile={isMobile}
-                buyerFacingBreakdown={pricing.buyerFacingBreakdown}
-                pricingFlags={{
-                  freightPending: pricing.freightPending,
-                  basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
-                  estimateConfidence: pricing.estimateConfidence,
-                  hasPricing: pricing.hasPricing,
-                  pricingMode: pricing.pricingMode,
-                }}
                 selectionSummary={selectionSummary}
               />
             </motion.div>
