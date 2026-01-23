@@ -41,8 +41,6 @@ import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricin
 import { NextStepCards } from '@/components/quote/QuoteRequestForms';
 import { WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
-import { usePricingEngine } from '@/hooks/usePricingEngine';
-import { useBuildSelection } from '@/hooks/useBuildSelection';
 import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -74,8 +72,6 @@ export function Step4Review({
   shareableUrl,
   onBack,
   isMobile,
-  buyerFacingBreakdown,
-  pricingFlags,
   selectionSummary,
 }: Step4ReviewProps) {
   const { toast } = useToast();
@@ -83,24 +79,17 @@ export function Step4Review({
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
 
-  // Get current build selection and compute pricing directly
-  const { selection } = useBuildSelection();
-  const { pricing } = usePricingEngine(selection);
-  
-  // Derive pricing flags from the engine output
-  const pricingFlags: BuyerPricingFlags = {
-    freightPending: pricing.freightPending,
-    basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
-    estimateConfidence: pricing.estimateConfidence,
-    hasPricing: pricing.hasPricing,
-    pricingMode: pricing.pricingMode,
+  // Fallback pricing flags - pricing will be computed by parent or pricing rail
+  const flags: BuyerPricingFlags = {
+    freightPending: false,
+    basementSelectedRequiresQuote: false,
+    estimateConfidence: 'medium',
+    hasPricing: false,
+    pricingMode: 'delivered_installed',
   };
   
-  // Get buyer-facing breakdown from pricing engine
-  const buyerFacingBreakdown = pricing.buyerFacingBreakdown;
-  
-  const flags = pricingFlags || defaultFlags;
-  const hasPricing = buyerFacingBreakdown && flags.hasPricing;
+  // For now, pricing is handled by the pricing rail - Step4Review shows "pricing by request"
+  const hasPricing = false;
 
   const handleCopyLink = async () => {
     try {
@@ -227,13 +216,13 @@ export function Step4Review({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05, duration: 0.2 }}
           >
-            {hasPricing && buyerFacingBreakdown ? (
-              <BuyerPricingDisplay
-                breakdown={buyerFacingBreakdown}
-                flags={flags}
-                variant={isMobile ? 'compact' : 'full'}
-                className="shadow-lg"
-              />
+            {/* Pricing is now handled by the pricing rail - show "by request" card */}
+            {hasPricing ? (
+              <Card className="border-amber-200/50 bg-amber-50/30 shadow-sm">
+                <CardContent className="py-6 text-center">
+                  <p className="text-amber-800 font-medium">Pricing available in sidebar</p>
+                </CardContent>
+              </Card>
             ) : (
               <Card className="border-amber-200/50 bg-amber-50/30 shadow-sm">
                 <CardContent className="p-5">
@@ -326,7 +315,7 @@ export function Step4Review({
           >
             <NextStepCards
               selection={selectionSummary || {}}
-              buyerFacingBreakdown={buyerFacingBreakdown}
+              buyerFacingBreakdown={undefined}
               pricingFlags={flags}
               pricingMode={flags.pricingMode}
             />
