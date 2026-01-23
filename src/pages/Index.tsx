@@ -20,7 +20,7 @@ const valueProps = [
   },
   {
     title: "Transparent pricing",
-    description: "Real estimates with confidence labels — no guessing games.",
+    description: "Real-time estimates as you design — no guessing games.",
   },
 ];
 
