@@ -299,8 +299,6 @@ export default function BuildWizard() {
               className="absolute inset-0"
             >
               <Step2Model
-                selectedModelSlug={selection.modelSlug}
-                onSelectModel={setModel}
                 onNext={() => setCurrentStep(3)}
                 onBack={() => setCurrentStep(1)}
                 isMobile={isMobile}
