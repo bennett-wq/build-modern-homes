@@ -84,29 +84,35 @@ export default function Configurator() {
   
   const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
   
-  // Step 4 override: Force supply_only pricing for MOD/XMOD comparison
+  // Step 4 override: Force supply_only pricing for MOD/XMOD comparison DISPLAY ONLY
   // This helps users compare home package costs before install is applied in Step 5
+  // IMPORTANT: This is a display-only override - it does NOT mutate the actual selection
   const step4Selection = {
     ...selection,
     servicePackage: 'supply_only' as const,
   };
   const { pricing: step4Pricing } = usePricingEngine(step4Selection);
   
-  // Determine which pricing to display based on current step
-  const displayPricing = currentStep === 4 ? step4Pricing : pricing;
+  // Compute effective pricing mode:
+  // - Step 4 (Build Type): ALWAYS show supply_only for MOD/XMOD comparison
+  // - Step 5+: Use the actual selected service package
+  const isStep4 = currentStep === 4;
+  const displayPricing = isStep4 ? step4Pricing : pricing;
   
   // Track previous model for undo functionality
   const previousModelRef = useRef<string | null>(null);
   // Track model change for inline feedback (non-blocking)
   const [modelJustChanged, setModelJustChanged] = useState(false);
   
-  // Build buyer-facing pricing flags from displayed pricing output
+  // Build buyer-facing pricing flags
+  // CRITICAL: For Step 4, use the step4 override; for all other steps, use the actual selection
   const pricingFlags: BuyerPricingFlags = {
     freightPending: displayPricing.freightPending,
     basementSelectedRequiresQuote: displayPricing.basementSelectedRequiresQuote,
     estimateConfidence: displayPricing.estimateConfidence,
     hasPricing: displayPricing.hasPricing,
-    pricingMode: displayPricing.pricingMode,
+    // This is the key fix: Step 4 shows supply_only, Step 5+ uses actual selection
+    pricingMode: isStep4 ? 'supply_only' : pricing.pricingMode,
   };
   
   // Determine if we should show the pricing rail
@@ -307,10 +313,15 @@ export default function Configurator() {
                       variant="full"
                       showPlaceholder={false}
                       onSwitchToInstalled={
-                        // Only show upsell on Step 5+ when in supply_only mode
-                        currentStep >= 5 && selection.servicePackage === 'supply_only' 
-                          ? () => setServicePackage('delivered_installed')
-                          : undefined
+                        // Show upsell ONLY when:
+                        // 1. On Step 4 (always supply_only display, but user hasn't chosen yet)
+                        // 2. On Step 5+ AND user has explicitly selected supply_only
+                        // Never show if user selected delivered_installed
+                        isStep4 
+                          ? undefined // Step 4 doesn't show upsell - they haven't made service choice yet
+                          : (selection.servicePackage === 'supply_only' 
+                              ? () => setServicePackage('delivered_installed')
+                              : undefined)
                       }
                     />
                   </div>
@@ -377,10 +388,12 @@ export default function Configurator() {
             variant="mobile"
             showPlaceholder={false}
             onSwitchToInstalled={
-              // Only show upsell on Step 5+ when in supply_only mode
-              currentStep >= 5 && selection.servicePackage === 'supply_only' 
-                ? () => setServicePackage('delivered_installed')
-                : undefined
+              // Same logic as desktop: no upsell on Step 4, only on Step 5+ if supply_only selected
+              isStep4 
+                ? undefined 
+                : (selection.servicePackage === 'supply_only' 
+                    ? () => setServicePackage('delivered_installed')
+                    : undefined)
             }
           />
         )}
