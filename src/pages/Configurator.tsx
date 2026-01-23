@@ -84,18 +84,29 @@ export default function Configurator() {
   
   const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
   
+  // Step 4 override: Force supply_only pricing for MOD/XMOD comparison
+  // This helps users compare home package costs before install is applied in Step 5
+  const step4Selection = {
+    ...selection,
+    servicePackage: 'supply_only' as const,
+  };
+  const { pricing: step4Pricing } = usePricingEngine(step4Selection);
+  
+  // Determine which pricing to display based on current step
+  const displayPricing = currentStep === 4 ? step4Pricing : pricing;
+  
   // Track previous model for undo functionality
   const previousModelRef = useRef<string | null>(null);
   // Track model change for inline feedback (non-blocking)
   const [modelJustChanged, setModelJustChanged] = useState(false);
   
-  // Build buyer-facing pricing flags from full pricing output
+  // Build buyer-facing pricing flags from displayed pricing output
   const pricingFlags: BuyerPricingFlags = {
-    freightPending: pricing.freightPending,
-    basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
-    estimateConfidence: pricing.estimateConfidence,
-    hasPricing: pricing.hasPricing,
-    pricingMode: pricing.pricingMode,
+    freightPending: displayPricing.freightPending,
+    basementSelectedRequiresQuote: displayPricing.basementSelectedRequiresQuote,
+    estimateConfidence: displayPricing.estimateConfidence,
+    hasPricing: displayPricing.hasPricing,
+    pricingMode: displayPricing.pricingMode,
   };
   
   // Determine if we should show the pricing rail
@@ -286,16 +297,18 @@ export default function Configurator() {
               </div>
               
               {/* Buyer-Facing Pricing Panel (Desktop) - Only for steps 4+ */}
+              {/* Step 4 forces supply_only display for MOD/XMOD comparison */}
               {!isMobile && (
                 <div className="hidden lg:block">
                   <div className="sticky top-32">
                     <BuyerPricingDisplay
-                      breakdown={pricing.buyerFacingBreakdown}
+                      breakdown={displayPricing.buyerFacingBreakdown}
                       flags={pricingFlags}
                       variant="full"
                       showPlaceholder={false}
                       onSwitchToInstalled={
-                        selection.servicePackage === 'supply_only' 
+                        // Only show upsell on Step 5+ when in supply_only mode
+                        currentStep >= 5 && selection.servicePackage === 'supply_only' 
                           ? () => setServicePackage('delivered_installed')
                           : undefined
                       }
@@ -356,14 +369,16 @@ export default function Configurator() {
         </main>
         
         {/* Mobile Pricing Bar - Only show on steps 4+ */}
+        {/* Step 4 forces supply_only display for MOD/XMOD comparison */}
         {isMobile && showPricingRail && (
           <BuyerPricingDisplay
-            breakdown={pricing.buyerFacingBreakdown}
+            breakdown={displayPricing.buyerFacingBreakdown}
             flags={pricingFlags}
             variant="mobile"
             showPlaceholder={false}
             onSwitchToInstalled={
-              selection.servicePackage === 'supply_only' 
+              // Only show upsell on Step 5+ when in supply_only mode
+              currentStep >= 5 && selection.servicePackage === 'supply_only' 
                 ? () => setServicePackage('delivered_installed')
                 : undefined
             }
