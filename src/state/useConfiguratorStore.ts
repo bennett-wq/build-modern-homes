@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 // ============================================================================
 // Configurator Store - Single source of truth for wizard configuration state
@@ -61,53 +62,79 @@ const initialState: ConfiguratorState = {
   developmentSlug: null,
 };
 
-// Create the store with proper typing
-export const useConfiguratorStore = create<ConfiguratorState & ConfiguratorActions>((set) => ({
-  ...initialState,
+// Create the store with persistence
+export const useConfiguratorStore = create<ConfiguratorState & ConfiguratorActions>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setCurrentStep: (step) => set({ currentStep: step }),
+      setCurrentStep: (step) => set({ currentStep: step }),
 
-  markStepComplete: (step) =>
-    set((state) => ({
-      completedSteps: state.completedSteps.includes(step)
-        ? state.completedSteps
-        : [...state.completedSteps, step].sort((a, b) => a - b),
-    })),
+      markStepComplete: (step) =>
+        set((state) => ({
+          completedSteps: state.completedSteps.includes(step)
+            ? state.completedSteps
+            : [...state.completedSteps, step].sort((a, b) => a - b),
+        })),
 
-  setIntent: (intent) => set({ intent }),
+      setIntent: (intent) => set({ intent }),
 
-  setLocationZip: (zip) =>
-    set((state) => ({
-      location: { ...state.location, zipCode: zip },
-    })),
+      setLocationZip: (zip) =>
+        set((state) => ({
+          location: { ...state.location, zipCode: zip },
+        })),
 
-  setLocationAddress: (address) =>
-    set((state) => ({
-      location: { ...state.location, address },
-    })),
+      setLocationAddress: (address) =>
+        set((state) => ({
+          location: { ...state.location, address },
+        })),
 
-  setLocationKnown: (known) =>
-    set((state) => ({
-      location: { ...state.location, known },
-    })),
+      setLocationKnown: (known) =>
+        set((state) => ({
+          location: { ...state.location, known },
+        })),
 
-  setModelSlug: (slug) => set({ modelSlug: slug }),
+      setModelSlug: (slug) => set({ modelSlug: slug }),
 
-  setBuildType: (type) => set({ buildType: type }),
+      setBuildType: (type) => set({ buildType: type }),
 
-  setServicePackage: (pkg) => set({ servicePackage: pkg }),
+      setServicePackage: (pkg) => set({ servicePackage: pkg }),
 
-  setExterior: (updates) =>
-    set((state) => ({
-      exterior: { ...state.exterior, ...updates },
-    })),
+      setExterior: (updates) =>
+        set((state) => ({
+          exterior: { ...state.exterior, ...updates },
+        })),
 
-  setLotId: (lotId) => set({ lotId }),
+      setLotId: (lotId) => set({ lotId }),
 
-  setDevelopmentSlug: (slug) => set({ developmentSlug: slug }),
+      setDevelopmentSlug: (slug) => set({ developmentSlug: slug }),
 
-  resetBuild: () => set(initialState),
-}));
+      resetBuild: () => set(initialState),
+    }),
+    {
+      name: 'basemod-configurator-v1',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        intent: state.intent,
+        location: state.location,
+        modelSlug: state.modelSlug,
+        buildType: state.buildType,
+        servicePackage: state.servicePackage,
+        exterior: state.exterior,
+        lotId: state.lotId,
+        developmentSlug: state.developmentSlug,
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Never persist UI step progress
+        if (state) {
+          state.currentStep = 1;
+          state.completedSteps = [];
+        }
+      },
+      version: 1,
+    }
+  )
+);
 
 // Export types for consumers
 export type {
