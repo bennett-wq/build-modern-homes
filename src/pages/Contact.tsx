@@ -383,10 +383,10 @@ export default function Contact() {
                   <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
                     <MapPin className="h-5 w-5 text-accent" />
                   </div>
-                  <div>
+                   <div>
                     <h4 className="font-semibold text-foreground mb-1">Location</h4>
                     <p className="text-muted-foreground text-sm">
-                      Grand Haven, Michigan
+                      Ann Arbor • Chicago
                     </p>
                   </div>
                 </div>
@@ -402,10 +402,10 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-foreground mb-1">Phone</h4>
                     <a
-                      href="tel:+1234567890"
+                      href="tel:7346467867"
                       className="text-muted-foreground text-sm hover:text-accent transition-colors"
                     >
-                      (123) 456-7890
+                      (734) 646-7867
                     </a>
                   </div>
                 </div>
@@ -421,10 +421,10 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-foreground mb-1">Email</h4>
                     <a
-                      href="mailto:info@basemod.dev"
+                      href="mailto:info@basemodhomes.com"
                       className="text-muted-foreground text-sm hover:text-accent transition-colors"
                     >
-                      info@basemod.dev
+                      info@basemodhomes.com
                     </a>
                   </div>
                 </div>

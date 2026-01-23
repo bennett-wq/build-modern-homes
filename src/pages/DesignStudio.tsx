@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 
-// Curated color options based on Clayton Middlebury 2025 Decor Book
+// Curated color options for modern modular home exteriors
 const sidingColors = [
   { id: "white", name: "Arctic White", color: "#F5F5F5" },
   { id: "gray", name: "Coastal Gray", color: "#6B7280" },
@@ -180,8 +180,7 @@ const DesignStudio = () => {
               Design Your Perfect Exterior
             </h1>
             <p className="text-lg text-white/70 max-w-2xl mx-auto">
-              Select from curated options inspired by the Clayton Middlebury 2025 Decor Book. 
-              Visualize your home's exterior in real-time.
+              Select from curated options to visualize your home's exterior in real-time.
             </p>
           </motion.div>
         </div>
