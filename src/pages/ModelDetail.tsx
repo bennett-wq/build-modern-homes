@@ -1,12 +1,37 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Ruler, BedDouble, Bath, Maximize, CheckCircle, Building, Settings2, FileText, Download, Phone } from "lucide-react";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Ruler, 
+  BedDouble, 
+  Bath, 
+  Maximize, 
+  CheckCircle, 
+  Building, 
+  Settings2, 
+  FileText, 
+  Download, 
+  Phone,
+  Home,
+  Truck,
+  ClipboardCheck,
+  Hammer,
+  Factory,
+  ShieldCheck,
+  HelpCircle,
+  ChevronDown,
+  Palette
+} from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { homeModels, HomeModel } from "@/data/models";
 import { getModelHeroImage } from "@/lib/model-images";
+import { INCLUSIONS_COPY } from "@/content/inclusionsCopy";
 
 // Model-specific data for highlights and layout options
 const modelData: Record<string, {
@@ -15,6 +40,8 @@ const modelData: Record<string, {
   highlights: string[];
   layoutOptions: string[];
   foundationType: string;
+  badges: string[];
+  buyerBullets: string[];
 }> = {
   hawthorne: {
     tagline: "Modern barndominium-inspired design with architectural flow and flexible layouts.",
@@ -31,6 +58,12 @@ const modelData: Record<string, {
       "2 or 3 Bedroom configurations available",
     ],
     foundationType: "Basement or slab foundation (site-specific)",
+    badges: ["CrossMod® compatible", "Modular available", "Garage + porch ready"],
+    buyerBullets: [
+      "Designed for curb appeal with a site-built garage + porch",
+      "Delivered & installed — estimate varies by site conditions",
+      "Financing & appraisal support available",
+    ],
   },
   belmont: {
     tagline: "Compact efficiency meets strong livability—ideal for narrow lots and tighter setbacks.",
@@ -46,6 +79,12 @@ const modelData: Record<string, {
       "Designed for tight setbacks / narrow-lot fit",
     ],
     foundationType: "Basement or slab foundation (site-specific)",
+    badges: ["CrossMod® compatible", "Modular available", "Best Value"],
+    buyerBullets: [
+      "Efficient footprint ideal for narrow lots",
+      "Delivered & installed — estimate varies by site conditions",
+      "Financing & appraisal support available",
+    ],
   },
   aspen: {
     tagline: "Maximum bedroom count in a compact footprint—versatile and efficient.",
@@ -63,6 +102,12 @@ const modelData: Record<string, {
       "Highly efficient layout for tighter setbacks",
     ],
     foundationType: "Crawl or basement foundation (site-specific)",
+    badges: ["CrossMod® compatible", "Modular available", "Family Favorite"],
+    buyerBullets: [
+      "Four bedrooms in a compact, efficient footprint",
+      "Delivered & installed — estimate varies by site conditions",
+      "Financing & appraisal support available",
+    ],
   },
   keeneland: {
     tagline: "Cost-effective modern design with strong livability and creative exterior potential.",
@@ -78,6 +123,12 @@ const modelData: Record<string, {
       "Versatile for creative exterior treatments",
     ],
     foundationType: "Slab or basement foundation (site-specific)",
+    badges: ["CrossMod® compatible", "Modular available"],
+    buyerBullets: [
+      "Modern design with flexible exterior options",
+      "Delivered & installed — estimate varies by site conditions",
+      "Financing & appraisal support available",
+    ],
   },
   laurel: {
     tagline: "Efficient, thoughtfully designed three-bedroom home with flexible garage options.",
@@ -94,6 +145,12 @@ const modelData: Record<string, {
       "Two-Car Garage with Single Modern Door",
     ],
     foundationType: "Slab or crawl foundation (site-specific)",
+    badges: ["CrossMod® compatible", "Most Affordable"],
+    buyerBullets: [
+      "Flexible garage options to match your site",
+      "Delivered & installed — estimate varies by site conditions",
+      "Financing & appraisal support available",
+    ],
   },
   cypress: {
     tagline: "Most compact CrossMod design — ideal for narrow lots and ADU applications.",
@@ -109,11 +166,52 @@ const modelData: Record<string, {
       "Open living and kitchen core",
     ],
     foundationType: "Slab or crawl foundation (site-specific)",
+    badges: ["CrossMod® only", "Most Compact"],
+    buyerBullets: [
+      "Ultra-compact footprint for narrow or ADU sites",
+      "Delivered & installed — estimate varies by site conditions",
+      "Financing & appraisal support available",
+    ],
   },
 };
 
 // Models with floor plan PDFs available
 const modelsWithFloorPlans = ["hawthorne", "belmont", "aspen", "keeneland", "laurel", "cypress"];
+
+// Process steps
+const processSteps = [
+  { icon: Home, title: "Pick your location", description: "Choose your lot or tell us where you're building" },
+  { icon: Palette, title: "Choose model + exterior", description: "Select your home design and exterior package" },
+  { icon: ClipboardCheck, title: "Confirm site conditions", description: "We review your site and finalize options" },
+  { icon: FileText, title: "Permit + site prep", description: "Handle permits and prepare your foundation" },
+  { icon: Factory, title: "Factory build", description: "Your home is precision-built in our factory" },
+  { icon: Truck, title: "Delivery & set", description: "Transport and professional installation" },
+  { icon: ShieldCheck, title: "Final walkthrough", description: "Complete on-site work and hand over keys" },
+];
+
+// FAQs
+const faqs = [
+  {
+    question: "What affects final installed price?",
+    answer: "Your final price depends on site conditions (foundation type, utility connections, grading), location, selected options, and local permit requirements. We provide a detailed written quote after site review.",
+  },
+  {
+    question: "How long does the process take?",
+    answer: "Typical timelines range from 4-6 months from contract to completion, depending on permit timelines, site preparation needs, and factory scheduling. We'll provide a projected timeline with your quote.",
+  },
+  {
+    question: "What site conditions can change cost?",
+    answer: "Factors include foundation type (slab, crawl, basement), utility run distances, grading/excavation complexity, rock or soil conditions, and local permit/impact fees.",
+  },
+  {
+    question: "Can I customize finishes?",
+    answer: "Yes! We offer curated exterior packages and upgrade options for appliances, finishes, and features. Your selections are confirmed during the design process.",
+  },
+  {
+    question: "Do you build in my county?",
+    answer: "We serve select markets. Enter your ZIP code in the Build & Price tool to check availability and get a preliminary estimate for your area.",
+  },
+];
 
 export default function ModelDetail() {
   const { modelId } = useParams<{ modelId: string }>();
@@ -144,113 +242,132 @@ export default function ModelDetail() {
     );
   }
 
+  const scrollToFloorPlan = () => {
+    document.getElementById('floor-plan-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <Layout>
-      {/* 1) Hero Section - Apple-minimal */}
-      <section className="relative w-full h-[260px] md:h-[420px] overflow-hidden">
+      {/* A) Hero Section - Premium, above the fold */}
+      <section className="relative w-full min-h-[480px] md:min-h-[560px] overflow-hidden">
         <img 
           src={heroImage} 
           alt={`The ${model.name} exterior`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover absolute inset-0"
           onError={(e) => {
             e.currentTarget.src = "/placeholder.svg";
           }}
         />
-        {/* Subtle gradient for readability - not heavy */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         
-        {/* Hero content */}
         <div className="absolute inset-0 flex flex-col justify-end">
-          <div className="container mx-auto px-4 lg:px-8 pb-8 md:pb-12">
+          <div className="container mx-auto px-4 lg:px-8 pb-10 md:pb-14">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-4xl"
             >
               <Link 
                 to="/models" 
-                className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors duration-200 mb-4"
-                aria-label="Back to all models"
+                className="inline-flex items-center text-sm text-white/70 hover:text-white transition-colors duration-200 mb-4"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 All Models
               </Link>
               
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-white mb-2">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white mb-4">
                 The {model.name}
               </h1>
               
-              {data && (
-                <p className="text-white/80 text-base md:text-lg max-w-2xl">
-                  {data.tagline}
-                </p>
+              {/* Badges */}
+              {data && data.badges.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {data.badges.map((badge, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="bg-white/20 text-white border-white/30 backdrop-blur-sm"
+                    >
+                      {badge}
+                    </Badge>
+                  ))}
+                </div>
               )}
+              
+              {/* Key stats row */}
+              <div className="flex flex-wrap gap-4 text-white/90 text-sm md:text-base mb-6">
+                <span className="flex items-center gap-1.5">
+                  <Maximize className="h-4 w-4" />
+                  {model.sqft.toLocaleString()} sq ft
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <BedDouble className="h-4 w-4" />
+                  {model.beds} bed
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Bath className="h-4 w-4" />
+                  {model.baths} bath
+                </span>
+                {data && (
+                  <span className="flex items-center gap-1.5">
+                    <Ruler className="h-4 w-4" />
+                    {data.footprint}
+                  </span>
+                )}
+              </div>
+              
+              {/* Buyer bullets */}
+              {data && data.buyerBullets.length > 0 && (
+                <ul className="space-y-1.5 mb-8">
+                  {data.buyerBullets.map((bullet, index) => (
+                    <li key={index} className="flex items-start gap-2 text-white/80 text-sm">
+                      <CheckCircle className="h-4 w-4 text-white/60 mt-0.5 flex-shrink-0" />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              
+              {/* CTAs */}
+              <div className="flex flex-wrap gap-3">
+                <Button asChild size="lg" className="bg-white text-foreground hover:bg-white/90">
+                  <Link to={`/build?model=${model.slug}`}>
+                    Build & Price
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                {hasFloorPlan && (
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-white/40 text-white hover:bg-white/10"
+                    onClick={scrollToFloorPlan}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    View Floor Plan
+                  </Button>
+                )}
+                <Button 
+                  asChild 
+                  size="lg" 
+                  variant="ghost" 
+                  className="text-white hover:bg-white/10"
+                >
+                  <Link to="/contact">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Talk to Us
+                  </Link>
+                </Button>
+              </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* 2) Specs Row - Chips matching homepage */}
-      <section className="bg-background border-b border-border">
-        <div className="container mx-auto px-4 lg:px-8 py-6">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex flex-wrap gap-3"
-          >
-            <SpecChip icon={Maximize} label={`${model.sqft.toLocaleString()} sq ft`} />
-            <SpecChip icon={BedDouble} label={`${model.beds} Bed`} />
-            <SpecChip icon={Bath} label={`${model.baths} Bath`} />
-            {data && <SpecChip icon={Ruler} label={data.footprint} />}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* 3) Primary CTA Row */}
-      <section className="bg-secondary/50 border-b border-border">
-        <div className="container mx-auto px-4 lg:px-8 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col gap-4"
-          >
-            <div className="flex flex-wrap items-center gap-4">
-              <Button asChild size="lg">
-                <Link to={`/build?model=${model.slug}`}>
-                  Get a Quote
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              {hasFloorPlan && (
-                <Button asChild size="lg" variant="outline">
-                  <a href={pdfPath} target="_blank" rel="noreferrer">
-                    <FileText className="mr-2 h-4 w-4" />
-                    View Floor Plans (PDF)
-                  </a>
-                </Button>
-              )}
-            </div>
-            {hasFloorPlan && (
-              <p className="text-xs text-muted-foreground">
-                If the PDF doesn't open,{" "}
-                <a 
-                  href={pdfPath} 
-                  download 
-                  className="underline hover:text-accent transition-colors duration-200"
-                >
-                  click here to download
-                </a>.
-              </p>
-            )}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* 4) Overview + Highlights */}
+      {/* B) Quick Overview */}
       <Section className="bg-background">
-        <div className="max-w-4xl">
+        <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -261,7 +378,6 @@ export default function ModelDetail() {
               Overview
             </h2>
             
-            {/* Keep only 2 paragraphs max */}
             <div className="space-y-4 mb-8">
               {model.description.split('\n\n').slice(0, 2).map((paragraph, index) => (
                 <p 
@@ -291,8 +407,58 @@ export default function ModelDetail() {
         </div>
       </Section>
 
-      {/* 5) Plan Details + Flexible Options */}
-      <Section className="bg-secondary/30">
+      {/* C) Floor Plan Section */}
+      {hasFloorPlan && (
+        <Section id="floor-plan-section" className="bg-secondary/30">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="max-w-3xl mx-auto text-center"
+          >
+            <FileText className="h-12 w-12 text-accent mx-auto mb-4" />
+            <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-3">
+              Floor Plan
+            </h2>
+            <p className="text-muted-foreground mb-2">
+              Download the complete floor plan for the {model.name}.
+            </p>
+            {data && (
+              <p className="text-sm text-muted-foreground mb-6">
+                Dimensions: {data.footprint}
+              </p>
+            )}
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button asChild size="lg" variant="outline">
+                <a href={pdfPath} target="_blank" rel="noreferrer">
+                  <FileText className="mr-2 h-4 w-4" />
+                  View Floor Plan (PDF)
+                </a>
+              </Button>
+              <Button asChild size="lg">
+                <a href={pdfPath} download>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Floor Plan
+                </a>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              If the PDF doesn't open,{" "}
+              <a 
+                href={pdfPath} 
+                download 
+                className="underline hover:text-accent transition-colors duration-200"
+              >
+                click here to download
+              </a>.
+            </p>
+          </motion.div>
+        </Section>
+      )}
+
+      {/* D) Plan Details + Layout Options */}
+      <Section className="bg-background">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -315,13 +481,6 @@ export default function ModelDetail() {
                   <PlanDetailItem label="Square Footage" value={`${model.sqft.toLocaleString()} sq ft`} />
                   <PlanDetailItem label="Base Layout" value={`${model.beds} Bed · ${model.baths} Bath`} />
                   {data && <PlanDetailItem label="Footprint" value={data.footprint} />}
-                  {model.price && (
-                    <PlanDetailItem 
-                      label="Starting From" 
-                      value={`$${model.price.toLocaleString()}`} 
-                      note="excludes land"
-                    />
-                  )}
                 </ul>
               </CardContent>
             </Card>
@@ -346,7 +505,7 @@ export default function ModelDetail() {
               </Card>
             )}
 
-            {/* 6) Build Types */}
+            {/* Build Types */}
             <Card className="bg-card">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -372,52 +531,168 @@ export default function ModelDetail() {
         </motion.div>
       </Section>
 
-      {/* Floor Plan Download Section - Only for models with PDFs */}
-      {hasFloorPlan && (
-        <Section className="bg-background">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl mx-auto text-center"
-          >
-            <FileText className="h-12 w-12 text-accent mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-foreground tracking-tight mb-3">
-              Floor Plan Documentation
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Download the complete floor plan for the {model.name} model.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button asChild size="lg" variant="outline">
-                <a href={pdfPath} target="_blank" rel="noreferrer">
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Floor Plans (PDF)
-                </a>
-              </Button>
-              <Button asChild size="lg">
-                <a href={pdfPath} download>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Floor Plan
-                </a>
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-4">
-              If the PDF doesn't open,{" "}
-              <a 
-                href={pdfPath} 
-                download 
-                className="underline hover:text-accent transition-colors duration-200"
+      {/* E) What's Included - Trust Builder */}
+      <Section className="bg-secondary/30">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto"
+        >
+          <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-2 text-center">
+            What's Included
+          </h2>
+          <p className="text-muted-foreground text-center mb-8 text-sm">
+            {INCLUSIONS_COPY.accordion.includedNote}
+          </p>
+          
+          <Accordion type="single" collapsible className="space-y-2">
+            {INCLUSIONS_COPY.accordion.categories.map((category) => (
+              <AccordionItem 
+                key={category.key} 
+                value={category.key}
+                className="bg-card border border-border rounded-lg px-4"
               >
-                click here to download
-              </a>.
-            </p>
-          </motion.div>
-        </Section>
-      )}
+                <AccordionTrigger className="text-foreground font-medium hover:no-underline">
+                  {category.title}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-2 pb-2">
+                    {category.items.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2 text-muted-foreground text-sm">
+                        <CheckCircle className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            Final specifications confirmed in written quote.
+          </p>
+        </motion.div>
+      </Section>
 
-      {/* 7) Bottom CTA Band */}
+      {/* F) The Process */}
+      <Section className="bg-background">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-2 text-center">
+            The Process
+          </h2>
+          <p className="text-muted-foreground text-center mb-10 max-w-xl mx-auto text-sm">
+            Our platform streamlines design selections, quoting, financing support, and project tracking.
+          </p>
+          
+          <div className="max-w-4xl mx-auto">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {processSteps.slice(0, 4).map((step, index) => (
+                <div key={index} className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                    <step.icon className="h-6 w-6 text-accent" />
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">Step {index + 1}</div>
+                  <h3 className="font-medium text-foreground text-sm mb-1">{step.title}</h3>
+                  <p className="text-xs text-muted-foreground">{step.description}</p>
+                </div>
+              ))}
+            </div>
+            <div className="grid sm:grid-cols-3 gap-6 mt-6 max-w-3xl mx-auto">
+              {processSteps.slice(4).map((step, index) => (
+                <div key={index + 4} className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                    <step.icon className="h-6 w-6 text-accent" />
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">Step {index + 5}</div>
+                  <h3 className="font-medium text-foreground text-sm mb-1">{step.title}</h3>
+                  <p className="text-xs text-muted-foreground">{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </Section>
+
+      {/* G) Financing & Appraisals */}
+      <Section className="bg-secondary/30">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-2xl mx-auto text-center"
+        >
+          <ShieldCheck className="h-10 w-10 text-accent mx-auto mb-4" />
+          <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-4">
+            Financing & Appraisals
+          </h2>
+          <ul className="space-y-3 text-left max-w-md mx-auto mb-6">
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+              <span className="text-muted-foreground text-sm">Conventional financing eligible (where applicable)</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+              <span className="text-muted-foreground text-sm">Appraisal support and documentation provided</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+              <span className="text-muted-foreground text-sm">Permanent foundation + site-built features designed for neighborhood fit</span>
+            </li>
+          </ul>
+          <Button asChild variant="outline">
+            <Link to="/how-it-works">
+              Learn More About Financing
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </motion.div>
+      </Section>
+
+      {/* H) FAQs */}
+      <Section className="bg-background">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-2xl mx-auto"
+        >
+          <HelpCircle className="h-10 w-10 text-accent mx-auto mb-4" />
+          <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-8 text-center">
+            Frequently Asked Questions
+          </h2>
+          
+          <Accordion type="single" collapsible className="space-y-2">
+            {faqs.map((faq, index) => (
+              <AccordionItem 
+                key={index} 
+                value={`faq-${index}`}
+                className="bg-card border border-border rounded-lg px-4"
+              >
+                <AccordionTrigger className="text-foreground font-medium hover:no-underline text-left">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-muted-foreground text-sm pb-2">
+                    {faq.answer}
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </motion.div>
+      </Section>
+
+      {/* Bottom CTA Band */}
       <Section className="bg-primary">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -427,10 +702,10 @@ export default function ModelDetail() {
           className="text-center max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-semibold text-primary-foreground tracking-tight mb-4">
-            Ready to get your price?
+            Get an estimate in minutes
           </h2>
           <p className="text-lg text-primary-foreground/70 mb-8">
-            Design your home and see a real estimate in minutes.
+            Design your {model.name} and see a preliminary estimate for your site.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button
@@ -439,7 +714,7 @@ export default function ModelDetail() {
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             >
               <Link to={`/build?model=${model.slug}`}>
-                Get a Quote
+                Build & Price
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -447,10 +722,11 @@ export default function ModelDetail() {
               asChild
               size="lg"
               variant="outline"
-              className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/50"
+              className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10"
             >
-              <Link to="/models">
-                Explore More Models
+              <Link to="/contact">
+                <Phone className="mr-2 h-4 w-4" />
+                Talk to Us
               </Link>
             </Button>
           </div>
@@ -460,25 +736,25 @@ export default function ModelDetail() {
   );
 }
 
-// Spec chip component - matches homepage trust chips style
-function SpecChip({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
+// Helper component for plan details
+function PlanDetailItem({ 
+  label, 
+  value, 
+  note 
+}: { 
+  label: string; 
+  value: string; 
+  note?: string;
+}) {
   return (
-    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-muted text-foreground border border-border">
-      <Icon className="h-4 w-4 text-accent" />
-      {label}
-    </span>
-  );
-}
-
-// Plan detail item component
-function PlanDetailItem({ label, value, note }: { label: string; value: string; note?: string }) {
-  return (
-    <li className="flex justify-between items-baseline gap-2">
+    <li className="flex justify-between items-start">
       <span className="text-muted-foreground text-sm">{label}</span>
-      <span className="text-foreground font-medium text-sm">
-        {value}
-        {note && <span className="text-muted-foreground font-normal text-xs ml-1">({note})</span>}
-      </span>
+      <div className="text-right">
+        <span className="text-foreground text-sm font-medium">{value}</span>
+        {note && (
+          <span className="block text-xs text-muted-foreground">{note}</span>
+        )}
+      </div>
     </li>
   );
 }
