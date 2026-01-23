@@ -197,7 +197,7 @@ export default function BuildWizard() {
     pricingMode: derivedPricingMode,
     includeUtilityFees: true,
     includePermitsCosts: true,
-  }), [normalizedModelSlug, derivedPricingMode]);
+  }), [storeModelSlug, derivedPricingMode]);
 
   // Get pricing from the engine
   const { pricing } = usePricingEngine(pricingSelection);
