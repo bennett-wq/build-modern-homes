@@ -27,8 +27,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-primary-foreground/70 text-sm leading-relaxed mb-6">
-              Modern CrossMod® homes with site-built components. 
-              Thoughtfully designed for Grand Haven, Michigan.
+              Modern Modular Homes. Thoughtfully designed for people who want quality, speed, and attainability.
             </p>
           </div>
 
@@ -79,25 +78,25 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-accent mt-0.5 flex-shrink-0" />
                 <span className="text-primary-foreground/70 text-sm">
-                  Grand Haven, Michigan
+                  Ann Arbor • Chicago
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-accent flex-shrink-0" />
                 <a
-                  href="tel:+1234567890"
+                  href="tel:7346467867"
                   className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm"
                 >
-                  (123) 456-7890
+                  (734) 646-7867
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-accent flex-shrink-0" />
                 <a
-                  href="mailto:info@basemod.dev"
+                  href="mailto:info@basemodhomes.com"
                   className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm"
                 >
-                  info@basemod.dev
+                  info@basemodhomes.com
                 </a>
               </li>
             </ul>
@@ -111,7 +110,7 @@ export function Footer() {
               © {new Date().getFullYear()} BaseMod Developments. All rights reserved.
             </p>
             <p className="text-primary-foreground/50 text-xs">
-              CrossMod® is a registered trademark. Homes built in partnership with Clayton Middlebury.
+              CrossMod® is a registered trademark. Modern modular homes built for quality and efficiency.
             </p>
           </div>
         </div>

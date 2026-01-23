@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -21,7 +22,10 @@ import {
   ShieldCheck,
   HelpCircle,
   ChevronDown,
-  Palette
+  Palette,
+  Users,
+  Package,
+  Wrench
 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
@@ -193,23 +197,48 @@ const processSteps = [
 const faqs = [
   {
     question: "What affects final installed price?",
-    answer: "Your final price depends on site conditions (foundation type, utility connections, grading), location, selected options, and local permit requirements. We provide a detailed written quote after site review.",
+    answer: "Site conditions drive cost. Key variables include foundation type (crawl/basement), driveway length, utility run length, clearing/grading, permit requirements, and finish selections. Our Build & Price tool gives an estimate, then we confirm with a site review.",
   },
   {
     question: "How long does the process take?",
-    answer: "Typical timelines range from 4-6 months from contract to completion, depending on permit timelines, site preparation needs, and factory scheduling. We'll provide a projected timeline with your quote.",
+    answer: "Factory build time averages about ~78 days for many homes. Total timeline depends on permits and site work, but our platform is designed to compress the schedule by running site prep and factory production in parallel. You'll receive a project timeline with your quote.",
   },
   {
     question: "What site conditions can change cost?",
-    answer: "Factors include foundation type (slab, crawl, basement), utility run distances, grading/excavation complexity, rock or soil conditions, and local permit/impact fees.",
+    answer: "Long driveways, long water/sewer runs, tree clearing, poor drainage, steep slopes, and special township/city requirements can change cost. We flag these early so there are no surprises.",
   },
   {
     question: "Can I customize finishes?",
-    answer: "Yes! We offer curated exterior packages and upgrade options for appliances, finishes, and features. Your selections are confirmed during the design process.",
+    answer: "Yes. Choose from curated exterior packages and interior upgrade options. Final selections are confirmed during design.",
   },
   {
     question: "Do you build in my county?",
-    answer: "We serve select markets. Enter your ZIP code in the Build & Price tool to check availability and get a preliminary estimate for your area.",
+    answer: "We're expanding market by market. Start a Build & Price estimate and we'll confirm availability for your site.",
+  },
+];
+
+// Build path options
+const buildPathOptions = [
+  {
+    title: "Turnkey",
+    subtitle: "Delivered & Installed",
+    description: "We manage the process end-to-end: site prep coordination, delivery, set, and completion.",
+    cta: "Build & Price",
+    intent: "turnkey",
+  },
+  {
+    title: "Builder/GC Assist",
+    subtitle: "We Supply, You Build",
+    description: "We supply the home and coordinate delivery/set. Your GC handles site work and finishes.",
+    cta: "Request Builder Quote",
+    intent: "builder",
+  },
+  {
+    title: "Supply-Only",
+    subtitle: "Home Kit Delivery",
+    description: "We supply the home package for qualified builders and owner-builders. You handle site work and install with a qualified crew.",
+    cta: "Request Supply-Only Quote",
+    intent: "supply-only",
   },
 ];
 
@@ -220,6 +249,11 @@ export default function ModelDetail() {
   const data = modelId ? modelData[modelId] : null;
   const hasFloorPlan = modelId ? modelsWithFloorPlans.includes(modelId) : false;
   const pdfPath = modelId ? `/floorplans/${modelId}/${modelId}-floorplan.pdf` : "";
+
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, [modelId]);
 
   if (!model) {
     return (
@@ -331,7 +365,7 @@ export default function ModelDetail() {
               
               {/* CTAs */}
               <div className="flex flex-wrap gap-3">
-                <Button asChild size="lg" className="bg-white text-foreground hover:bg-white/90">
+                <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg">
                   <Link to={`/build?model=${model.slug}`}>
                     Build & Price
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -341,7 +375,7 @@ export default function ModelDetail() {
                   <Button 
                     size="lg" 
                     variant="outline" 
-                    className="border-white/40 text-white hover:bg-white/10"
+                    className="border-white/50 text-white bg-white/10 hover:bg-white/20"
                     onClick={scrollToFloorPlan}
                   >
                     <FileText className="mr-2 h-4 w-4" />
@@ -351,8 +385,8 @@ export default function ModelDetail() {
                 <Button 
                   asChild 
                   size="lg" 
-                  variant="ghost" 
-                  className="text-white hover:bg-white/10"
+                  variant="outline" 
+                  className="border-white/50 text-white bg-white/10 hover:bg-white/20"
                 >
                   <Link to="/contact">
                     <Phone className="mr-2 h-4 w-4" />
@@ -528,6 +562,52 @@ export default function ModelDetail() {
               </CardContent>
             </Card>
           </div>
+        </motion.div>
+      </Section>
+
+      {/* NEW: Choose Your Build Path */}
+      <Section className="bg-accent/5 border-t border-b border-accent/20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-2 text-center">
+            Choose Your Build Path
+          </h2>
+          <p className="text-muted-foreground text-center mb-10 max-w-xl mx-auto text-sm">
+            Whether you want turnkey delivery or prefer to manage your own build, we have options.
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {buildPathOptions.map((option, index) => {
+              const icons = [Truck, Users, Package];
+              const Icon = icons[index];
+              return (
+                <Card key={option.intent} className="bg-card hover:border-accent/50 transition-colors">
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                      <Icon className="h-6 w-6 text-accent" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">{option.title}</h3>
+                    <p className="text-xs text-accent font-medium uppercase tracking-wide mb-3">{option.subtitle}</p>
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed">{option.description}</p>
+                    <Button asChild size="sm" variant={index === 0 ? "default" : "outline"} className="w-full">
+                      <Link to={`/build?model=${model?.slug || ''}&intent=${option.intent}`}>
+                        {option.cta}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            Availability and final scope depend on site conditions and local requirements.
+          </p>
         </motion.div>
       </Section>
 
