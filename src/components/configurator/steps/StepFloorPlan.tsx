@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, X, FileText, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { FloorPlanViewer } from '@/components/FloorPlanViewer';
+import { FloorPlanImageViewer } from '@/components/FloorPlanImageViewer';
 import { type ModelConfig, type BuildType, getAvailableFloorPlanOptions } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
 
@@ -205,11 +205,11 @@ export function StepFloorPlan({
         </Button>
       </motion.div>
       
-      {/* Floor Plan Viewer - uses react-pdf, no iframe */}
-      <FloorPlanViewer
+      {/* Floor Plan Viewer - image-based with zoom/pan */}
+      <FloorPlanImageViewer
         open={floorPlanOpen}
         onOpenChange={setFloorPlanOpen}
-        pdfUrl={model.floorPlanPdf}
+        modelSlug={model.slug}
         modelName={model.name}
       />
     </div>

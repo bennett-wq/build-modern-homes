@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -12,12 +12,10 @@ import {
   Building, 
   Settings2, 
   FileText, 
-  Download, 
   Phone,
   Home,
   Truck,
   ClipboardCheck,
-  Hammer,
   Factory,
   ShieldCheck,
   HelpCircle,
@@ -36,6 +34,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { homeModels, HomeModel } from "@/data/models";
 import { getModelHeroImage } from "@/lib/model-images";
 import { INCLUSIONS_COPY } from "@/content/inclusionsCopy";
+import { FloorPlanThumbnail, FloorPlanImageViewer, floorPlanImages } from "@/components/FloorPlanImageViewer";
 
 // Model-specific data for highlights and layout options
 const modelData: Record<string, {
@@ -179,8 +178,7 @@ const modelData: Record<string, {
   },
 };
 
-// Models with floor plan PDFs available
-const modelsWithFloorPlans = ["hawthorne", "belmont", "aspen", "keeneland", "laurel", "cypress"];
+// Floor plan availability is now managed by floorPlanImages in FloorPlanImageViewer
 
 // Process steps
 const processSteps = [
@@ -244,11 +242,11 @@ const buildPathOptions = [
 
 export default function ModelDetail() {
   const { modelId } = useParams<{ modelId: string }>();
+  const [floorPlanViewerOpen, setFloorPlanViewerOpen] = useState(false);
   const model = homeModels.find(m => m.slug === modelId);
   const heroImage = getModelHeroImage(model);
   const data = modelId ? modelData[modelId] : null;
-  const hasFloorPlan = modelId ? modelsWithFloorPlans.includes(modelId) : false;
-  const pdfPath = modelId ? `/floorplans/${modelId}/${modelId}-floorplan.pdf` : "";
+  const hasFloorPlan = modelId ? !!floorPlanImages[modelId] : false;
 
   // Scroll to top on page load
   useEffect(() => {
@@ -276,8 +274,10 @@ export default function ModelDetail() {
     );
   }
 
-  const scrollToFloorPlan = () => {
+  const scrollToFloorPlanAndOpen = () => {
     document.getElementById('floor-plan-section')?.scrollIntoView({ behavior: 'smooth' });
+    // Open the viewer after a short delay for the scroll to complete
+    setTimeout(() => setFloorPlanViewerOpen(true), 500);
   };
 
   return (
@@ -376,7 +376,7 @@ export default function ModelDetail() {
                     size="lg" 
                     variant="outline" 
                     className="border-white/50 text-white bg-white/10 hover:bg-white/20"
-                    onClick={scrollToFloorPlan}
+                    onClick={scrollToFloorPlanAndOpen}
                   >
                     <FileText className="mr-2 h-4 w-4" />
                     View Floor Plan
@@ -442,52 +442,46 @@ export default function ModelDetail() {
       </Section>
 
       {/* C) Floor Plan Section */}
-      {hasFloorPlan && (
+      {hasFloorPlan && modelId && (
         <Section id="floor-plan-section" className="bg-secondary/30">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="max-w-3xl mx-auto text-center"
+            className="max-w-4xl mx-auto"
           >
-            <FileText className="h-12 w-12 text-accent mx-auto mb-4" />
-            <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-3">
-              Floor Plan
-            </h2>
-            <p className="text-muted-foreground mb-2">
-              Download the complete floor plan for the {model.name}.
-            </p>
-            {data && (
-              <p className="text-sm text-muted-foreground mb-6">
-                Dimensions: {data.footprint}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-3">
+                Floor Plan
+              </h2>
+              <p className="text-muted-foreground">
+                View the layout for the {model.name}.
+                {data && <span className="ml-1">Dimensions: {data.footprint}</span>}
               </p>
-            )}
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button asChild size="lg" variant="outline">
-                <a href={pdfPath} target="_blank" rel="noreferrer">
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Floor Plan (PDF)
-                </a>
-              </Button>
-              <Button asChild size="lg">
-                <a href={pdfPath} download>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Floor Plan
-                </a>
-              </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-4">
-              If the PDF doesn't open,{" "}
-              <a 
-                href={pdfPath} 
-                download 
-                className="underline hover:text-accent transition-colors duration-200"
-              >
-                click here to download
-              </a>.
+            
+            {/* Floor plan thumbnail with click-to-expand */}
+            <FloorPlanThumbnail
+              modelSlug={modelId}
+              modelName={model.name}
+              onExpand={() => setFloorPlanViewerOpen(true)}
+              className="max-w-3xl mx-auto"
+            />
+            
+            {/* Disclaimer */}
+            <p className="text-xs text-muted-foreground text-center mt-6">
+              Layouts are for marketing purposes and may vary. Final construction documents are provided after contracting.
             </p>
           </motion.div>
+          
+          {/* Floor plan viewer modal */}
+          <FloorPlanImageViewer
+            open={floorPlanViewerOpen}
+            onOpenChange={setFloorPlanViewerOpen}
+            modelSlug={modelId}
+            modelName={model.name}
+          />
         </Section>
       )}
 
