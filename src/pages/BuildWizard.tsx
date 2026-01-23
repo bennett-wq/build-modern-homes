@@ -192,7 +192,7 @@ export default function BuildWizard() {
   // Build pricing selection for the engine
   const pricingSelection: BuildSelection = useMemo(() => ({
     ...defaultBuildSelection,
-    modelSlug: normalizedModelSlug,
+    modelSlug: storeModelSlug,
     buildType: 'xmod' as const, // Default to XMOD for community wizard
     pricingMode: derivedPricingMode,
     includeUtilityFees: true,
