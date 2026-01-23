@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 import type { ServicePackageType } from '@/lib/pricing-mode-utils';
 
 interface ServicePackageOption {
@@ -73,20 +74,19 @@ const SERVICE_PACKAGES: ServicePackageOption[] = [
 ];
 
 export interface StepServicePackageProps {
-  selectedPackage: ServicePackageType;
-  onSelectPackage: (pkg: ServicePackageType) => void;
   onNext: () => void;
   onBack: () => void;
   hasLotSelected?: boolean;
 }
 
 export function StepServicePackage({
-  selectedPackage,
-  onSelectPackage,
   onNext,
   onBack,
   hasLotSelected = false,
 }: StepServicePackageProps) {
+  // Get service package from store
+  const selectedPackage = useConfiguratorStore(s => s.servicePackage);
+  const onSelectPackage = (pkg: ServicePackageType) => useConfiguratorStore.getState().setServicePackage(pkg as 'delivered_installed' | 'supply_only' | 'community_all_in');
   
   // Filter packages based on lot selection
   const availablePackages = SERVICE_PACKAGES.filter(pkg => {
