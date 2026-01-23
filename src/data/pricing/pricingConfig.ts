@@ -90,8 +90,8 @@ export const MODELS: ModelConfig[] = [
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 97087, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod', foundationType: 'basement', baseHomePrice: 97087, deliveryInstallAllowance: 28000 },
-      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 104190, deliveryInstallAllowance: 22500 },
-      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 104190, deliveryInstallAllowance: 28000 },
+      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 107904, deliveryInstallAllowance: 22500 },
+      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 107904, deliveryInstallAllowance: 28000 },
     ],
   },
   {
@@ -106,8 +106,8 @@ export const MODELS: ModelConfig[] = [
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 98246, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod', foundationType: 'basement', baseHomePrice: 98246, deliveryInstallAllowance: 28000 },
-      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 108493, deliveryInstallAllowance: 22500 },
-      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 108493, deliveryInstallAllowance: 28000 },
+      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 112559, deliveryInstallAllowance: 22500 },
+      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 112559, deliveryInstallAllowance: 28000 },
     ],
   },
   {
@@ -122,8 +122,8 @@ export const MODELS: ModelConfig[] = [
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 97182, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod', foundationType: 'basement', baseHomePrice: 97182, deliveryInstallAllowance: 28000 },
-      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 107429, deliveryInstallAllowance: 22500 },
-      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 107429, deliveryInstallAllowance: 28000 },
+      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 111323, deliveryInstallAllowance: 22500 },
+      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 111323, deliveryInstallAllowance: 28000 },
     ],
   },
   {
@@ -133,12 +133,11 @@ export const MODELS: ModelConfig[] = [
     baths: 2,
     sqft: 1065,
     length: 48,
-    defaultBuildType: 'xmod',
+    defaultBuildType: 'mod',
     defaultFoundationType: 'slab',
-    pricingSource: 'Ballpark estimate - freight pending',
+    pricingSource: 'Laurel MOD Quote',
     pricing: [
-      { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 80535, deliveryInstallAllowance: 22500, freightPending: true },
-      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 87535, deliveryInstallAllowance: 22500, freightPending: true },
+      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 95245, deliveryInstallAllowance: 22500 },
     ],
   },
   {
@@ -164,9 +163,9 @@ export const MODELS: ModelConfig[] = [
     length: 66,
     defaultBuildType: 'xmod',
     defaultFoundationType: 'slab',
-    pricingSource: 'BaseMod Home Package (factory)',
+    pricingSource: 'BaseMod Home Package (placeholder)',
     pricing: [
-      { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 56397, deliveryInstallAllowance: 18000, freightPending: true },
+      { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 62213, deliveryInstallAllowance: 18000, freightPending: true },
     ],
   },
 ];

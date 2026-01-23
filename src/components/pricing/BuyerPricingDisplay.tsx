@@ -76,26 +76,14 @@ function formatPrice(price: number): string {
   }).format(price);
 }
 
-function getConfidenceBadgeVariant(confidence: 'high' | 'medium' | 'low'): 'default' | 'secondary' | 'outline' {
-  switch (confidence) {
-    case 'high':
-      return 'default';
-    case 'medium':
-      return 'secondary';
-    case 'low':
-      return 'outline';
-  }
+function getConfidenceBadgeVariant(confidence: 'high' | 'medium' | 'low'): 'secondary' {
+  // Always use secondary/neutral styling - no confidence claims
+  return 'secondary';
 }
 
 function getConfidenceLabel(confidence: 'high' | 'medium' | 'low'): string {
-  switch (confidence) {
-    case 'high':
-      return 'High confidence';
-    case 'medium':
-      return 'Estimate';
-    case 'low':
-      return 'Preliminary';
-  }
+  // Always use neutral "Preliminary" label - no confidence claims
+  return 'Preliminary';
 }
 
 function getPricingModeDisplayLabel(mode: PricingMode): string {
@@ -103,7 +91,7 @@ function getPricingModeDisplayLabel(mode: PricingMode): string {
     case 'supply_only':
       return 'Home Package Estimate';
     case 'delivered_installed':
-      return 'Delivered & Installed Estimate';
+      return 'Typical Installed Allowance (Preliminary)';
     case 'community_all_in':
       return 'All-in Price (Includes Lot)';
   }
@@ -124,23 +112,21 @@ function getPricingModeHeadline(mode: PricingMode): string {
 // SUBCOMPONENTS
 // ============================================================================
 
-function ConfidenceBadge({ confidence }: { confidence: 'high' | 'medium' | 'low' }) {
+function PreliminaryBadge() {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
-            variant={getConfidenceBadgeVariant(confidence)}
+            variant="secondary"
             className="text-xs cursor-help"
           >
-            {getConfidenceLabel(confidence)}
+            Preliminary
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-xs max-w-48">
-            {confidence === 'high' && 'Pricing is based on confirmed factory quotes.'}
-            {confidence === 'medium' && 'Some costs (like freight) are pending final confirmation.'}
-            {confidence === 'low' && 'Preliminary estimate. Contact us for a detailed quote.'}
+            Preliminary estimate. Not a contract or final bid. Final pricing confirmed in a written quote after site review.
           </p>
         </TooltipContent>
       </Tooltip>
@@ -345,7 +331,7 @@ export function BuyerPricingDisplay({
             <span className="text-sm font-medium text-muted-foreground">
               {getPricingModeHeadline(flags.pricingMode)}
             </span>
-            <ConfidenceBadge confidence={flags.estimateConfidence} />
+            <PreliminaryBadge />
           </div>
           <WhatsIncludedModal />
         </div>
@@ -599,7 +585,7 @@ function MobilePricingBar({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Starting from</span>
-            <ConfidenceBadge confidence={flags.estimateConfidence} />
+            <PreliminaryBadge />
           </div>
           {flags.hasPricing ? (
             <AnimatePresence mode="wait">
@@ -640,4 +626,4 @@ function MobilePricingBar({
 // ============================================================================
 
 export default BuyerPricingDisplay;
-export { CompactPricingCard, MobilePricingBar, WhatsIncludedModal, ConfidenceBadge };
+export { CompactPricingCard, MobilePricingBar, WhatsIncludedModal, PreliminaryBadge };

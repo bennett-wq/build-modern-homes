@@ -43,6 +43,8 @@ interface StepSummaryProps {
   includePermitsCosts: boolean;
   onUtilityFeesChange: (value: boolean) => void;
   onPermitsCostsChange: (value: boolean) => void;
+  // Service package selection
+  servicePackage?: 'delivered_installed' | 'supply_only' | 'community_all_in';
 }
 
 export function StepSummary({
@@ -61,6 +63,7 @@ export function StepSummary({
   includePermitsCosts,
   onUtilityFeesChange,
   onPermitsCostsChange,
+  servicePackage = 'delivered_installed',
 }: StepSummaryProps) {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
@@ -277,22 +280,32 @@ export function StepSummary({
           animate={{ opacity: 1, x: 0 }}
           className="space-y-6"
         >
-          {/* Price Summary */}
+          {/* Price Summary - Conditional based on service package */}
           <div className="bg-accent/5 rounded-xl border border-accent/20 p-6">
             <div className="text-center mb-6">
-              <span className="text-sm text-muted-foreground">All-in Estimate</span>
+              <span className="text-sm text-muted-foreground">
+                {servicePackage === 'supply_only' 
+                  ? 'Estimated Home Package Total' 
+                  : servicePackage === 'community_all_in'
+                    ? 'All-in Price (Includes Lot)'
+                    : 'Typical Installed Allowance (Preliminary)'}
+              </span>
               <AnimatePresence mode="wait">
                 <motion.p
-                  key={breakdown.allInEstimateTotal}
+                  key={servicePackage === 'supply_only' ? breakdown.factoryTotal : breakdown.allInEstimateTotal}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
                   className="text-4xl font-semibold text-foreground"
                 >
-                  {formatPrice(breakdown.allInEstimateTotal)}
+                  {formatPrice(
+                    servicePackage === 'supply_only' 
+                      ? Math.round((breakdown.factoryTotal + breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) * 1.20)
+                      : breakdown.allInEstimateTotal
+                  )}
                 </motion.p>
               </AnimatePresence>
-              <span className="text-sm text-muted-foreground">starting from</span>
+              <span className="text-xs text-muted-foreground">Preliminary estimate</span>
             </div>
             
             {breakdown.freightPending && (
@@ -300,12 +313,6 @@ export function StepSummary({
                 <AlertCircle className="w-4 h-4" />
                 <span>Freight pending — estimate shown without freight</span>
               </div>
-            )}
-            
-            {breakdown.pricingSource && (
-              <p className="text-xs text-center text-muted-foreground mb-4">
-                Source: {breakdown.pricingSource}
-              </p>
             )}
             
             {/* Expandable Breakdown */}
@@ -319,41 +326,65 @@ export function StepSummary({
               
               <CollapsibleContent>
                 <div className="mt-4 pt-4 border-t border-border space-y-3 text-sm">
+                  {/* Home Package - always shown */}
                   {breakdown.factoryTotal > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Factory Home</span>
-                      <span className="text-foreground">{formatPrice(breakdown.factoryTotal)}</span>
+                      <span className="text-muted-foreground">BaseMod Home Package</span>
+                      <span className="text-foreground">{formatPrice(Math.round(breakdown.factoryTotal * 1.20))}</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">BaseMod Sitework</span>
-                    <span className="text-foreground">{formatPrice(breakdown.basemodSiteworkTotal)}</span>
-                  </div>
-                  {breakdown.floorPlanAddersTotal > 0 && (
+                  
+                  {/* Selected Add-ons */}
+                  {(breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Floor Plan Options</span>
-                      <span className="text-foreground">+{formatPrice(breakdown.floorPlanAddersTotal)}</span>
+                      <span className="text-muted-foreground">Selected Add-ons</span>
+                      <span className="text-foreground">+{formatPrice(Math.round((breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) * 1.20))}</span>
                     </div>
                   )}
-                  {breakdown.exteriorAddersTotal > 0 && (
+                  
+                  {/* Sitework - only for installed or community modes */}
+                  {servicePackage !== 'supply_only' && breakdown.basemodSiteworkTotal > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Exterior Options</span>
-                      <span className="text-foreground">+{formatPrice(breakdown.exteriorAddersTotal)}</span>
+                      <span className="text-muted-foreground">Typical Sitework Allowance</span>
+                      <span className="text-foreground">{formatPrice(Math.round(breakdown.basemodSiteworkTotal * 1.20))}</span>
                     </div>
                   )}
-                  {breakdown.optionalFeesTotal > 0 && (
+                  
+                  {/* Optional fees - only for installed or community modes */}
+                  {servicePackage !== 'supply_only' && breakdown.optionalFeesTotal > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Typical Fees</span>
+                      <span className="text-muted-foreground">Typical Fees (allowance)</span>
                       <span className="text-foreground">+{formatPrice(breakdown.optionalFeesTotal)}</span>
                     </div>
                   )}
+                  
                   <div className="pt-3 border-t border-border flex justify-between font-medium">
-                    <span className="text-foreground">Total</span>
-                    <span className="text-foreground">{formatPrice(breakdown.allInEstimateTotal)}</span>
+                    <span className="text-foreground">
+                      {servicePackage === 'supply_only' ? 'Home Package Total' : 'Estimated Total'}
+                    </span>
+                    <span className="text-foreground">
+                      {formatPrice(
+                        servicePackage === 'supply_only' 
+                          ? Math.round((breakdown.factoryTotal + breakdown.floorPlanAddersTotal + breakdown.exteriorAddersTotal) * 1.20)
+                          : breakdown.allInEstimateTotal
+                      )}
+                    </span>
                   </div>
                 </div>
               </CollapsibleContent>
             </Collapsible>
+            
+            {/* Supply-only: link to see installed allowance */}
+            {servicePackage === 'supply_only' && (
+              <div className="mt-4 pt-4 border-t border-border text-center">
+                <p className="text-xs text-muted-foreground">
+                  Want to see a typical installed estimate?{' '}
+                  <button className="text-accent underline hover:text-accent/80">
+                    View installed allowance
+                  </button>
+                </p>
+              </div>
+            )}
           </div>
           
           {/* Assumptions & Allowances Accordion */}

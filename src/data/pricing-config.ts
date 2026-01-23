@@ -120,14 +120,14 @@ export const models: ModelConfig[] = [
         options_adjustment: -1902,
         freight: 4754,
         mhi_dues: 35,
-        factory_quote_total: 97087,
+        factory_quote_total: 97087, // From Hawthorne CrossMod Quote
       },
       mod: {
         base_cost: 100700,
-        options_adjustment: -1857,
-        freight: 5312,
+        options_adjustment: 2342,
+        freight: 4827,
         mhi_dues: 35,
-        factory_quote_total: 104190,
+        factory_quote_total: 107904, // From Hawthorne MOD Quote (verified)
       },
     },
     floorPlanOptions: [
@@ -171,14 +171,14 @@ export const models: ModelConfig[] = [
         options_adjustment: -1760,
         freight: 5396,
         mhi_dues: 35,
-        factory_quote_total: 98246,
+        factory_quote_total: 98246, // From Aspen CrossMod Quote
       },
       mod: {
         base_cost: 103650,
-        options_adjustment: -2033,
-        freight: 6841,
+        options_adjustment: 2933,
+        freight: 5941,
         mhi_dues: 35,
-        factory_quote_total: 108493,
+        factory_quote_total: 112559, // From Aspen MOD Quote (verified)
       },
     },
     floorPlanOptions: [
@@ -207,14 +207,14 @@ export const models: ModelConfig[] = [
         options_adjustment: -1674,
         freight: 5396,
         mhi_dues: 35,
-        factory_quote_total: 97182,
+        factory_quote_total: 97182, // From Belmont CrossMod Quote
       },
       mod: {
         base_cost: 102500,
-        options_adjustment: -1947,
-        freight: 6841,
+        options_adjustment: 2982,
+        freight: 5806,
         mhi_dues: 35,
-        factory_quote_total: 107429,
+        factory_quote_total: 111323, // From Belmont MOD Quote (verified)
       },
     },
     floorPlanOptions: [
@@ -234,28 +234,19 @@ export const models: ModelConfig[] = [
     baths: 2,
     sqft: 1065,
     length: 48,
-    buildTypes: ['xmod', 'mod'],
+    buildTypes: ['mod'], // Only MOD pricing available
     heroImage: '/images/models/laurel/hero-no-garage.webp',
     floorPlanPdf: '/floorplans/laurel/laurel-floorplan.pdf',
     pricing: {
-      xmod: {
-        base_cost: 80500,
-        options_adjustment: 0,
-        freight: 0,
-        mhi_dues: 35,
-        factory_quote_total: 80535,
-        freightPending: true,
-      },
       mod: {
         base_cost: 87500,
-        options_adjustment: 0,
-        freight: 0,
+        options_adjustment: 2745,
+        freight: 4965,
         mhi_dues: 35,
-        factory_quote_total: 87535,
-        freightPending: true,
+        factory_quote_total: 95245, // From Laurel MOD Quote (verified)
       },
     },
-    pricingSource: 'Ballpark estimate - freight pending',
+    pricingSource: 'Laurel MOD Quote',
     floorPlanOptions: [
       {
         id: '9ft-walls',
@@ -316,10 +307,10 @@ export const models: ModelConfig[] = [
     pricing: {
       xmod: {
         base_cost: 56362,
-        options_adjustment: 0,
-        freight: 0,
+        options_adjustment: 2651,
+        freight: 3165,
         mhi_dues: 35,
-        factory_quote_total: 56397,
+        factory_quote_total: 62213, // Placeholder - pending formal quote
         freightPending: true,
       },
     },
