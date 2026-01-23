@@ -90,6 +90,7 @@ export default function Configurator() {
   const storeExterior = useConfiguratorStore(s => s.exterior);
   const storeLocation = useConfiguratorStore(s => s.location);
   const storeIntent = useConfiguratorStore(s => s.intent);
+  const storeSelectedOptionIds = useConfiguratorStore(s => s.selectedOptionIds);
   
   const { breakdown, formatPrice, model, pricing } = usePricingEngine({
     ...selection,
@@ -102,6 +103,7 @@ export default function Configurator() {
     intent: storeIntent,
     zipCode: storeLocation.zipCode,
     locationKnown: storeLocation.known,
+    floorPlanSelections: storeSelectedOptionIds.map(id => ({ optionId: id, selected: true })),
   });
   
   // Step 4 override: Force supply_only pricing for MOD/XMOD comparison DISPLAY ONLY
