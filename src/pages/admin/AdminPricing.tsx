@@ -685,7 +685,7 @@ export default function AdminPricing() {
                           {model.pricing.map((p, idx) => (
                             <div key={idx} className="p-3 border rounded-lg space-y-2">
                               <p className="text-sm text-muted-foreground">
-                                {p.buildType === 'xmod' ? 'CrossMod' : 'Modular'} / {p.foundationType}
+                                {p.buildType === 'xmod' ? 'Factory-Built' : 'Modular'} / {p.foundationType}
                               </p>
                               <div>
                                 <Label className="text-xs">Base Price</Label>

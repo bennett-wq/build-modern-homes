@@ -184,7 +184,7 @@ export function FinancingModal({
 
           <p className="text-xs text-muted-foreground leading-relaxed pt-2">
             This is not a loan application. We'll connect you with lending partners 
-            familiar with CrossMod® financing to discuss your options.
+            familiar with factory-built financing to discuss your options.
           </p>
 
           <div className="flex gap-3 pt-3">

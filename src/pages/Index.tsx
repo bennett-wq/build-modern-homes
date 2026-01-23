@@ -259,7 +259,7 @@ const Index = () => {
               Why modular?
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-10">
-              CrossMod® and modular homes combine factory precision with site-built finishing — delivering a home that looks, appraises, and performs like traditional construction.
+              Factory-built and modular homes combine factory precision with site-built finishing — delivering a home that looks, appraises, and performs like traditional construction.
             </p>
             <ul className="space-y-3 text-left max-w-sm mx-auto">
               {modularBenefits.map((benefit) => (
