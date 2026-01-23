@@ -17,6 +17,7 @@ import {
 } from '@/data/hawthorne-exteriors';
 import { getAspenPackageById } from '@/data/aspen-exteriors';
 import { getBelmontPackageById } from '@/data/belmont-exteriors';
+import { getKeenelandPackageById, getKeenelandGarageById } from '@/data/keeneland-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePricingEngine, defaultBuildSelection, type BuildSelection } from '@/hooks/usePricingEngine';
@@ -99,6 +100,33 @@ export default function BuildWizard() {
     useConfiguratorStore.getState().resetBuild();
     setShowResumePrompt(false);
   }, []);
+
+  // Helper functions to get friendly names for resume prompt
+  const getPackageNameById = (modelSlug: string | null, packageId: string | null): string | undefined => {
+    if (!packageId) return undefined;
+    const normalized = modelSlug ? normalizeModelSlug(modelSlug) : null;
+    const pkg = normalized === 'hawthorne' 
+      ? getHawthornePackageById(packageId)
+      : normalized === 'aspen'
+        ? getAspenPackageById(packageId)
+        : normalized === 'belmont'
+          ? getBelmontPackageById(packageId)
+          : normalized === 'keeneland'
+            ? getKeenelandPackageById(packageId)
+            : getPackageById(packageId);
+    return pkg?.name ?? packageId;
+  };
+
+  const getGarageNameById = (modelSlug: string | null, garageId: string | null): string | undefined => {
+    if (!garageId) return undefined;
+    const normalized = modelSlug ? normalizeModelSlug(modelSlug) : null;
+    const garage = normalized === 'hawthorne'
+      ? getHawthorneGarageById(garageId)
+      : normalized === 'keeneland'
+        ? getKeenelandGarageById(garageId)
+        : getGarageDoorById(garageId);
+    return garage?.name ?? garageId;
+  };
 
   // Auto-advance to appropriate step based on URL params (only on mount)
   useEffect(() => {
@@ -212,8 +240,8 @@ export default function BuildWizard() {
         onResume={handleResume}
         onStartFresh={handleStartFresh}
         savedLotLabel={storeState.lotId ? lots.find(l => l.id === storeState.lotId)?.label : undefined}
-        savedPackageName={storeState.exterior.packageId || undefined}
-        savedGarageName={storeState.exterior.garageDoorId || undefined}
+        savedPackageName={getPackageNameById(storeState.modelSlug, storeState.exterior.packageId)}
+        savedGarageName={getGarageNameById(storeState.modelSlug, storeState.exterior.garageDoorId)}
       />
       
       <div className="min-h-screen bg-background flex flex-col">
