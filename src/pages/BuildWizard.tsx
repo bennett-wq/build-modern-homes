@@ -29,6 +29,9 @@ import { Step4Review } from '@/components/wizard/Step4Review';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useConfiguratorStore } from '@/state/useConfiguratorStore';
+
+// Store selector for pricing - single source of truth
+const useStoreModelSlug = () => useConfiguratorStore(s => s.modelSlug);
 import { ResumePrompt } from '@/components/configurator/ResumePrompt';
 
 const STEPS = [
@@ -51,6 +54,8 @@ const stepTransition = {
 };
 
 export default function BuildWizard() {
+  // Single source of truth for model selection - read from store
+  const storeModelSlug = useConfiguratorStore(s => s.modelSlug);
   const { slug = 'grand-haven' } = useParams<{ slug: string }>();
   const isMobile = useIsMobile();
   const development = getDevelopmentBySlug(slug);
