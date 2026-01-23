@@ -268,10 +268,6 @@ export default function Configurator() {
                     
                     {currentStep === 7 && currentModel && (
                       <Step3Design
-                        selectedPackageId={selection.packageId}
-                        selectedGarageDoorId={selection.garageDoorId}
-                        onSelectPackage={setPackageId}
-                        onSelectGarageDoor={setGarageDoorId}
                         onNext={nextStep}
                         onBack={prevStep}
                         isMobile={isMobile}

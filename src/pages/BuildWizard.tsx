@@ -321,10 +321,6 @@ export default function BuildWizard() {
               className="absolute inset-0"
             >
               <Step3Design
-                selectedPackageId={selection.packageId}
-                selectedGarageDoorId={selection.garageDoorId}
-                onSelectPackage={setPackage}
-                onSelectGarageDoor={setGarageDoor}
                 onNext={() => setCurrentStep(4)}
                 onBack={() => setCurrentStep(2)}
                 isMobile={isMobile}
