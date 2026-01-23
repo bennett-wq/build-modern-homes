@@ -26,9 +26,10 @@ export const floorPlanImages: Record<string, string> = {
   cypress: '/images/floorplans/cypress-floorplan.png',
 };
 
-// Models that need special cropping (to hide manufacturer logos)
+// Models that need special cropping (to hide manufacturer logos/identifiers)
 const modelsToCrop: Record<string, { clipPath: string }> = {
-  laurel: { clipPath: 'inset(0 20% 0 0)' }, // Crop right 20% to hide logo
+  laurel: { clipPath: 'inset(0 22% 5% 0)' }, // Crop right 22% and bottom 5% to hide logo and model ID
+  belmont: { clipPath: 'inset(0 0 8% 0)' }, // Crop bottom 8% to hide revision text
 };
 
 interface FloorPlanImageViewerProps {
@@ -187,29 +188,6 @@ export function FloorPlanImageViewer({
                       contentClass="!w-full !h-full flex items-center justify-center"
                     >
                       <div className="relative w-full h-full flex items-center justify-center p-4">
-                        {/* Watermark overlay */}
-                        <div 
-                          className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
-                          style={{
-                            background: `repeating-linear-gradient(
-                              -45deg,
-                              transparent,
-                              transparent 200px,
-                              rgba(0,0,0,0.02) 200px,
-                              rgba(0,0,0,0.02) 201px
-                            )`
-                          }}
-                        >
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span 
-                              className="text-2xl md:text-4xl font-bold text-black/[0.04] whitespace-nowrap select-none"
-                              style={{ transform: 'rotate(-30deg)' }}
-                            >
-                              BaseModHomes • Layout preview (not for construction)
-                            </span>
-                          </div>
-                        </div>
-                        
                         <img
                           src={imageUrl}
                           alt={`${modelName} layout preview`}
@@ -231,7 +209,7 @@ export function FloorPlanImageViewer({
                 {/* Footer disclaimer */}
                 <div className="px-4 py-3 border-t border-border bg-muted/30 text-center">
                   <p className="text-xs text-muted-foreground">
-                    Layouts are for marketing purposes and may vary. Final construction documents are provided after contracting.
+                    Layout preview for marketing purposes. Not for construction. Layouts may vary. Final documents provided after contracting.
                   </p>
                 </div>
               </>
@@ -370,11 +348,11 @@ export function FloorPlanThumbnail({
         </div>
       </div>
 
-      {/* Light watermark on thumbnail */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/20 to-transparent py-3 px-4">
-        <span className="text-xs text-white/80 font-medium">
-          Layout preview
-        </span>
+      {/* Disclaimer bar at bottom (not on image itself) */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent py-3 px-4">
+        <p className="text-xs text-white/90">
+          Layout preview for marketing purposes
+        </p>
       </div>
 
       {/* Error state */}
