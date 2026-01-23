@@ -149,6 +149,35 @@ function ConfidenceBadge({ confidence }: { confidence: 'high' | 'medium' | 'low'
 }
 
 function WhatsIncludedModal() {
+  // Import modal content from centralized copy
+  const modalContent = {
+    title: "What's included in your price",
+    subtitle: "A high‑level breakdown of what your estimate covers.",
+    sections: [
+      {
+        title: "BaseMod Home Package",
+        description: "Your factory‑built home with standard features and selected plan options, built to CrossMod® or Modular standards (as applicable).",
+        icon: Package,
+      },
+      {
+        title: "Appliances & Standard Finishes",
+        description: "Standard appliance package and finish specifications (cabinetry, counters, fixtures) as defined by the series/model. Upgrades are available.",
+        icon: Wrench,
+      },
+      {
+        title: "Professional Installation",
+        description: "Home set and on‑site completion scope as quoted (varies by site and delivery model). Foundation/excavation are not included unless explicitly quoted.",
+        icon: Truck,
+      },
+      {
+        title: "Freight & Delivery",
+        description: "Transportation from the factory to the build site. Route and access conditions may affect final delivery cost.",
+        icon: Truck,
+      },
+    ],
+    footerNote: "All estimates are preliminary and subject to site review. Final pricing is confirmed in a written quote.",
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -159,76 +188,34 @@ function WhatsIncludedModal() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>What's Included in Your Price</DialogTitle>
+          <DialogTitle>{modalContent.title}</DialogTitle>
           <DialogDescription>
-            A breakdown of what each package covers.
+            {modalContent.subtitle}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
-          {/* Home Package */}
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Package className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h4 className="font-medium text-foreground mb-1">BaseMod Home Package</h4>
-              <p className="text-sm text-muted-foreground">
-                Your factory-built home including all standard features, selected floor plan options, 
-                and exterior finishes. Built to CrossMod® standards with quality-controlled construction.
-              </p>
-            </div>
-          </div>
-
-          {/* Installation */}
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h4 className="font-medium text-foreground mb-1">Professional Installation</h4>
-              <p className="text-sm text-muted-foreground">
-                Delivery, crane set, foundation connection, and on-site completion work. 
-                Includes utility connections, drywall finishing, and final inspections.
-              </p>
-            </div>
-          </div>
-
-          {/* Delivery */}
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Truck className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h4 className="font-medium text-foreground mb-1">Freight & Delivery</h4>
-              <p className="text-sm text-muted-foreground">
-                Transportation from the factory to your build site. Distance and route 
-                complexity may affect final delivery costs.
-              </p>
-            </div>
-          </div>
-
-          {/* Fees */}
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h4 className="font-medium text-foreground mb-1">Fees & Permits</h4>
-              <p className="text-sm text-muted-foreground">
-                Typical utility authority fees, building permits, and soft costs. 
-                Actual fees vary by jurisdiction and site conditions.
-              </p>
-            </div>
-          </div>
+          {modalContent.sections.map((section, index) => {
+            const IconComponent = section.icon;
+            return (
+              <div key={index} className="flex gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <IconComponent className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground mb-1">{section.title}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {section.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="pt-4 border-t border-border">
           <div className="flex items-start gap-2 text-xs text-muted-foreground">
             <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <p>
-              All estimates are preliminary and subject to site review. 
-              Final pricing will be confirmed through a formal written quote.
-            </p>
+            <p>{modalContent.footerNote}</p>
           </div>
         </div>
       </DialogContent>

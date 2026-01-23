@@ -1,6 +1,7 @@
 // ============================================================================
 // What's Included / Not Included Accordions
 // Reusable component for displaying standard inclusions and exclusions
+// Uses centralized copy from src/content/inclusionsCopy.ts
 // ============================================================================
 
 import { 
@@ -11,8 +12,8 @@ import {
   Sun, 
   Check, 
   X, 
-  ChevronDown,
   Info,
+  DoorOpen,
 } from 'lucide-react';
 import {
   Accordion,
@@ -20,25 +21,21 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { 
-  getInclusionCategories, 
-  getExclusions,
-  type InclusionCategory,
-  type ExclusionItem,
-} from '@/data/standard-inclusions';
+import { INCLUSIONS_COPY, type InclusionCategory } from '@/content/inclusionsCopy';
 import { cn } from '@/lib/utils';
 
 // Icon mapping for categories
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  ChefHat,
-  Bath,
-  Home,
-  Zap,
-  Sun,
+  kitchen: ChefHat,
+  bathrooms: Bath,
+  interior: Home,
+  mechanical: Zap,
+  windows: Sun,
+  exterior: DoorOpen,
 };
 
-function getCategoryIcon(iconName: string) {
-  return iconMap[iconName] || Home;
+function getCategoryIcon(key: string) {
+  return iconMap[key] || Home;
 }
 
 // ============================================================================
@@ -46,16 +43,16 @@ function getCategoryIcon(iconName: string) {
 // ============================================================================
 
 function InclusionCategorySection({ category }: { category: InclusionCategory }) {
-  const IconComponent = getCategoryIcon(category.icon);
+  const IconComponent = getCategoryIcon(category.key);
   
   return (
-    <AccordionItem value={category.id} className="border-b border-border/50 last:border-0">
+    <AccordionItem value={category.key} className="border-b border-border/50 last:border-0">
       <AccordionTrigger className="py-3 hover:no-underline group">
         <div className="flex items-center gap-3 text-left">
           <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
             <IconComponent className="w-4 h-4 text-accent" />
           </div>
-          <span className="text-sm font-medium text-foreground">{category.name}</span>
+          <span className="text-sm font-medium text-foreground">{category.title}</span>
         </div>
       </AccordionTrigger>
       <AccordionContent className="pb-4">
@@ -63,14 +60,7 @@ function InclusionCategorySection({ category }: { category: InclusionCategory })
           {category.items.map((item, index) => (
             <li key={index} className="flex items-start gap-2 text-sm">
               <Check className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
-              <span className="text-muted-foreground">
-                {item.text}
-                {item.note && (
-                  <span className="text-muted-foreground/70 italic ml-1">
-                    ({item.note})
-                  </span>
-                )}
-              </span>
+              <span className="text-muted-foreground">{item}</span>
             </li>
           ))}
         </ul>
@@ -83,20 +73,13 @@ function InclusionCategorySection({ category }: { category: InclusionCategory })
 // EXCLUSIONS SECTION
 // ============================================================================
 
-function ExclusionsList({ exclusions }: { exclusions: ExclusionItem[] }) {
+function ExclusionsList({ items }: { items: string[] }) {
   return (
     <ul className="space-y-2">
-      {exclusions.map((item, index) => (
+      {items.map((item, index) => (
         <li key={index} className="flex items-start gap-2 text-sm">
           <X className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <span className="text-muted-foreground">
-            {item.text}
-            {item.reason && (
-              <span className="text-muted-foreground/70 italic ml-1">
-                — {item.reason}
-              </span>
-            )}
-          </span>
+          <span className="text-muted-foreground">{item}</span>
         </li>
       ))}
     </ul>
@@ -120,8 +103,7 @@ export function InclusionsAccordion({
   variant = 'full',
   defaultOpen = [],
 }: InclusionsAccordionProps) {
-  const categories = getInclusionCategories();
-  const exclusions = getExclusions();
+  const { accordion } = INCLUSIONS_COPY;
   
   return (
     <div className={cn('space-y-4', className)}>
@@ -132,16 +114,18 @@ export function InclusionsAccordion({
           <div className="px-4 py-3 bg-green-500/5 border-b border-border">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-600" />
-              <h3 className="text-sm font-semibold text-foreground">What's Included</h3>
+              <h3 className="text-sm font-semibold text-foreground">{accordion.includedTitle}</h3>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Included as standard in this series; final confirmation in written quote.
-            </p>
+            {accordion.includedNote && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {accordion.includedNote}
+              </p>
+            )}
           </div>
           
           <div className="px-4">
-            {categories.map((category) => (
-              <InclusionCategorySection key={category.id} category={category} />
+            {accordion.categories.map((category) => (
+              <InclusionCategorySection key={category.key} category={category} />
             ))}
           </div>
         </Accordion>
@@ -156,17 +140,19 @@ export function InclusionsAccordion({
                 <div className="flex items-center gap-2 flex-1">
                   <Info className="w-4 h-4 text-amber-600" />
                   <div className="text-left">
-                    <h3 className="text-sm font-semibold text-foreground">Not Included / Site-Dependent</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Items that vary by site or are owner responsibility
-                    </p>
+                    <h3 className="text-sm font-semibold text-foreground">{accordion.notIncludedTitle}</h3>
+                    {accordion.notIncludedNote && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {accordion.notIncludedNote}
+                      </p>
+                    )}
                   </div>
                 </div>
               </AccordionTrigger>
             </div>
             <AccordionContent>
               <div className="px-4 py-4">
-                <ExclusionsList exclusions={exclusions} />
+                <ExclusionsList items={accordion.notIncludedItems} />
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -181,8 +167,7 @@ export function InclusionsAccordion({
 // ============================================================================
 
 export function InlineInclusionsAccordion({ className = '' }: { className?: string }) {
-  const categories = getInclusionCategories();
-  const exclusions = getExclusions();
+  const { accordion } = INCLUSIONS_COPY;
   
   return (
     <div className={cn('border-t border-border', className)}>
@@ -192,17 +177,19 @@ export function InlineInclusionsAccordion({ className = '' }: { className?: stri
           <AccordionTrigger className="px-5 py-4 hover:no-underline text-sm">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-600" />
-              <span className="font-medium">What's Included</span>
+              <span className="font-medium">{accordion.includedTitle}</span>
             </div>
           </AccordionTrigger>
           <AccordionContent>
             <div className="px-5 pb-4">
-              <p className="text-xs text-muted-foreground mb-4 italic">
-                Included as standard in this series; final confirmation in written quote.
-              </p>
+              {accordion.includedNote && (
+                <p className="text-xs text-muted-foreground mb-4 italic">
+                  {accordion.includedNote}
+                </p>
+              )}
               <Accordion type="multiple" className="w-full">
-                {categories.map((category) => (
-                  <InclusionCategorySection key={category.id} category={category} />
+                {accordion.categories.map((category) => (
+                  <InclusionCategorySection key={category.key} category={category} />
                 ))}
               </Accordion>
             </div>
@@ -214,15 +201,17 @@ export function InlineInclusionsAccordion({ className = '' }: { className?: stri
           <AccordionTrigger className="px-5 py-4 hover:no-underline text-sm">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-amber-600" />
-              <span className="font-medium">Not Included / Site-Dependent</span>
+              <span className="font-medium">{accordion.notIncludedTitle}</span>
             </div>
           </AccordionTrigger>
           <AccordionContent>
             <div className="px-5 pb-4">
-              <p className="text-xs text-muted-foreground mb-4 italic">
-                Items that vary by site or are owner responsibility.
-              </p>
-              <ExclusionsList exclusions={exclusions} />
+              {accordion.notIncludedNote && (
+                <p className="text-xs text-muted-foreground mb-4 italic">
+                  {accordion.notIncludedNote}
+                </p>
+              )}
+              <ExclusionsList items={accordion.notIncludedItems} />
             </div>
           </AccordionContent>
         </AccordionItem>
