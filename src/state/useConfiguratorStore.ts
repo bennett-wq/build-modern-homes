@@ -29,6 +29,7 @@ interface ConfiguratorState {
   exterior: ExteriorSelection;
   lotId: number | null;
   developmentSlug: string | null;
+  selectedOptionIds: string[];
 }
 
 // Actions interface
@@ -45,6 +46,7 @@ interface ConfiguratorActions {
   setExterior: (updates: Partial<ExteriorSelection>) => void;
   setLotId: (lotId: number | null) => void;
   setDevelopmentSlug: (slug: string | null) => void;
+  toggleFloorPlanOption: (optionId: string) => void;
   resetBuild: () => void;
 }
 
@@ -60,6 +62,7 @@ const initialState: ConfiguratorState = {
   exterior: { packageId: null, garageDoorId: null },
   lotId: null,
   developmentSlug: null,
+  selectedOptionIds: [],
 };
 
 // Create the store with persistence
@@ -109,6 +112,13 @@ export const useConfiguratorStore = create<ConfiguratorState & ConfiguratorActio
 
       setDevelopmentSlug: (slug) => set({ developmentSlug: slug }),
 
+      toggleFloorPlanOption: (optionId) =>
+        set((state) => ({
+          selectedOptionIds: state.selectedOptionIds.includes(optionId)
+            ? state.selectedOptionIds.filter((id) => id !== optionId)
+            : [...state.selectedOptionIds, optionId],
+        })),
+
       resetBuild: () => set(initialState),
     }),
     {
@@ -123,6 +133,7 @@ export const useConfiguratorStore = create<ConfiguratorState & ConfiguratorActio
         exterior: state.exterior,
         lotId: state.lotId,
         developmentSlug: state.developmentSlug,
+        selectedOptionIds: state.selectedOptionIds,
       }),
       onRehydrateStorage: () => (state) => {
         // Never persist UI step progress
