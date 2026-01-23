@@ -83,12 +83,25 @@ export default function Configurator() {
     preselectedModel,
   } = useConfiguratorState();
 
-  // Read modelSlug from the canonical store (StepModel writes here)
+  // Read pricing-relevant fields from the canonical store (step components write here)
   const storeModelSlug = useConfiguratorStore(s => s.modelSlug);
+  const storeBuildType = useConfiguratorStore(s => s.buildType);
+  const storeServicePackage = useConfiguratorStore(s => s.servicePackage);
+  const storeExterior = useConfiguratorStore(s => s.exterior);
+  const storeLocation = useConfiguratorStore(s => s.location);
+  const storeIntent = useConfiguratorStore(s => s.intent);
   
   const { breakdown, formatPrice, model, pricing } = usePricingEngine({
     ...selection,
+    // Override with canonical store values
     modelSlug: storeModelSlug,
+    buildType: storeBuildType,
+    servicePackage: storeServicePackage,
+    packageId: storeExterior.packageId,
+    garageDoorId: storeExterior.garageDoorId,
+    intent: storeIntent,
+    zipCode: storeLocation.zipCode,
+    locationKnown: storeLocation.known,
   });
   
   // Step 4 override: Force supply_only pricing for MOD/XMOD comparison DISPLAY ONLY
