@@ -178,7 +178,7 @@ const Index = () => {
             {featuredModels.map((model) => (
               <Link
                 key={model.slug}
-                to={`/build?model=${model.slug}`}
+                to={`/models/${model.slug}`}
                 className="group block"
               >
                 <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted mb-4">
@@ -199,7 +199,7 @@ const Index = () => {
                   {model.sqft.toLocaleString()} sq ft · {model.beds} bed · {model.baths} bath
                 </p>
                 <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all">
-                  Get a Quote
+                  Learn More
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </span>
               </Link>

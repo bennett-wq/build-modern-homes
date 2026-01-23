@@ -259,15 +259,23 @@ export function useConfiguratorState() {
   });
   
   // Current step in wizard (1-7)
+  // IMPORTANT: Always start at step 1 even with model preselection
+  // Only resume to later steps if user has saved progress intentionally
   const [currentStep, setCurrentStep] = useState(() => {
     const urlParams = parseUrlParams(searchParams);
-    const hasUrlParams = Object.keys(urlParams).length > 0;
     
-    // If model was preselected, skip to step 3 (model selection)
-    if (urlParams.modelSlug) {
-      return 3;
+    // Check for explicit resume flag in URL
+    const shouldResume = searchParams.get('resume') === 'true';
+    
+    // If resume flag is set and we have stored progress, use stored step
+    if (shouldResume) {
+      const storedStep = loadLastStep();
+      if (storedStep > 1) {
+        return storedStep;
+      }
     }
     
+    // Always start at step 1 - model preselection no longer auto-skips
     return 1;
   });
   
