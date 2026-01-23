@@ -156,7 +156,7 @@ function WhatsIncludedModal() {
     sections: [
       {
         title: "BaseMod Home Package",
-        description: "Your factory‑built home with standard features and selected plan options, built to CrossMod® or Modular standards (as applicable).",
+        description: "Your factory‑built home with standard features and selected plan options, built to factory or modular standards (as applicable).",
         icon: Package,
       },
       {

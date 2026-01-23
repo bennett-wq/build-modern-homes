@@ -147,7 +147,7 @@ export function calcInstalledEstimate(input: CalcPriceInput): CalcPriceResult {
       disclaimer: DISCLAIMERS.estimate,
       freightPending: false,
       confidence: 'low',
-      message: `Pricing not available for ${modelConfig.name} with ${buildType === 'xmod' ? 'CrossMod' : 'Modular'} build type and ${foundationType} foundation. Please contact us.`,
+      message: `Pricing not available for ${modelConfig.name} with ${buildType === 'xmod' ? 'Factory-Built' : 'Modular'} build type and ${foundationType} foundation. Please contact us.`,
       pricingMode,
       modelConfig,
       internalCost: 0,
@@ -166,7 +166,7 @@ export function calcInstalledEstimate(input: CalcPriceInput): CalcPriceResult {
   const baseHomeInternal = pricing.baseHomePrice;
   lineItems.push({
     id: 'base-home',
-    label: `${modelConfig.name} Home (${buildType === 'xmod' ? 'CrossMod' : 'Modular'})`,
+    label: `${modelConfig.name} Home (${buildType === 'xmod' ? 'Factory-Built' : 'Modular'})`,
     amount: 0, // Will be set after markup
     category: 'base',
   });

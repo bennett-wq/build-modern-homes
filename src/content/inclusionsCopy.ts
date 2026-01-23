@@ -119,7 +119,7 @@ export const INCLUSIONS_COPY: InclusionsCopy = {
       {
         title: "BaseMod Home Package",
         description:
-          "Your factory‑built home with standard features and selected plan options, built to CrossMod® or Modular standards (as applicable).",
+          "Your factory‑built home with standard features and selected plan options, built to factory or modular standards (as applicable).",
       },
       {
         title: "Appliances & Standard Finishes",

@@ -62,7 +62,7 @@ const modelData: Record<string, {
       "2 or 3 Bedroom configurations available",
     ],
     foundationType: "Basement or slab foundation (site-specific)",
-    badges: ["CrossMod® compatible", "Modular available", "Garage + porch ready"],
+    badges: ["Factory-built", "Modular available", "Garage + porch ready"],
     buyerBullets: [
       "Designed for curb appeal with a site-built garage + porch",
       "Delivered & installed — estimate varies by site conditions",
@@ -83,7 +83,7 @@ const modelData: Record<string, {
       "Designed for tight setbacks / narrow-lot fit",
     ],
     foundationType: "Basement or slab foundation (site-specific)",
-    badges: ["CrossMod® compatible", "Modular available", "Best Value"],
+    badges: ["Factory-built", "Modular available", "Best Value"],
     buyerBullets: [
       "Efficient footprint ideal for narrow lots",
       "Delivered & installed — estimate varies by site conditions",
@@ -106,7 +106,7 @@ const modelData: Record<string, {
       "Highly efficient layout for tighter setbacks",
     ],
     foundationType: "Crawl or basement foundation (site-specific)",
-    badges: ["CrossMod® compatible", "Modular available", "Family Favorite"],
+    badges: ["Factory-built", "Modular available", "Family Favorite"],
     buyerBullets: [
       "Four bedrooms in a compact, efficient footprint",
       "Delivered & installed — estimate varies by site conditions",
@@ -127,7 +127,7 @@ const modelData: Record<string, {
       "Versatile for creative exterior treatments",
     ],
     foundationType: "Slab or basement foundation (site-specific)",
-    badges: ["CrossMod® compatible", "Modular available"],
+    badges: ["Factory-built", "Modular available"],
     buyerBullets: [
       "Modern design with flexible exterior options",
       "Delivered & installed — estimate varies by site conditions",
@@ -149,7 +149,7 @@ const modelData: Record<string, {
       "Two-Car Garage with Single Modern Door",
     ],
     foundationType: "Slab or crawl foundation (site-specific)",
-    badges: ["CrossMod® compatible", "Most Affordable"],
+    badges: ["Factory-built", "Most Affordable"],
     buyerBullets: [
       "Flexible garage options to match your site",
       "Delivered & installed — estimate varies by site conditions",
@@ -157,7 +157,7 @@ const modelData: Record<string, {
     ],
   },
   cypress: {
-    tagline: "Most compact CrossMod design — ideal for narrow lots and ADU applications.",
+    tagline: "Most compact factory-built design — ideal for narrow lots and ADU applications.",
     footprint: "16' x 66'",
     highlights: [
       "Efficient 990 sq ft in ultra-compact footprint",
@@ -170,7 +170,7 @@ const modelData: Record<string, {
       "Open living and kitchen core",
     ],
     foundationType: "Slab or crawl foundation (site-specific)",
-    badges: ["CrossMod® only", "Most Compact"],
+    badges: ["Factory-built", "Most Compact"],
     buyerBullets: [
       "Ultra-compact footprint for narrow or ADU sites",
       "Delivered & installed — estimate varies by site conditions",
@@ -236,7 +236,7 @@ const buildPathOptions = [
   {
     title: "Supply-Only",
     subtitle: "Home Kit Delivery",
-    description: "We supply the home package for qualified builders and owner-builders. You handle site work and install with a qualified crew.",
+    description: "We supply the home package for qualified builders and owner-builders. You handle site work and install with a qualified crew. Available for qualified builders and owner-builders with a verified installer.",
     cta: "Request Supply-Only Quote",
     intent: "supply-only",
   },
@@ -252,7 +252,7 @@ export default function ModelDetail() {
 
   // Scroll to top on page load
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [modelId]);
 
   if (!model) {
@@ -576,6 +576,9 @@ export default function ModelDetail() {
           <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-2 text-center">
             Choose Your Build Path
           </h2>
+          <p className="text-accent font-medium text-center mb-2 text-sm">
+            Three ways to build — turnkey, builder-assisted, or supply-only kits.
+          </p>
           <p className="text-muted-foreground text-center mb-10 max-w-xl mx-auto text-sm">
             Whether you want turnkey delivery or prefer to manage your own build, we have options.
           </p>

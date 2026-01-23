@@ -22,7 +22,7 @@ const pricingComponents = [
   {
     icon: Home,
     title: "Base Home",
-    description: "The CrossMod® home itself, including all interior finishes, appliances, and standard features.",
+    description: "The factory-built home itself, including all interior finishes, appliances, and standard features.",
     note: "Starting from $180,000 - $260,000 depending on model"
   },
   {
@@ -56,7 +56,7 @@ const pricingFaqs = [
   },
   {
     question: "What financing options are available?",
-    answer: "BaseMod homes qualify for conventional mortgage financing, just like traditional site-built homes. We work with lenders experienced in CrossMod® construction and can provide referrals. FHA and VA financing may also be available."
+    answer: "BaseMod homes qualify for conventional mortgage financing, just like traditional site-built homes. We work with lenders experienced in factory-built construction and can provide referrals. FHA and VA financing may also be available."
   },
   {
     question: "When is payment required?",

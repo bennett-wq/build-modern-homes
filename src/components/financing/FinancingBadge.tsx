@@ -106,7 +106,7 @@ export function FinancingInfoDrawer({ open, onOpenChange }: FinancingInfoDrawerP
           Conventional Financing Options
         </span>
       }
-      description="Understanding your mortgage options for CrossMod® homes"
+      description="Understanding your mortgage options for factory-built homes"
     >
       <div className="space-y-5">
         {/* Programs Overview */}
@@ -160,7 +160,7 @@ export function FinancingInfoDrawer({ open, onOpenChange }: FinancingInfoDrawerP
         {/* Disclaimer */}
         <p className="text-xs text-muted-foreground/80 leading-relaxed pt-2 border-t border-border">
           Financing availability depends on individual qualifications and lender approval. 
-          BaseMod Homes works with lending partners familiar with CrossMod® financing programs.
+          BaseMod Homes works with lending partners familiar with factory-built financing programs.
         </p>
 
         <div className="flex justify-end pt-2">

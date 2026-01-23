@@ -28,11 +28,11 @@ const buildTypeInfo: Record<BuildType, {
   features: string[];
 }> = {
   xmod: {
-    title: 'CrossMod® (XMOD)',
+    title: 'Factory-Built (XMOD)',
     subtitle: 'Factory standardized',
-    description: 'Factory-built to CrossMod® program standards with standardized specifications.',
+    description: 'Factory-built to program standards with standardized specifications.',
     features: [
-      'CrossMod® certification path',
+      'Factory certification path',
       'Standardized floor plan',
       'Financing eligibility varies by lender',
       'Faster delivery timeline',

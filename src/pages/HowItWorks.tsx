@@ -15,7 +15,7 @@ const steps = [
     details: [
       "Compare square footage and layouts",
       "See available bedroom configurations",
-      "Understand build type options (CrossMod® or Modular)",
+      "Understand build type options (factory-built or modular)",
     ],
   },
   {

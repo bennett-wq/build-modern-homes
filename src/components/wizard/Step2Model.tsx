@@ -66,7 +66,7 @@ export function Step2Model({
           </h2>
           <div className="flex items-center gap-3 mt-0.5">
             <p className="text-sm text-muted-foreground">
-              {conformingModels ? 'Showing conforming plans approved for this development' : 'Choose from our CrossMod® home collection'}
+              {conformingModels ? 'Showing conforming plans approved for this development' : 'Choose from our factory-built home collection'}
             </p>
             <span className="text-muted-foreground/30">•</span>
             <AppraisalInfoLink />

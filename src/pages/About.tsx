@@ -34,7 +34,7 @@ const values = [
   {
     icon: Shield,
     title: "Quality Assured",
-    description: "CrossMod® standards ensure your home meets or exceeds traditional site-built construction requirements."
+    description: "Factory-built standards ensure your home meets or exceeds traditional site-built construction requirements."
   },
   {
     icon: Heart,
@@ -119,7 +119,7 @@ export default function About() {
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
               Traditional home building is slow, expensive, and often inconsistent. 
               We saw an opportunity to do better by partnering with industry-leading 
-              CrossMod® home manufacturers and adding our own design-focused 
+              factory-built home manufacturers and adding our own design-focused 
               site-built components.
             </p>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
@@ -194,7 +194,7 @@ export default function About() {
               Built with Industry-Leading Partners
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              Our manufacturing partners are industry leaders in CrossMod® and modular 
+              Our manufacturing partners are industry leaders in factory-built and modular 
               home construction, bringing decades of experience in precision factory 
               production. Their commitment to quality and innovation aligns perfectly 
               with our vision for attainable, design-forward housing.

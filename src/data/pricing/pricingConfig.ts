@@ -326,7 +326,7 @@ export const PRICING_MODES: Record<PricingMode, PricingModeConfig> = {
 
 export const DISCLAIMERS = {
   whatsIncluded: [
-    'Factory-built CrossMod® home to site-built standards',
+    'Factory-built home to site-built standards',
     'Professional delivery and installation',
     'Foundation (slab or basement as configured)',
     'Exterior finishes as specified',

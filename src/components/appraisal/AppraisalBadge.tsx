@@ -141,12 +141,12 @@ export function AppraisalInfoDrawer({ open, onOpenChange }: AppraisalInfoDrawerP
           <div className="p-4 rounded-lg bg-secondary border border-border">
             <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">2</span>
-              CrossMod® Homes
+              Factory-Built Homes
             </h4>
             <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
-                <span>HUD-built with additional features required by Fannie Mae MH Advantage® and Freddie Mac CHOICEHome®</span>
+                <span>Built with features that may qualify for Fannie Mae MH Advantage® and Freddie Mac CHOICEHome® programs</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />

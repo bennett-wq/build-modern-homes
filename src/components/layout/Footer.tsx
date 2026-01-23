@@ -110,7 +110,7 @@ export function Footer() {
               © {new Date().getFullYear()} BaseMod Developments. All rights reserved.
             </p>
             <p className="text-primary-foreground/50 text-xs">
-              CrossMod® is a registered trademark. Modern modular homes built for quality and efficiency.
+              Modern modular homes built for quality and efficiency.
             </p>
           </div>
         </div>

@@ -118,10 +118,10 @@ export default function Models() {
               Build Types
             </span>
             <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-foreground tracking-tight">
-              What is a CrossMod® Home?
+              What is Factory-Built?
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              CrossMod® homes are factory-built to meet or exceed site-built construction 
+              Factory-built homes are constructed to meet or exceed site-built construction 
               standards. Built in a controlled environment, they offer consistent quality, 
               faster completion times, and enhanced energy efficiency.
             </p>
@@ -147,7 +147,7 @@ export default function Models() {
           >
             <div className="text-center text-muted-foreground">
               <HomeIcon size={64} className="mx-auto mb-4 opacity-30" />
-              <p className="text-sm">CrossMod® Construction Diagram</p>
+              <p className="text-sm">Factory-Built Construction Diagram</p>
             </div>
           </motion.div>
         </div>
