@@ -7,6 +7,7 @@ import { MapPin, Search, Building2, ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BuildIntent } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
+import { useConfiguratorStore } from '@/state/useConfiguratorStore';
 
 const intentOptions: {
   id: BuildIntent;
@@ -72,7 +73,10 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              onClick={() => onSelectIntent(option.id)}
+              onClick={() => {
+                onSelectIntent(option.id);
+                useConfiguratorStore.getState().setIntent(option.id);
+              }}
               className={cn(
                 'relative p-6 rounded-xl border-2 text-left transition-all duration-200',
                 'hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5',
