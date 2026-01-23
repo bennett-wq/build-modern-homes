@@ -41,7 +41,8 @@ import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricin
 import { NextStepCards } from '@/components/quote/QuoteRequestForms';
 import { WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
-import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
+import { usePricingEngine } from '@/hooks/usePricingEngine';
+import { useBuildSelection } from '@/hooks/useBuildSelection';
 import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -60,8 +61,6 @@ interface Step4ReviewProps {
   shareableUrl: string;
   onBack: () => void;
   isMobile: boolean;
-  buyerFacingBreakdown?: BuyerFacingBreakdown;
-  pricingFlags?: BuyerPricingFlags;
   selectionSummary?: SelectionSummary;
 }
 
@@ -84,14 +83,21 @@ export function Step4Review({
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
 
-  // Default fallback flags if not provided
-  const defaultFlags: BuyerPricingFlags = {
-    freightPending: false,
-    basementSelectedRequiresQuote: false,
-    estimateConfidence: 'medium',
-    hasPricing: false,
-    pricingMode: 'delivered_installed',
+  // Get current build selection and compute pricing directly
+  const { selection } = useBuildSelection();
+  const { pricing } = usePricingEngine(selection);
+  
+  // Derive pricing flags from the engine output
+  const pricingFlags: BuyerPricingFlags = {
+    freightPending: pricing.freightPending,
+    basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
+    estimateConfidence: pricing.estimateConfidence,
+    hasPricing: pricing.hasPricing,
+    pricingMode: pricing.pricingMode,
   };
+  
+  // Get buyer-facing breakdown from pricing engine
+  const buyerFacingBreakdown = pricing.buyerFacingBreakdown;
   
   const flags = pricingFlags || defaultFlags;
   const hasPricing = buyerFacingBreakdown && flags.hasPricing;
