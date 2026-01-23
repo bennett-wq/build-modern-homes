@@ -247,8 +247,6 @@ export default function Configurator() {
                     
                     {currentStep === 5 && (
                       <StepServicePackage
-                        selectedPackage={selection.servicePackage}
-                        onSelectPackage={setServicePackage}
                         onNext={nextStep}
                         onBack={prevStep}
                         hasLotSelected={false}
