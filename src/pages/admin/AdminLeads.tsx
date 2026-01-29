@@ -4,14 +4,16 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -27,24 +29,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { 
   Loader2, 
-  LogOut, 
-  DollarSign,
-  Users,
-  Shield,
-  Hammer,
+  TrendingUp,
   RefreshCw,
   Search,
   Mail,
   Phone,
   Calendar,
-  TrendingUp,
   Clock,
   CheckCircle2,
   AlertCircle,
-  FileText
+  FileText,
+  Eye,
+  Save
 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface FinancingApplication {
   id: string;
@@ -63,6 +70,7 @@ interface FinancingApplication {
   purchase_timeframe: string;
   pre_qualification_status: 'pending' | 'pre_qualified' | 'needs_review' | 'declined';
   pre_qualified_amount: number | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -97,14 +105,33 @@ const TIMEFRAME_LABELS: Record<string, string> = {
   '12_plus': '12+ mo',
 };
 
+const EMPLOYMENT_LABELS: Record<string, string> = {
+  employed: 'Employed',
+  self_employed: 'Self-Employed',
+  retired: 'Retired',
+  other: 'Other',
+};
+
+const USE_LABELS: Record<string, string> = {
+  primary: 'Primary Residence',
+  second_home: 'Second Home',
+  investment: 'Investment Property',
+};
+
 export default function AdminLeads() {
   const navigate = useNavigate();
-  const { user, isAdmin, isBuilder, hasAccess, isLoading: authLoading, signOut } = useAdminAuth();
+  const { user, isAdmin, hasAccess, isLoading: authLoading, signOut } = useAdminAuth();
 
   const [applications, setApplications] = useState<FinancingApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // Detail drawer state
+  const [selectedApp, setSelectedApp] = useState<FinancingApplication | null>(null);
+  const [editNotes, setEditNotes] = useState('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Redirect if not authenticated or not authorized
   useEffect(() => {
@@ -161,6 +188,71 @@ export default function AdminLeads() {
     });
   };
 
+  // Update application status
+  const handleStatusChange = async (appId: string, newStatus: string) => {
+    setIsUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from('financing_applications')
+        .update({ pre_qualification_status: newStatus as 'pending' | 'pre_qualified' | 'needs_review' | 'declined' })
+        .eq('id', appId);
+
+      if (error) throw error;
+
+      // Update local state
+      setApplications(prev => prev.map(app => 
+        app.id === appId 
+          ? { ...app, pre_qualification_status: newStatus as FinancingApplication['pre_qualification_status'] }
+          : app
+      ));
+
+      if (selectedApp?.id === appId) {
+        setSelectedApp(prev => prev ? { ...prev, pre_qualification_status: newStatus as FinancingApplication['pre_qualification_status'] } : null);
+      }
+
+      toast({ title: 'Status updated', description: `Changed to ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG]?.label}` });
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Save notes
+  const handleSaveNotes = async () => {
+    if (!selectedApp) return;
+
+    setIsSavingNotes(true);
+    try {
+      const { error } = await supabase
+        .from('financing_applications')
+        .update({ notes: editNotes })
+        .eq('id', selectedApp.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setApplications(prev => prev.map(app => 
+        app.id === selectedApp.id ? { ...app, notes: editNotes } : app
+      ));
+      setSelectedApp(prev => prev ? { ...prev, notes: editNotes } : null);
+
+      toast({ title: 'Notes saved' });
+    } catch (err) {
+      console.error('Failed to save notes:', err);
+      toast({ title: 'Error', description: 'Failed to save notes', variant: 'destructive' });
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
+  // Open detail drawer
+  const openDetail = (app: FinancingApplication) => {
+    setSelectedApp(app);
+    setEditNotes(app.notes || '');
+  };
+
   // Filter applications
   const filteredApplications = applications.filter(app => {
     const matchesSearch = searchQuery === '' || 
@@ -177,6 +269,7 @@ export default function AdminLeads() {
   const totalLeads = applications.length;
   const preQualifiedCount = applications.filter(a => a.pre_qualification_status === 'pre_qualified').length;
   const needsReviewCount = applications.filter(a => a.pre_qualification_status === 'needs_review').length;
+  const pendingCount = applications.filter(a => a.pre_qualification_status === 'pending').length;
   const totalPipelineValue = applications.reduce((sum, a) => sum + a.purchase_price, 0);
 
   if (authLoading) {
@@ -192,65 +285,23 @@ export default function AdminLeads() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="bg-background border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10">
-              <TrendingUp className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">Financing Leads</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{user.email}</span>
-                <Badge variant={isAdmin ? 'default' : 'secondary'} className="text-xs">
-                  {isAdmin ? (
-                    <>
-                      <Shield className="h-3 w-3 mr-1" />
-                      Admin
-                    </>
-                  ) : (
-                    <>
-                      <Hammer className="h-3 w-3 mr-1" />
-                      Builder
-                    </>
-                  )}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin/pricing">
-                <DollarSign className="h-4 w-4 mr-1" />
-                Pricing
-              </Link>
-            </Button>
-            {isAdmin && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/admin/users">
-                  <Users className="h-4 w-4 mr-1" />
-                  Team
-                </Link>
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={loadApplications}>
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-1" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 space-y-6">
+    <AdminShell
+      title="Financing Leads"
+      description="Pre-qualification applications"
+      icon={<TrendingUp className="h-5 w-5 text-emerald-600" />}
+      user={user}
+      isAdmin={isAdmin}
+      onSignOut={handleSignOut}
+      headerActions={
+        <Button variant="ghost" size="sm" onClick={loadApplications}>
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Refresh
+        </Button>
+      }
+    >
+      <div className="space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
@@ -259,6 +310,17 @@ export default function AdminLeads() {
                   <p className="text-2xl font-bold">{totalLeads}</p>
                 </div>
                 <FileText className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
+                </div>
+                <Clock className="h-8 w-8 text-amber-500/50" />
               </div>
             </CardContent>
           </Card>
@@ -278,9 +340,9 @@ export default function AdminLeads() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Needs Review</p>
-                  <p className="text-2xl font-bold text-amber-600">{needsReviewCount}</p>
+                  <p className="text-2xl font-bold text-orange-600">{needsReviewCount}</p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-amber-500/50" />
+                <AlertCircle className="h-8 w-8 text-orange-500/50" />
               </div>
             </CardContent>
           </Card>
@@ -356,11 +418,10 @@ export default function AdminLeads() {
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Purchase Price</TableHead>
                       <TableHead className="text-right">Down %</TableHead>
-                      <TableHead className="text-right">Monthly Est.</TableHead>
                       <TableHead>Credit</TableHead>
-                      <TableHead>Income</TableHead>
                       <TableHead>Timeframe</TableHead>
                       <TableHead>Submitted</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -369,31 +430,42 @@ export default function AdminLeads() {
                       const StatusIcon = statusConfig.icon;
                       
                       return (
-                        <TableRow key={app.id}>
+                        <TableRow key={app.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDetail(app)}>
                           <TableCell>
                             <div className="space-y-1">
                               <p className="font-medium">{app.contact_name}</p>
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Mail className="h-3 w-3" />
-                                <a href={`mailto:${app.contact_email}`} className="hover:underline">
-                                  {app.contact_email}
-                                </a>
+                                <span className="truncate max-w-[150px]">{app.contact_email}</span>
                               </div>
-                              {app.contact_phone && (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Phone className="h-3 w-3" />
-                                  <a href={`tel:${app.contact_phone}`} className="hover:underline">
-                                    {app.contact_phone}
-                                  </a>
-                                </div>
-                              )}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <Badge variant={statusConfig.variant} className="gap-1">
-                              <StatusIcon className="h-3 w-3" />
-                              {statusConfig.label}
-                            </Badge>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Select 
+                              value={app.pre_qualification_status} 
+                              onValueChange={(v) => handleStatusChange(app.id, v)}
+                              disabled={isUpdatingStatus}
+                            >
+                              <SelectTrigger className="w-[140px] h-8">
+                                <Badge variant={statusConfig.variant} className="gap-1">
+                                  <StatusIcon className="h-3 w-3" />
+                                  {statusConfig.label}
+                                </Badge>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(STATUS_CONFIG).map(([key, config]) => {
+                                  const Icon = config.icon;
+                                  return (
+                                    <SelectItem key={key} value={key}>
+                                      <span className="flex items-center gap-2">
+                                        <Icon className="h-3 w-3" />
+                                        {config.label}
+                                      </span>
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell className="text-right font-medium">
                             {formatCurrency(app.purchase_price)}
@@ -401,19 +473,9 @@ export default function AdminLeads() {
                           <TableCell className="text-right">
                             {app.down_payment_percent}%
                           </TableCell>
-                          <TableCell className="text-right">
-                            {app.monthly_payment_estimate 
-                              ? formatCurrency(app.monthly_payment_estimate)
-                              : '—'}
-                          </TableCell>
                           <TableCell>
                             <span className="text-sm">
                               {CREDIT_LABELS[app.credit_score_range] || app.credit_score_range}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">
-                              {INCOME_LABELS[app.annual_income_range] || app.annual_income_range}
                             </span>
                           </TableCell>
                           <TableCell>
@@ -424,8 +486,13 @@ export default function AdminLeads() {
                           <TableCell>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <Calendar className="h-3 w-3" />
-                              {formatDate(app.created_at)}
+                              {new Date(app.created_at).toLocaleDateString()}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openDetail(app); }}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -436,7 +503,149 @@ export default function AdminLeads() {
             )}
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+
+      {/* Detail Drawer */}
+      <Sheet open={!!selectedApp} onOpenChange={(open) => !open && setSelectedApp(null)}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          {selectedApp && (
+            <>
+              <SheetHeader>
+                <SheetTitle>{selectedApp.contact_name}</SheetTitle>
+                <SheetDescription>
+                  Submitted {formatDate(selectedApp.created_at)}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-6 space-y-6">
+                {/* Contact Info */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Contact Information</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <a href={`mailto:${selectedApp.contact_email}`} className="text-primary hover:underline">
+                        {selectedApp.contact_email}
+                      </a>
+                    </div>
+                    {selectedApp.contact_phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <a href={`tel:${selectedApp.contact_phone}`} className="text-primary hover:underline">
+                          {selectedApp.contact_phone}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Status</h4>
+                  <Select 
+                    value={selectedApp.pre_qualification_status} 
+                    onValueChange={(v) => handleStatusChange(selectedApp.id, v)}
+                    disabled={isUpdatingStatus}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STATUS_CONFIG).map(([key, config]) => {
+                        const Icon = config.icon;
+                        return (
+                          <SelectItem key={key} value={key}>
+                            <span className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              {config.label}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Financial Details */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Financial Details</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Purchase Price</p>
+                      <p className="font-semibold">{formatCurrency(selectedApp.purchase_price)}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Down Payment</p>
+                      <p className="font-semibold">{selectedApp.down_payment_percent}% ({formatCurrency(selectedApp.down_payment_amount)})</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Loan Amount</p>
+                      <p className="font-semibold">{formatCurrency(selectedApp.loan_amount_requested)}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Est. Monthly</p>
+                      <p className="font-semibold">
+                        {selectedApp.monthly_payment_estimate ? formatCurrency(selectedApp.monthly_payment_estimate) : '—'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Profile */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Buyer Profile</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Credit Score</p>
+                      <p className="font-semibold">{CREDIT_LABELS[selectedApp.credit_score_range] || selectedApp.credit_score_range}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Annual Income</p>
+                      <p className="font-semibold">{INCOME_LABELS[selectedApp.annual_income_range] || selectedApp.annual_income_range}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Employment</p>
+                      <p className="font-semibold">{EMPLOYMENT_LABELS[selectedApp.employment_status] || selectedApp.employment_status}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-muted-foreground">Intended Use</p>
+                      <p className="font-semibold">{USE_LABELS[selectedApp.intended_use] || selectedApp.intended_use}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg col-span-2">
+                      <p className="text-muted-foreground">Purchase Timeframe</p>
+                      <p className="font-semibold">{TIMEFRAME_LABELS[selectedApp.purchase_timeframe] || selectedApp.purchase_timeframe}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Notes</h4>
+                  <Textarea
+                    placeholder="Add internal notes about this lead..."
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    rows={4}
+                  />
+                  <Button 
+                    onClick={handleSaveNotes} 
+                    disabled={isSavingNotes || editNotes === (selectedApp.notes || '')}
+                    className="mt-2"
+                    size="sm"
+                  >
+                    {isSavingNotes ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-1" />
+                    )}
+                    Save Notes
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+    </AdminShell>
   );
 }
