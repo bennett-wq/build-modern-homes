@@ -1,7 +1,7 @@
 // PreQualificationFlow - 3-Step Pre-Qualification Wizard for BaseMod Financial
 // Captures leads with financial qualification data
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -130,6 +130,26 @@ export function PreQualificationFlow({
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Memoized Plaid callbacks to prevent unnecessary re-renders
+  const handlePlaidSuccess = useCallback(
+    ({ publicToken, institutionName }: { publicToken: string; institutionName?: string }) => {
+      setPlaidPublicToken(publicToken);
+      setPlaidInstitutionName(institutionName ?? null);
+    },
+    []
+  );
+
+  const handlePlaidError = useCallback(
+    (message: string) => {
+      toast({
+        title: 'Bank connection failed',
+        description: message,
+        variant: 'destructive',
+      });
+    },
+    [toast]
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -510,17 +530,8 @@ export function PreQualificationFlow({
                 </p>
               </div>
               <PlaidLinkButton
-                onSuccess={({ publicToken, institutionName }) => {
-                  setPlaidPublicToken(publicToken);
-                  setPlaidInstitutionName(institutionName ?? null);
-                }}
-                onError={(message) =>
-                  toast({
-                    title: 'Bank connection failed',
-                    description: message,
-                    variant: 'destructive',
-                  })
-                }
+                onSuccess={handlePlaidSuccess}
+                onError={handlePlaidError}
               />
             </div>
           </div>
