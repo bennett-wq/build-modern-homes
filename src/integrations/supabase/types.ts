@@ -29,6 +29,384 @@ export type Database = {
         }
         Relationships: []
       }
+      development_arb_packages: {
+        Row: {
+          created_at: string
+          development_id: string
+          exterior_package_id: string
+        }
+        Insert: {
+          created_at?: string
+          development_id: string
+          exterior_package_id: string
+        }
+        Update: {
+          created_at?: string
+          development_id?: string
+          exterior_package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_arb_packages_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_arb_packages_exterior_package_id_fkey"
+            columns: ["exterior_package_id"]
+            isOneToOne: false
+            referencedRelation: "exterior_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      development_conforming_models: {
+        Row: {
+          created_at: string
+          development_id: string
+          model_id: string
+        }
+        Insert: {
+          created_at?: string
+          development_id: string
+          model_id: string
+        }
+        Update: {
+          created_at?: string
+          development_id?: string
+          model_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_conforming_models_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_conforming_models_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      developments: {
+        Row: {
+          arb_guidelines_url: string | null
+          city: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          pricing_zone_id: string | null
+          site_plan_image_url: string | null
+          slug: string
+          state: string | null
+          status: Database["public"]["Enums"]["development_status"]
+          updated_at: string
+        }
+        Insert: {
+          arb_guidelines_url?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          pricing_zone_id?: string | null
+          site_plan_image_url?: string | null
+          slug: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["development_status"]
+          updated_at?: string
+        }
+        Update: {
+          arb_guidelines_url?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          pricing_zone_id?: string | null
+          site_plan_image_url?: string | null
+          slug?: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["development_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "developments_pricing_zone_id_fkey"
+            columns: ["pricing_zone_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exterior_packages: {
+        Row: {
+          accent_color_hex: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          roof_color_hex: string | null
+          siding_color_hex: string | null
+          slug: string
+          trim_color_hex: string | null
+          updated_at: string
+          upgrade_price: number
+        }
+        Insert: {
+          accent_color_hex?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          roof_color_hex?: string | null
+          siding_color_hex?: string | null
+          slug: string
+          trim_color_hex?: string | null
+          updated_at?: string
+          upgrade_price?: number
+        }
+        Update: {
+          accent_color_hex?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          roof_color_hex?: string | null
+          siding_color_hex?: string | null
+          slug?: string
+          trim_color_hex?: string | null
+          updated_at?: string
+          upgrade_price?: number
+        }
+        Relationships: []
+      }
+      garage_door_options: {
+        Row: {
+          color_hex: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          slug: string
+          style: Database["public"]["Enums"]["garage_style"]
+          updated_at: string
+        }
+        Insert: {
+          color_hex?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          slug: string
+          style?: Database["public"]["Enums"]["garage_style"]
+          updated_at?: string
+        }
+        Update: {
+          color_hex?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          slug?: string
+          style?: Database["public"]["Enums"]["garage_style"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lots: {
+        Row: {
+          acreage: number | null
+          created_at: string
+          development_id: string
+          id: string
+          lot_number: string
+          net_acreage: number | null
+          notes: string | null
+          polygon_coordinates: Json | null
+          premium: number
+          restrictions: Json | null
+          status: Database["public"]["Enums"]["lot_status"]
+          updated_at: string
+        }
+        Insert: {
+          acreage?: number | null
+          created_at?: string
+          development_id: string
+          id?: string
+          lot_number: string
+          net_acreage?: number | null
+          notes?: string | null
+          polygon_coordinates?: Json | null
+          premium?: number
+          restrictions?: Json | null
+          status?: Database["public"]["Enums"]["lot_status"]
+          updated_at?: string
+        }
+        Update: {
+          acreage?: number | null
+          created_at?: string
+          development_id?: string
+          id?: string
+          lot_number?: string
+          net_acreage?: number | null
+          notes?: string | null
+          polygon_coordinates?: Json | null
+          premium?: number
+          restrictions?: Json | null
+          status?: Database["public"]["Enums"]["lot_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lots_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_pricing: {
+        Row: {
+          base_home_price: number
+          build_type: Database["public"]["Enums"]["build_type"]
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          foundation_type: Database["public"]["Enums"]["foundation_type"]
+          freight_allowance: number
+          freight_pending: boolean
+          id: string
+          is_current: boolean
+          model_id: string
+          pricing_source: string | null
+        }
+        Insert: {
+          base_home_price: number
+          build_type: Database["public"]["Enums"]["build_type"]
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          foundation_type: Database["public"]["Enums"]["foundation_type"]
+          freight_allowance?: number
+          freight_pending?: boolean
+          id?: string
+          is_current?: boolean
+          model_id: string
+          pricing_source?: string | null
+        }
+        Update: {
+          base_home_price?: number
+          build_type?: Database["public"]["Enums"]["build_type"]
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          foundation_type?: Database["public"]["Enums"]["foundation_type"]
+          freight_allowance?: number
+          freight_pending?: boolean
+          id?: string
+          is_current?: boolean
+          model_id?: string
+          pricing_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_pricing_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      models: {
+        Row: {
+          badge: string | null
+          baths: number
+          beds: number
+          created_at: string
+          description: string | null
+          display_order: number
+          floorplan_image_url: string | null
+          floorplan_pdf_url: string | null
+          hero_image_url: string | null
+          id: string
+          is_active: boolean
+          length: number | null
+          name: string
+          slug: string
+          sqft: number
+          tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          baths: number
+          beds: number
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          floorplan_image_url?: string | null
+          floorplan_pdf_url?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_active?: boolean
+          length?: number | null
+          name: string
+          slug: string
+          sqft: number
+          tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          baths?: number
+          beds?: number
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          floorplan_image_url?: string | null
+          floorplan_pdf_url?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_active?: boolean
+          length?: number | null
+          name?: string
+          slug?: string
+          sqft?: number
+          tagline?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pricing_configs: {
         Row: {
           config: Json
@@ -56,6 +434,256 @@ export type Database = {
           id?: string
           label?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      pricing_markups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dealer_markup_pct: number
+          developer_markup_pct: number
+          effective_from: string
+          id: string
+          installer_markup_pct: number
+          is_default: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dealer_markup_pct?: number
+          developer_markup_pct?: number
+          effective_from?: string
+          id?: string
+          installer_markup_pct?: number
+          is_default?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dealer_markup_pct?: number
+          developer_markup_pct?: number
+          effective_from?: string
+          id?: string
+          installer_markup_pct?: number
+          is_default?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      pricing_zones: {
+        Row: {
+          baseline_total: number
+          contingency_buffer: number
+          crane_cost: number
+          created_at: string
+          home_set_cost: number
+          id: string
+          name: string
+          on_site_portion: number
+          permits_soft_costs: number
+          slug: string
+          updated_at: string
+          utility_authority_fees: number
+        }
+        Insert: {
+          baseline_total?: number
+          contingency_buffer?: number
+          crane_cost?: number
+          created_at?: string
+          home_set_cost?: number
+          id?: string
+          name: string
+          on_site_portion?: number
+          permits_soft_costs?: number
+          slug: string
+          updated_at?: string
+          utility_authority_fees?: number
+        }
+        Update: {
+          baseline_total?: number
+          contingency_buffer?: number
+          crane_cost?: number
+          created_at?: string
+          home_set_cost?: number
+          id?: string
+          name?: string
+          on_site_portion?: number
+          permits_soft_costs?: number
+          slug?: string
+          updated_at?: string
+          utility_authority_fees?: number
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          address: string | null
+          build_type: Database["public"]["Enums"]["build_type"] | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          development_id: string | null
+          exterior_package_id: string | null
+          foundation_type: Database["public"]["Enums"]["foundation_type"] | null
+          garage_door_id: string | null
+          id: string
+          include_permits_costs: boolean
+          include_utility_fees: boolean
+          lot_id: string | null
+          model_id: string | null
+          notes: string | null
+          selected_options: string[] | null
+          service_package: Database["public"]["Enums"]["service_package"]
+          status: Database["public"]["Enums"]["quote_status"]
+          total_estimate: number | null
+          updated_at: string
+          user_id: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          build_type?: Database["public"]["Enums"]["build_type"] | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          development_id?: string | null
+          exterior_package_id?: string | null
+          foundation_type?:
+            | Database["public"]["Enums"]["foundation_type"]
+            | null
+          garage_door_id?: string | null
+          id?: string
+          include_permits_costs?: boolean
+          include_utility_fees?: boolean
+          lot_id?: string | null
+          model_id?: string | null
+          notes?: string | null
+          selected_options?: string[] | null
+          service_package?: Database["public"]["Enums"]["service_package"]
+          status?: Database["public"]["Enums"]["quote_status"]
+          total_estimate?: number | null
+          updated_at?: string
+          user_id?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          build_type?: Database["public"]["Enums"]["build_type"] | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          development_id?: string | null
+          exterior_package_id?: string | null
+          foundation_type?:
+            | Database["public"]["Enums"]["foundation_type"]
+            | null
+          garage_door_id?: string | null
+          id?: string
+          include_permits_costs?: boolean
+          include_utility_fees?: boolean
+          lot_id?: string | null
+          model_id?: string | null
+          notes?: string | null
+          selected_options?: string[] | null
+          service_package?: Database["public"]["Enums"]["service_package"]
+          status?: Database["public"]["Enums"]["quote_status"]
+          total_estimate?: number | null
+          updated_at?: string
+          user_id?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_exterior_package_id_fkey"
+            columns: ["exterior_package_id"]
+            isOneToOne: false
+            referencedRelation: "exterior_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_garage_door_id_fkey"
+            columns: ["garage_door_id"]
+            isOneToOne: false
+            referencedRelation: "garage_door_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      upgrade_options: {
+        Row: {
+          applies_to_build_types:
+            | Database["public"]["Enums"]["build_type"][]
+            | null
+          applies_to_models: string[] | null
+          base_price: number
+          category: Database["public"]["Enums"]["upgrade_category"]
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          label: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to_build_types?:
+            | Database["public"]["Enums"]["build_type"][]
+            | null
+          applies_to_models?: string[] | null
+          base_price?: number
+          category: Database["public"]["Enums"]["upgrade_category"]
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          label: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to_build_types?:
+            | Database["public"]["Enums"]["build_type"][]
+            | null
+          applies_to_models?: string[] | null
+          base_price?: number
+          category?: Database["public"]["Enums"]["upgrade_category"]
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -97,6 +725,17 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "builder"
+      build_type: "xmod" | "mod"
+      development_status: "active" | "coming-soon" | "sold-out"
+      foundation_type: "slab" | "basement"
+      garage_style: "traditional" | "carriage" | "modern" | "craftsman"
+      lot_status: "available" | "reserved" | "sold" | "pending"
+      quote_status: "draft" | "submitted" | "contacted" | "converted"
+      service_package:
+        | "delivered_installed"
+        | "supply_only"
+        | "community_all_in"
+      upgrade_category: "floor_plan" | "exterior" | "garage"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -225,6 +864,18 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "builder"],
+      build_type: ["xmod", "mod"],
+      development_status: ["active", "coming-soon", "sold-out"],
+      foundation_type: ["slab", "basement"],
+      garage_style: ["traditional", "carriage", "modern", "craftsman"],
+      lot_status: ["available", "reserved", "sold", "pending"],
+      quote_status: ["draft", "submitted", "contacted", "converted"],
+      service_package: [
+        "delivered_installed",
+        "supply_only",
+        "community_all_in",
+      ],
+      upgrade_category: ["floor_plan", "exterior", "garage"],
     },
   },
 } as const
