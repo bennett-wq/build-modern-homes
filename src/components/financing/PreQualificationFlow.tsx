@@ -1,7 +1,7 @@
 // PreQualificationFlow - 3-Step Pre-Qualification Wizard for BaseMod Financial
 // Captures leads with financial qualification data
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -115,6 +115,9 @@ export function PreQualificationFlow({
   const [plaidInstitutionName, setPlaidInstitutionName] = useState<string | null>(null);
   const [isVerifyingFinancials, setIsVerifyingFinancials] = useState(false);
   const [isPlaidModalOpen, setIsPlaidModalOpen] = useState(false);
+  // Ref is used to synchronously guard against Radix/overlay dismiss events firing
+  // before React state has a chance to commit.
+  const isPlaidModalOpenRef = useRef(false);
   const [prequalResults, setPrequalResults] = useState<{
     eligiblePrograms: Array<{ name: string; matchQuality: string; description: string }>;
     dtiRatio: number | null;
@@ -165,8 +168,23 @@ export function PreQualificationFlow({
 
   // Track when Plaid modal is open to prevent interference
   const handlePlaidOpenChange = useCallback((isOpen: boolean) => {
+    isPlaidModalOpenRef.current = isOpen;
     setIsPlaidModalOpen(isOpen);
   }, []);
+
+  // IMPORTANT: Plaid Link opens in a separate iframe overlay (mounted to <body>).
+  // Radix Dialog/Sheet will often interpret focusing/clicking inside that iframe as
+  // an "outside interaction" and attempt to dismiss this drawer, which unmounts the
+  // Plaid Link instance and makes the Plaid popup close mid-entry.
+  //
+  // We hard-block drawer dismissal while Plaid is open.
+  const handleDrawerOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen && isPlaidModalOpenRef.current) return;
+      onOpenChange(nextOpen);
+    },
+    [onOpenChange]
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -954,7 +972,7 @@ export function PreQualificationFlow({
   return (
     <InfoDrawer
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleDrawerOpenChange}
       title="BaseMod Financial"
       description="Pre-qualify in 2 minutes"
     >
