@@ -23,7 +23,10 @@ import {
   Landmark,
   Keyboard,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  Award,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -39,6 +42,7 @@ import {
 import { InfoDrawer } from '@/components/ui/info-drawer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { VerificationProgress } from './VerificationProgress';
 
 interface PreQualificationFlowProps {
   open: boolean;
@@ -131,6 +135,7 @@ export function PreQualificationFlow({
     verifiedIncome: number | null;
     monthlyPayment: number | null;
   } | null>(null);
+  const [verificationTimedOut, setVerificationTimedOut] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<FormData>({
@@ -342,57 +347,77 @@ export function PreQualificationFlow({
          });
 
          if (exchangeError) {
-           console.error('Plaid exchange error:', exchangeError);
-           toast({
-             title: 'Bank connection issue',
-             description: "We saved your application, but couldn't finalize the bank connection. We'll follow up to complete verification.",
-           });
-         } else {
-           // Run prequal engine to get verified results
-           setIsVerifyingFinancials(true);
-           try {
-             const { data: prequalData, error: prequalError } = await supabase.functions.invoke('prequal-engine', {
-               body: { application_id: inserted.id },
-             });
+            console.error('Plaid exchange error:', exchangeError);
+            toast({
+              title: 'Bank connection issue',
+              description: "We saved your application, but couldn't finalize the bank connection. We'll follow up to complete verification.",
+            });
+          } else {
+            // Run prequal engine to get verified results with timeout handling
+            setIsVerifyingFinancials(true);
+            setVerificationTimedOut(false);
+            
+            // Create AbortController for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+              controller.abort();
+              console.log('[PreQualificationFlow] Prequal engine timed out after 25s');
+            }, 25000);
+            
+            try {
+              const { data: prequalData, error: prequalError } = await supabase.functions.invoke('prequal-engine', {
+                body: { application_id: inserted.id },
+              });
 
-             if (!prequalError && prequalData) {
-               // Map program results to UI-friendly format
-               const programDescriptions: Record<string, string> = {
-                 mh_advantage: 'Fannie Mae program with conventional terms for manufactured homes',
-                 choicehome: 'Freddie Mac program offering competitive rates for factory-built homes',
-                 construction_to_perm: 'Single-close loan covering construction and permanent financing',
-                 fha_title_1: 'FHA-insured loan for manufactured homes with flexible requirements',
-                 conventional: 'Standard conventional mortgage with competitive rates',
-               };
+              clearTimeout(timeoutId);
 
-               const eligiblePrograms = (prequalData.eligible_programs || []).map((p: any) => ({
-                 name: p.program.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-                 matchQuality: p.match_quality,
-                 description: programDescriptions[p.program] || 'Qualified lending program',
-               }));
+              if (!prequalError && prequalData) {
+                // Map program results to UI-friendly format
+                const programDescriptions: Record<string, string> = {
+                  mh_advantage: 'Fannie Mae program with conventional terms for manufactured homes',
+                  choicehome: 'Freddie Mac program offering competitive rates for factory-built homes',
+                  construction_to_perm: 'Single-close loan covering construction and permanent financing',
+                  fha_title_1: 'FHA-insured loan for manufactured homes with flexible requirements',
+                  conventional: 'Standard conventional mortgage with competitive rates',
+                };
 
-               setPrequalResults({
-                 eligiblePrograms,
-                 dtiRatio: prequalData.dti_ratio,
-                 frontEndDti: prequalData.front_end_dti,
-                 verifiedIncome: prequalData.verified_annual_income,
-                 monthlyPayment: prequalData.monthly_payment,
-               });
+                const eligiblePrograms = (prequalData.eligible_programs || prequalData.result?.eligible_programs || []).map((p: any) => ({
+                  name: (p.program || p.key || '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+                  matchQuality: p.match_quality || p.match_strength || 'good',
+                  description: programDescriptions[p.program || p.key] || p.description || 'Qualified lending program',
+                }));
 
-               // Update status based on engine results
-               if (prequalData.status === 'pre_qualified') {
-                 setPreQualStatus('pre_qualified');
-               } else if (prequalData.status === 'needs_review') {
-                 setPreQualStatus('needs_review');
-               }
-             }
-           } catch (prequalErr) {
-             console.error('Prequal engine error:', prequalErr);
-           } finally {
-             setIsVerifyingFinancials(false);
-           }
-         }
-       }
+                const result = prequalData.result || prequalData;
+                
+                setPrequalResults({
+                  eligiblePrograms,
+                  dtiRatio: result.dti?.back_end ?? result.dti_ratio ?? null,
+                  frontEndDti: result.dti?.front_end ?? result.front_end_dti ?? null,
+                  verifiedIncome: result.verification?.annual_income_used ?? result.verified_annual_income ?? null,
+                  monthlyPayment: result.monthly_payment_estimate ?? result.monthly_payment ?? null,
+                });
+
+                // Update status based on engine results
+                const resultStatus = result.status || prequalData.status;
+                if (resultStatus === 'pre_qualified') {
+                  setPreQualStatus('pre_qualified');
+                } else if (resultStatus === 'needs_review') {
+                  setPreQualStatus('needs_review');
+                }
+              }
+            } catch (prequalErr: any) {
+              clearTimeout(timeoutId);
+              if (prequalErr?.name === 'AbortError') {
+                console.log('[PreQualificationFlow] Verification aborted due to timeout');
+                setVerificationTimedOut(true);
+              } else {
+                console.error('Prequal engine error:', prequalErr);
+              }
+            } finally {
+              setIsVerifyingFinancials(false);
+            }
+          }
+        }
 
       const newApplicationId = inserted?.id ?? crypto.randomUUID();
       setApplicationId(newApplicationId);
@@ -893,6 +918,31 @@ export function PreQualificationFlow({
     const loanAmount = purchasePrice * (1 - formData.downPaymentPercent / 100);
     const hasVerifiedResults = prequalResults && prequalResults.eligiblePrograms.length > 0;
 
+    // Show staged verification progress while loading
+    if (isPending) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="space-y-6"
+        >
+          <VerificationProgress
+            isVerifying={true}
+            timeoutSeconds={30}
+            onTimeout={() => setVerificationTimedOut(true)}
+            onFallbackToManual={() => {
+              setIsVerifyingFinancials(false);
+              setPreQualStatus('needs_review');
+              toast({
+                title: 'Results pending',
+                description: "We'll email your full verification results shortly.",
+              });
+            }}
+          />
+        </motion.div>
+      );
+    }
+
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -908,14 +958,10 @@ export function PreQualificationFlow({
             'inline-flex items-center justify-center p-4 rounded-full mb-4',
             isPreQualified
               ? 'bg-green-100 dark:bg-green-900'
-              : isPending
-              ? 'bg-blue-100 dark:bg-blue-900'
               : 'bg-amber-100 dark:bg-amber-900'
           )}
         >
-          {isPending ? (
-            <Loader2 className="h-8 w-8 text-blue-600 dark:text-blue-400 animate-spin" />
-          ) : isPreQualified ? (
+          {isPreQualified ? (
             <Sparkles className="h-8 w-8 text-green-600 dark:text-green-400" />
           ) : (
             <CheckCircle2 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
@@ -924,16 +970,12 @@ export function PreQualificationFlow({
 
         <div>
           <h3 className="text-xl font-bold text-foreground mb-2">
-            {isPending
-              ? 'Verifying your financials...'
-              : isPreQualified
+            {isPreQualified
               ? "You're Pre-Qualified!"
               : 'Application Received'}
           </h3>
           <p className="text-muted-foreground">
-            {isPending
-              ? 'Analyzing your bank data to find the best programs for you.'
-              : isPreQualified
+            {isPreQualified
               ? 'Great news! Based on your verified financials, you qualify for multiple programs.'
               : "We've received your application and will review it shortly."}
           </p>
@@ -970,8 +1012,6 @@ export function PreQualificationFlow({
           'p-6 rounded-2xl',
           isPreQualified
             ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800'
-            : isPending
-            ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800'
             : 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800'
         )}>
           <p className="text-sm text-muted-foreground mb-1">
@@ -1086,9 +1126,8 @@ export function PreQualificationFlow({
           onClick={() => onOpenChange(false)}
           className="w-full"
           size="lg"
-          disabled={isPending}
         >
-          {isPending ? 'Analyzing...' : 'Done'}
+          Done
         </Button>
 
         <p className="text-xs text-muted-foreground">

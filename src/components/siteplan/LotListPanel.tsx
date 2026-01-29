@@ -229,8 +229,11 @@ export function LotListPanel({
         </div>
       </div>
 
-      {/* Lot List */}
-      <ScrollArea className="flex-1">
+      {/* Lot List - native scroll for better mobile support */}
+      <div 
+        className="flex-1 overflow-auto min-h-0" 
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         <div className="p-3 space-y-2" role="listbox" aria-label="Available lots">
           {isLoading ? (
             // Loading skeletons
@@ -287,7 +290,7 @@ export function LotListPanel({
             })
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-border bg-muted/30 shrink-0">

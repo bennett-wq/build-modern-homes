@@ -117,11 +117,24 @@ export function Step3Design({
   
   const selectedPackage = packages.find(p => p.id === selectedPackageId);
   const selectedDoor = garages.find(d => d.id === selectedGarageDoorId);
-  const canProceed = selectedPackageId && selectedGarageDoorId;
+  
+  // Allow proceed with package only - garage is optional (auto-select first available as fallback)
+  const canProceed = !!selectedPackageId && !!selectedGarageDoorId;
 
   const [activeTab, setActiveTab] = useState<string>('package');
   const [showFinancingModal, setShowFinancingModal] = useState(false);
   const [showAppraisalDrawer, setShowAppraisalDrawer] = useState(false);
+
+  // Auto-select first garage door if none selected when entering step
+  useEffect(() => {
+    if (!selectedGarageDoorId && garages.length > 0) {
+      // Auto-select the first non-upgrade garage option, or just the first one
+      const defaultGarage = garages.find(g => !('isUpgrade' in g && g.isUpgrade)) || garages[0];
+      if (defaultGarage) {
+        onSelectGarageDoor(defaultGarage.id);
+      }
+    }
+  }, [selectedGarageDoorId, garages, onSelectGarageDoor]);
 
   // Auto-switch to garage tab when package is selected
   const handleSelectPackage = useCallback((id: string) => {
@@ -178,13 +191,13 @@ export function Step3Design({
 
       {/* Content */}
       <div className={cn(
-        'flex-1 overflow-hidden',
+        'flex-1 overflow-hidden min-h-0',
         isMobile ? 'flex flex-col' : 'flex'
       )}>
         {/* Live Preview - full-bleed hero container */}
         <div className={cn(
           'bg-gradient-to-b from-muted/30 to-muted/10 flex items-center justify-center p-3 sm:p-4',
-          isMobile ? 'h-72 shrink-0' : 'flex-1 min-h-0'
+          isMobile ? 'h-56 shrink-0' : 'flex-1 min-h-0'
         )}>
           {isKeeneland ? (
             <KeenelandPhotoPreview 
@@ -208,9 +221,9 @@ export function Step3Design({
           )}
         </div>
 
-        {/* Selection Panel */}
+        {/* Selection Panel - ensure proper scroll on mobile */}
         <div className={cn(
-          'bg-background border-l border-border overflow-hidden flex flex-col',
+          'bg-background border-l border-border overflow-hidden flex flex-col min-h-0',
           isMobile ? 'flex-1' : 'w-96 shrink-0'
         )}>
           <Tabs 
@@ -241,7 +254,7 @@ export function Step3Design({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="package" className="flex-1 overflow-auto p-4 mt-0">
+            <TabsContent value="package" className="flex-1 overflow-auto p-4 mt-0 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
               {/* Package tab helper + swatch legend */}
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-muted-foreground">{EXTERIOR_COPY.tabs.package.helper}</p>
@@ -312,7 +325,7 @@ export function Step3Design({
               <WizardFooterSpacer />
             </TabsContent>
 
-            <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0">
+            <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
               {/* Garage tab helper */}
               <p className="text-xs text-muted-foreground mb-3">{EXTERIOR_COPY.tabs.garage.helper}</p>
               <div className="grid gap-3">
