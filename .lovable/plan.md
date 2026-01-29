@@ -1,217 +1,139 @@
 
+# Grand Haven Development Update Plan
 
-# Update St. James Bay with Real Lot Data & Site Plan
-
-## Summary
-
-Replace the 80 placeholder St. James Bay lots with **30 real lots** from your January 2026 pricing data, update the development metadata with accurate Carrabelle address information, and add the new site plan image.
+## Overview
+Update the Grand Haven development with real lot pricing data, updated metadata, and a new site plan image based on the provided spreadsheet and aerial site plan.
 
 ---
 
-## Data Parsed from Your Upload
+## Data Received
 
-### Development Updates
-| Field | Current Value | New Value |
-|-------|---------------|-----------|
-| City | St. James Bay | **Carrabelle** |
-| Address | *(none)* | **151 Laughing Gull Ln, Carrabelle, FL 32322** |
-| Description | *(generic)* | **Beautiful Golf Course & Scenic View Lots Available with all-in BaseMod Pricing** |
-| Site Plan | `st-james-bay-site-plan.jpg` | **`hero-carrabelle-site-plan.png`** |
+### Development Details
+| Field | Value |
+|-------|-------|
+| Location | Cedar & 118th Street, Grand Haven, MI |
+| Address | 11665 N Cedar Road, Grand Haven, MI |
+| Status | Active (BaseMod Lots For Sale) |
+| Description | Beautiful large lots and waterfront community on the Grand River in Grand Haven with BaseMod homes |
+| HOA | No HOA restrictions on lots 1-13 |
+| Utilities | Well & Septic (all lots) |
 
-### 30 Real Lots Extracted
+### Lot Inventory (18 lots)
 
-| Lot | Acreage | Premium | Phase | Availability | Status |
-|-----|---------|---------|-------|--------------|--------|
-| 1 | 0.23 | $30,000 | 2 | Fall 2026 | available |
-| 2 | 0.33 | $30,000 | 2 | Fall 2026 | available |
-| 3 | 0.12 | $30,000 | 2 | Fall 2026 | available |
-| 4 | 0.22 | $30,000 | 2 | Fall 2026 | available |
-| 5 | 0.20 | $30,000 | 2 | Fall 2026 | available |
-| 6 | 0.30 | $30,000 | 2 | Fall 2026 | available |
-| 7 | 0.20 | $30,000 | 2 | Fall 2026 | available |
-| 8 | 0.25 | $30,000 | 2 | Fall 2026 | available |
-| 9 | 0.20 | $30,000 | 3 | Spring 2027 | available |
-| 10 | 0.18 | $30,000 | 3 | Spring 2027 | available |
-| 11 | 0.30 | $30,000 | 3 | Spring 2027 | available |
-| 12 | 0.23 | $30,000 | 3 | Spring 2027 | available |
-| 13 | 0.20 | $30,000 | 3 | Spring 2027 | available |
-| 14 | 0.30 | $30,000 | 3 | Spring 2027 | available |
-| 15 | 0.25 | $30,000 | 1 | **Now** | available |
-| 16 | 0.20 | $30,000 | 1 | **Now** | available |
-| 17 | 0.30 | $30,000 | 1 | **Now** | available |
-| 18 | 0.35 | $30,000 | 1 | **Now** | available |
-| 19 | 0.20 | $30,000 | 4 | TBD | available |
-| 20 | 0.18 | $30,000 | 4 | TBD | available |
-| 21-30 | TBD | $30,000 | 4 | TBD | available |
-
-**Key observations:**
-- **30 lots** total (not 80 as previously estimated)
-- All lots priced at **$30,000 premium**
-- **4 lots available NOW** (Phase 1): Lots 15, 16, 17, 18
-- Lots include lat/long coordinates and parcel straps for future mapping
-- No well/septic required (all "No")
+| Lot | Acres | Premium | Phase | Availability | Zoning |
+|-----|-------|---------|-------|--------------|--------|
+| 1 | 3.06 | $75,000 | Phase 2 | Fall 2026 | R-1 |
+| 2 | 2.03 | $50,750 | Phase 2 | Fall 2026 | R-1 |
+| 3 | 1.97 | $49,250 | Phase 2 | Fall 2026 | R-1 |
+| 4 | 1.92 | $48,000 | Phase 2 | Fall 2026 | R-1 |
+| 5 | 2.03 | $50,750 | Phase 2 | Fall 2026 | R-1 |
+| 6 | 1.98 | $49,500 | Phase 2 | Fall 2026 | R-1 |
+| 7 | 1.93 | $48,250 | Phase 2 | Fall 2026 | R-1 |
+| 8 | 1.96 | $49,000 | Phase 2 | Fall 2026 | R-1 |
+| 9 | 2.46 | $61,500 | Phase 3 | Spring 2027 | R-1 |
+| 10 | 2.40 | $60,000 | Phase 3 | Spring 2027 | R-1 |
+| 11 | 2.34 | $58,500 | Phase 3 | Spring 2027 | R-1 |
+| 12 | 32.09 | $802,250 | Phase 3 | Spring 2027 | R-1 |
+| 13 | 18.16 | $454,000 | Phase 3 | Spring 2027 | R-1 |
+| 14 | 67.93 | TBD | Phase 3 | Spring 2027 | I-2 (Future Waterfront) |
+| 15 | 2.47 | $61,750 | Phase 1 | Now | R-1 |
+| 16 | 2.46 | $61,500 | Phase 1 | Now | R-1 |
+| 17 | 2.44 | $61,000 | Phase 1 | Now | R-1 |
+| 18 | 15.40 | $385,000 | Phase 1 | Now | R-1 |
 
 ---
 
 ## Implementation Steps
 
-### Step 1: Save New Site Plan Image
-**Action:** Copy uploaded image to project assets
+### Step 1: Copy New Site Plan Image
+Copy the uploaded site plan to the project assets folder.
 
-```text
-Source: user-uploads://Hero-Carrabelle-Site-Plan.png
-Target: public/images/developments/st-james-bay/hero-carrabelle-site-plan.png
-```
+- **Source**: `user-uploads://Hero-grandhaven-site-plan.jpg`
+- **Destination**: `public/images/developments/grand-haven/hero-site-plan.jpg`
 
-The colorful site plan shows the golf course layout with:
-- Royal Tern Court (top)
-- Laughing Gull Ln (center - matches address)
-- Plover Court, White Pelican Way, Spoonbill Court (surrounding streets)
-- Orange lots = BaseMod available lots
+### Step 2: Update Development Metadata
+Modify `src/data/developments.ts` to update the Grand Haven entry:
 
----
+**Changes:**
+- Update `sitePlanImagePath` to new hero image
+- Update `description` with waterfront community messaging and address
+- Add note about No HOA restrictions (lots 1-13)
+- Update `locationHighlights` to emphasize Grand River waterfront
 
-### Step 2: Update St. James Bay Static Data
+### Step 3: Update Lot Data
+Completely rewrite `src/data/lots/grand-haven.ts` with:
 
-**File:** `src/data/lots/st-james-bay.ts`
-
-Replace the placeholder generator with real lot data:
-
-```typescript
-// St. James Bay (Carrabelle, FL) - Real lot data as of Jan 2026
-import { Lot, LotStatus } from './grand-haven';
-
-export const stJamesBayLots: Lot[] = [
-  {
-    id: 1,
-    label: 'Lot 1',
-    status: 'available',
-    polygon: [],
-    acreage: 0.23,
-    premium: 30000,
-    notes: 'Phase 2 - Available Fall 2026',
-  },
-  // ... 29 more lots with real data
-];
-```
-
-**Fields per lot:**
-- `id` - Lot number (1-30)
-- `label` - "Lot {n}" format
-- `status` - 'available' for all currently
-- `acreage` - From spreadsheet (null for TBD lots 21-30)
-- `premium` - $30,000 for all lots
-- `notes` - Phase and availability timeline
-
----
-
-### Step 3: Update Development Metadata
-
-**File:** `src/data/developments.ts`
-
-Update the St. James Bay entry:
-
-```typescript
-{
-  slug: 'st-james-bay',
-  name: 'St. James Bay',
-  city: 'Carrabelle',  // Changed from "St. James Bay"
-  state: 'Florida',
-  address: '151 Laughing Gull Ln, Carrabelle, FL 32322',  // NEW
-  sitePlanImagePath: '/images/developments/st-james-bay/hero-carrabelle-site-plan.png',  // Updated
-  description: 'Beautiful Golf Course & Scenic View Lots Available with all-in BaseMod Pricing',  // Updated
-  // ... rest unchanged
-}
-```
-
----
-
-### Step 4: Update Database Seeding SQL
-
-The database migration will use the real lot data:
-
-```sql
--- St. James Bay Lots (30 lots)
-INSERT INTO lots (development_id, lot_number, acreage, premium, status, notes)
-SELECT 
-  d.id,
-  '1',
-  0.23,
-  30000,
-  'available',
-  'Phase 2 - Available Fall 2026'
-FROM developments d WHERE d.slug = 'st-james-bay';
--- ... repeat for all 30 lots
-```
-
----
-
-### Step 5: Add Coordinates for Future Mapping
-
-The lot data includes GPS coordinates that we'll store for future interactive map features:
-
-```typescript
-// Extended lot interface (optional enhancement)
-interface StJamesBayLot extends Lot {
-  parcelStrap?: string;  // e.g., "03W07S051000000C039"
-  latitude?: number;     // e.g., 29.904722
-  longitude?: number;    // e.g., -84.559444
-  phase?: number;        // 1-4
-}
-```
-
----
-
-## Files Changed
-
-| File | Action | Description |
-|------|--------|-------------|
-| `public/images/developments/st-james-bay/hero-carrabelle-site-plan.png` | **Create** | New site plan image |
-| `src/data/lots/st-james-bay.ts` | **Replace** | 30 real lots instead of 80 placeholders |
-| `src/data/developments.ts` | **Update** | City, address, description, image path |
-| `src/types/database.ts` | **Update** | Add optional coordinate fields to Lot type |
-
----
-
-## Database Schema Consideration
-
-The `lots` table already has a `restrictions` JSONB column that can store extended data:
-
-```sql
--- Store phase and coordinates in restrictions JSONB
-restrictions: {
-  "phase": 1,
-  "parcel_strap": "03W07S051001000F007",
-  "coordinates": {
-    "lat": 29.9075,
-    "lng": -84.557222
-  }
-}
-```
-
----
-
-## Verification After Implementation
-
-1. **Static data test**: Navigate to `/developments/st-james-bay` - should show 30 lots
-2. **Site plan display**: New colorful site plan image should render
-3. **Build wizard test**: Start build at St. James Bay - lot picker should show 30 options
-4. **Phase filtering**: Phase 1 lots (15-18) marked as "Available Now"
+- All 18 lots with correct acreage from spreadsheet
+- Land premiums for each lot
+- Phase assignment with availability notes (Now, Fall 2026, Spring 2027)
+- Well/Septic indicator
+- Special handling for Lot 14 (Future Waterfront, I-2 zoning, Price TBD)
+- Zoning data preserved (R-1 for most, I-2 for Lot 14)
 
 ---
 
 ## Technical Details
 
-### Lot Data Mapping
+### File Changes
 
-| Spreadsheet Column | Database Column | TypeScript Field |
-|-------------------|-----------------|------------------|
-| Project Lot # | `lot_number` | `label` |
-| Size (Acres) | `acreage` | `acreage` |
-| Price for Land | `premium` | `premium` |
-| Phase | `restrictions->phase` | `notes` (text) |
-| Available When? | `notes` | `notes` |
-| Parcel_strap | `restrictions->parcel_strap` | *(future)* |
-| Latitude | `restrictions->coordinates->lat` | *(future)* |
-| Longitude | `restrictions->coordinates->lng` | *(future)* |
+```text
+Files to Modify:
+├── public/images/developments/grand-haven/
+│   └── hero-site-plan.jpg (new - copy from upload)
+├── src/data/developments.ts
+│   └── Update Grand Haven entry
+└── src/data/lots/grand-haven.ts
+    └── Complete rewrite with pricing data
+```
 
+### Lot Interface (existing)
+```typescript
+export interface Lot {
+  id: number;
+  label: string;
+  status: LotStatus;
+  polygon: LotPolygonPoint[];
+  acreage?: number;
+  netAcreage?: number;
+  zoning?: string;
+  premium?: number;
+  notes?: string;
+}
+```
+
+### New Fields to Consider
+- Add `requiresWellSeptic?: boolean` field if needed for UI display
+- Use `notes` field for phase and availability information
+
+### Development Entry Updates
+```typescript
+{
+  slug: 'grand-haven',
+  name: 'Grand Haven',
+  city: 'Grand Haven',
+  state: 'Michigan',
+  sitePlanImagePath: '/images/developments/grand-haven/hero-site-plan.jpg',
+  description: 'Beautiful large lots and waterfront community on the Grand River. Located at 11665 N Cedar Road, Grand Haven, MI. No HOA restrictions on lots 1-13.',
+  status: 'active',
+  locationHighlights: [
+    { icon: 'Waves', title: 'Grand River Waterfront', description: 'Stunning riverfront community with waterfront and scenic view lots.' },
+    { icon: 'TreePine', title: 'Large Acreage Lots', description: 'Spacious lots ranging from 2 to 32+ acres for ultimate privacy.' },
+    // ... updated highlights
+  ],
+  features: [
+    { icon: 'Sun', title: 'Well & Septic Ready', description: 'All lots are prepared for well and septic system installation.' },
+    // ... updated features
+  ],
+}
+```
+
+---
+
+## Validation Checklist
+After implementation, verify:
+- [ ] Site plan image displays on `/developments/grand-haven`
+- [ ] All 18 lots appear in the lot picker
+- [ ] Lot premiums display correctly ($48,000 - $802,250 range)
+- [ ] Phase 1 lots (15-18) show "Available Now"
+- [ ] Lot 14 shows "Future Waterfront - Price TBD"
+- [ ] Acreage values match spreadsheet data
