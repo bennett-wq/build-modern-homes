@@ -36,11 +36,10 @@ async function fetchModels(): Promise<Model[]> {
     return mapStaticModelsToDbShape();
   }
 
-  // Fetch current pricing for all models
+  // Fetch current pricing for all models using the secure public function
+  // This function only exposes customer-facing fields (no internal cost data)
   const { data: pricingRows, error: pricingError } = await supabase
-    .from('model_pricing')
-    .select('*')
-    .eq('is_current', true);
+    .rpc('get_public_model_pricing');
 
   if (pricingError) {
     console.warn('[useModels] Error fetching pricing, models will have no pricing:', pricingError);

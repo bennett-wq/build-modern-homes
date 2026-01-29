@@ -187,7 +187,8 @@ export function useUnifiedPricingEngine(): UseUnifiedPricingEngineResult {
       
       // Extract factory quote total from database
       const factoryQuoteTotal = pricing?.base_home_price ?? 0;
-      const freightPending = pricing?.freight_pending ?? false;
+      // freight_pending is only available in full ModelPricingRow (admin access)
+      const freightPending = (pricing && 'freight_pending' in pricing) ? pricing.freight_pending : false;
       
       const modelName = model?.name ?? 'Unknown';
       const buildTypeLabel = buildType === 'xmod' ? 'Factory-Built' : 'Modular';
@@ -392,10 +393,10 @@ export function useUnifiedPricingEngine(): UseUnifiedPricingEngineResult {
         freightPending,
         modelConfig: model || null,
         
-        // Audit trail from database
-        pricingSource: pricing?.pricing_source || undefined,
-        quoteNumber: pricing?.quote_number || undefined,
-        quoteDate: pricing?.quote_date || undefined,
+        // Audit trail from database (only available in full ModelPricingRow for admin)
+        pricingSource: (pricing && 'pricing_source' in pricing) ? pricing.pricing_source || undefined : undefined,
+        quoteNumber: (pricing && 'quote_number' in pricing) ? pricing.quote_number || undefined : undefined,
+        quoteDate: (pricing && 'quote_date' in pricing) ? pricing.quote_date || undefined : undefined,
         
         disclaimers: {
           short: 'Preliminary estimate. Not a contract or final bid.',

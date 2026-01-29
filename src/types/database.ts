@@ -39,12 +39,27 @@ export type QuoteRow = Tables<'quotes'>;
 // ============================================================================
 
 /**
+ * Public-facing pricing data (subset exposed via get_public_model_pricing RPC)
+ * Used for customer-facing displays - does not include internal cost data
+ */
+export interface PublicModelPricing {
+  id: string;
+  model_id: string;
+  build_type: string; // Comes as string from RPC
+  foundation_type: string;
+  base_home_price: number;
+  is_current: boolean;
+  effective_from: string;
+}
+
+/**
  * Model with current pricing attached
+ * Uses PublicModelPricing for public access, full ModelPricingRow for admin
  */
 export interface Model extends ModelRow {
   pricing?: {
-    xmod?: ModelPricingRow;
-    mod?: ModelPricingRow;
+    xmod?: PublicModelPricing | ModelPricingRow;
+    mod?: PublicModelPricing | ModelPricingRow;
   };
 }
 
