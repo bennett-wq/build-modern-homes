@@ -176,7 +176,7 @@ export function isValidBuildType(value: unknown): value is BuildType {
 }
 
 export function isValidFoundationType(value: unknown): value is FoundationType {
-  return value === 'slab' || value === 'basement';
+  return value === 'slab' || value === 'basement' || value === 'crawl';
 }
 
 export function isValidServicePackage(value: unknown): value is ServicePackage {
