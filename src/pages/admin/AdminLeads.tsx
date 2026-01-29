@@ -344,7 +344,8 @@ export default function AdminLeads() {
   const preQualifiedCount = applications.filter(a => a.pre_qualification_status === 'pre_qualified').length;
   const needsReviewCount = applications.filter(a => a.pre_qualification_status === 'needs_review').length;
   const pendingCount = applications.filter(a => a.pre_qualification_status === 'pending').length;
-  const totalPipelineValue = applications.reduce((sum, a) => sum + a.purchase_price, 0);
+  const verifiedCount = applications.filter(a => a.verification_method === 'plaid_verified').length;
+  const totalPipelineValue = applications.reduce((sum, a) => sum + a.loan_amount_requested, 0);
 
   if (authLoading) {
     return (
@@ -398,59 +399,70 @@ export default function AdminLeads() {
     >
       <div className="space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Leads</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Leads</p>
                   <p className="text-2xl font-bold">{totalLeads}</p>
                 </div>
-                <FileText className="h-8 w-8 text-muted-foreground/50" />
+                <FileText className="h-8 w-8 text-muted-foreground/30" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Verified</p>
+                  <p className="text-2xl font-bold text-blue-600">{verifiedCount}</p>
                 </div>
-                <Clock className="h-8 w-8 text-amber-500/50" />
+                <BadgeCheck className="h-8 w-8 text-blue-500/30" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pre-Qualified</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Pre-Qualified</p>
                   <p className="text-2xl font-bold text-emerald-600">{preQualifiedCount}</p>
                 </div>
-                <CheckCircle2 className="h-8 w-8 text-emerald-500/50" />
+                <CheckCircle2 className="h-8 w-8 text-emerald-500/30" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Needs Review</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Pending</p>
+                  <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
+                </div>
+                <Clock className="h-8 w-8 text-amber-500/30" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Needs Review</p>
                   <p className="text-2xl font-bold text-orange-600">{needsReviewCount}</p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-orange-500/50" />
+                <AlertCircle className="h-8 w-8 text-orange-500/30" />
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pipeline Value</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalPipelineValue)}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Pipeline Value</p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(totalPipelineValue)}</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-primary/50" />
+                <TrendingUp className="h-8 w-8 text-primary/30" />
               </div>
             </CardContent>
           </Card>
@@ -513,10 +525,9 @@ export default function AdminLeads() {
                     <TableRow>
                       <TableHead>Contact</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Purchase Price</TableHead>
-                      <TableHead className="text-right">Down %</TableHead>
-                      <TableHead>Credit</TableHead>
-                      <TableHead>Timeframe</TableHead>
+                      <TableHead className="text-right">Loan Amount</TableHead>
+                      <TableHead className="text-center">DTI</TableHead>
+                      <TableHead className="text-center">Credit</TableHead>
                       <TableHead>Submitted</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
@@ -526,6 +537,8 @@ export default function AdminLeads() {
                       const statusConfig = STATUS_CONFIG[app.pre_qualification_status];
                       const StatusIcon = statusConfig.icon;
                       const isVerified = app.verification_method === 'plaid_verified';
+                      const dtiValue = app.dti_ratio;
+                      const dtiColor = dtiValue && dtiValue <= 36 ? 'text-emerald-600' : dtiValue && dtiValue <= 43 ? 'text-amber-600' : 'text-destructive';
                       
                       return (
                         <TableRow key={app.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openProfileView(app)}>
@@ -534,12 +547,15 @@ export default function AdminLeads() {
                               <div className="flex items-center gap-2">
                                 <p className="font-medium">{app.contact_name}</p>
                                 {isVerified && (
-                                  <BadgeCheck className="h-4 w-4 text-emerald-500" />
+                                  <Badge variant="outline" className="text-emerald-600 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 text-[10px] px-1.5 py-0">
+                                    <BadgeCheck className="h-3 w-3 mr-0.5" />
+                                    Verified
+                                  </Badge>
                                 )}
                               </div>
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Mail className="h-3 w-3" />
-                                <span className="truncate max-w-[150px]">{app.contact_email}</span>
+                                <span className="truncate max-w-[180px]">{app.contact_email}</span>
                               </div>
                             </div>
                           </TableCell>
@@ -549,8 +565,8 @@ export default function AdminLeads() {
                               onValueChange={(v) => handleStatusChange(app.id, v)}
                               disabled={isUpdatingStatus}
                             >
-                              <SelectTrigger className="w-[140px] h-8">
-                                <Badge variant={statusConfig.variant} className="gap-1">
+                              <SelectTrigger className="w-[130px] h-8">
+                                <Badge variant={statusConfig.variant} className="gap-1 text-xs">
                                   <StatusIcon className="h-3 w-3" />
                                   {statusConfig.label}
                                 </Badge>
@@ -570,20 +586,24 @@ export default function AdminLeads() {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(app.purchase_price)}
-                          </TableCell>
                           <TableCell className="text-right">
-                            {app.down_payment_percent}%
+                            <div className="space-y-0.5">
+                              <p className="font-semibold">{formatCurrency(app.loan_amount_requested)}</p>
+                              <p className="text-xs text-muted-foreground">{app.down_payment_percent}% down</p>
+                            </div>
                           </TableCell>
-                          <TableCell>
-                            <span className="text-sm">
+                          <TableCell className="text-center">
+                            {dtiValue ? (
+                              <span className={`font-semibold ${dtiColor}`}>
+                                {dtiValue.toFixed(0)}%
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-sm font-medium">
                               {CREDIT_LABELS[app.credit_score_range] || app.credit_score_range}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">
-                              {TIMEFRAME_LABELS[app.purchase_timeframe] || app.purchase_timeframe}
                             </span>
                           </TableCell>
                           <TableCell>
