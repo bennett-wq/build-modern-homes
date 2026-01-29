@@ -87,6 +87,7 @@ export function StepSummary({
   
   // Calculate canonical pricing - SINGLE SOURCE OF TRUTH
   const canonicalPricing = useMemo(() => {
+    if (!model?.slug) return null;
     return calcCanonicalPricing({
       modelSlug: model.slug,
       buildType: buildType as BuildType,
@@ -95,7 +96,7 @@ export function StepSummary({
       includeFeesAllowance: includeUtilityFees || includePermitsCosts,
       includeSiteworkContingency: true,
     });
-  }, [model.slug, buildType, canonicalServicePackage, selectedOptionIds, includeUtilityFees, includePermitsCosts]);
+  }, [model?.slug, buildType, canonicalServicePackage, selectedOptionIds, includeUtilityFees, includePermitsCosts]);
   
   // Determine if location is known (has valid ZIP)
   const hasValidZip = zipCode && zipCode.length === 5;
@@ -132,8 +133,11 @@ export function StepSummary({
     : null;
   
   // Get unified exterior preview info (if packageId/garageDoorId are provided)
-  const exteriorInfo = getExteriorPreviewInfo(model.slug, packageId || null, garageDoorId || null);
+  const exteriorInfo = getExteriorPreviewInfo(model?.slug || null, packageId || null, garageDoorId || null);
   const hasUnifiedExterior = packageId || garageDoorId;
+  
+  // Check if we have any legacy exterior selections to show
+  const hasLegacyExterior = selectedSiding || selectedShingle || selectedDoor || exteriorSelection?.blackFasciaPackage;
   
   return (
     <div className="space-y-8">
@@ -169,19 +173,19 @@ export function StepSummary({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Model</span>
-                <span className="font-medium text-foreground">{model.name}</span>
+                <span className="font-medium text-foreground">{model?.name || 'Not selected'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Build Type</span>
-                <span className="font-medium text-foreground uppercase">{buildType}</span>
+                <span className="font-medium text-foreground uppercase">{buildType || 'Not selected'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Square Feet</span>
-                <span className="font-medium text-foreground">{model.sqft.toLocaleString()}</span>
+                <span className="font-medium text-foreground">{model?.sqft?.toLocaleString() || '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Beds / Baths</span>
-                <span className="font-medium text-foreground">{model.beds} / {model.baths}</span>
+                <span className="font-medium text-foreground">{model?.beds ?? '—'} / {model?.baths ?? '—'}</span>
               </div>
             </div>
           </div>
@@ -202,7 +206,7 @@ export function StepSummary({
                 {/* Preview Image */}
                 <div className="relative aspect-video bg-muted">
                   <img
-                    src={imageError ? `/images/models/${model.slug}/${model.slug}-hero.jpg` : exteriorInfo.imageSrc}
+                    src={imageError ? `/images/models/${model?.slug || 'placeholder'}/${model?.slug || 'placeholder'}-hero.jpg` : exteriorInfo.imageSrc}
                     alt="Final exterior preview"
                     className="w-full h-full object-cover"
                     onError={() => setImageError(true)}
@@ -250,35 +254,41 @@ export function StepSummary({
                 </div>
               </CardContent>
             </Card>
-          ) : (
+          ) : hasLegacyExterior ? (
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">Exterior Style</h3>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Siding</span>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-5 h-5 rounded border border-border"
-                      style={{ backgroundColor: selectedSiding?.hex }}
-                    />
-                    <span className="font-medium text-foreground">{selectedSiding?.name}</span>
+                {selectedSiding && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Siding</span>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-5 h-5 rounded border border-border"
+                        style={{ backgroundColor: selectedSiding.hex }}
+                      />
+                      <span className="font-medium text-foreground">{selectedSiding.name}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Shingles</span>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-5 h-5 rounded border border-border"
-                      style={{ backgroundColor: selectedShingle?.hex }}
-                    />
-                    <span className="font-medium text-foreground">{selectedShingle?.name}</span>
+                )}
+                {selectedShingle && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Shingles</span>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-5 h-5 rounded border border-border"
+                        style={{ backgroundColor: selectedShingle.hex }}
+                      />
+                      <span className="font-medium text-foreground">{selectedShingle.name}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Door Style</span>
-                  <span className="font-medium text-foreground">{selectedDoor?.name}</span>
-                </div>
+                )}
+                {selectedDoor && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Door Style</span>
+                    <span className="font-medium text-foreground">{selectedDoor.name}</span>
+                  </div>
+                )}
                 {exteriorSelection?.blackFasciaPackage && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Black Trim Package</span>
@@ -287,10 +297,10 @@ export function StepSummary({
                 )}
               </div>
             </div>
-          )}
+          ) : null}
           
           {/* Floor Plan Options - Use canonical pricing items */}
-          {canonicalPricing.options.items.length > 0 && (
+          {canonicalPricing && canonicalPricing.options.items.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">Selected Add-ons</h3>
               <ul className="space-y-2">
@@ -477,7 +487,7 @@ function LeadFormDialog({
             </div>
             <DialogTitle className="mb-2">Request Submitted!</DialogTitle>
             <DialogDescription>
-              Thanks for your interest in the {model.name}. Our team will reach out within 1 business day.
+              Thanks for your interest in the {model?.name || 'selected home'}. Our team will reach out within 1 business day.
             </DialogDescription>
             <Button className="mt-6" onClick={onClose}>
               Close
