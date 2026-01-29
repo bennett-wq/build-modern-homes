@@ -101,6 +101,8 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
       servicePackage: unifiedServicePackage,
       selectedOptionIds: input.selectedOptionIds || [],
       includeFeesAllowance: input.includeUtilityFees || input.includePermitsCosts,
+      includeSitework: unifiedServicePackage === 'installed',
+      includeSiteworkContingency: true,
     });
   }, [
     engine, 
