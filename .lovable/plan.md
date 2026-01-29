@@ -1,202 +1,171 @@
 
-
-# Admin Pricing Console Redesign
+# Upgrade Options Database Sync Plan
 
 ## Overview
-
-The current Admin Pricing page is technically oriented and difficult for non-technical users to navigate. This plan redesigns it into an intuitive, tabbed dashboard that presents all pricing data in easy-to-understand tables with inline editing capabilities.
+This plan reconciles the CMH Builders Series CROSSMOD Option Price List (dated 1-14-26) with the current `upgrade_options` table in the database. The spreadsheet contains 100+ individual options across multiple categories that need to be properly represented.
 
 ## Current State Analysis
 
-The existing admin pricing console has several usability issues:
+**Database Status:** 14 upgrade options currently exist
+**Spreadsheet Contents:** 100+ options across 12+ categories
 
-1. **Complex Draft/Publish Workflow** - Uses a JSONB config blob approach that requires creating drafts before viewing or editing any pricing
-2. **No Direct Database Editing** - Model prices, lots, and markups are stored in relational tables, but the admin only shows the JSONB config
-3. **Missing Data Visibility** - Cannot see lot pricing, upgrade options, or exterior packages
-4. **Technical Interface** - Form inputs without context; requires understanding of pricing formulas
+### Options Already in Database (Price Verification)
 
-## Proposed Solution
+| Option | DB Price | Spreadsheet Price | Status |
+|--------|----------|-------------------|--------|
+| eBuilt Plus (DOE Certified) | $1,500 | $1,500 | Correct |
+| CrossMod Inspection Fee | $750 | $750 | Correct |
+| Carrier Gas Furnace | $765 | $765 | Correct |
+| Garbage Disposal | $170 | $170 | Correct |
+| Black Fascia & Soffit | $525 | $525 | Correct |
+| Black Exterior Doors | $280 | $280 | Correct |
 
-A redesigned admin pricing console with 5 intuitive tabs, each presenting data in clear tables with inline editing:
+### Options Needing Updates
 
-### Tab Structure
-
-| Tab | Purpose | Data Source |
-|-----|---------|-------------|
-| **Home Prices** | Model base prices by build type | `models` + `model_pricing` tables |
-| **Lot Inventory** | Lot prices and status by community | `developments` + `lots` tables |
-| **Sitework Costs** | Regional installation baselines | `pricing_zones` table |
-| **Markups** | Dealer/installer/developer percentages | `pricing_markups` table |
-| **Upgrades** | Options and add-on pricing | `upgrade_options` + `exterior_packages` tables |
-
-### Visual Design Principles
-
-- **Clean Tables**: Each section displays data in a sortable, readable table format
-- **Inline Editing**: Click-to-edit cells with immediate save confirmation
-- **Plain English Labels**: "Dealer Markup (20%)" instead of "dealerMarkupPct: 0.20"
-- **Visual Status Indicators**: Color-coded badges for lot status (Available/Reserved/Sold)
-- **Price Formatting**: All prices shown with dollar signs and commas ($97,087)
+| Option | Current DB | Spreadsheet | Action |
+|--------|------------|-------------|--------|
+| Storm Door Package | $450 (package) | $230 (each) | Update to $230 each |
+| 9' Ceiling Height | $2,200 | $11,050 (Hawthorne specific) | Update + model restriction |
+| Half Bath Addition | $3,500 | $1,000 | Update price |
+| Office/Den Conversion | $1,800 | $1,500 | Update price |
+| PlyGem Siding Tier 1 | $1,200 | $1,205-$1,505 (by length) | Update to $1,355 (mid) |
+| PlyGem Siding Tier 2 | $1,800 | N/A (remove or rename) | Remove duplicate |
 
 ---
 
-## Detailed Tab Designs
+## Implementation Steps
 
-### 1. Home Prices Tab
+### Step 1: Update Existing Options with Correct Prices
 
-Displays all models with their base prices in a clear table format:
-
-| Model | Beds | Baths | Sqft | Factory-Built Price | Modular Price | Last Updated |
-|-------|------|-------|------|---------------------|---------------|--------------|
-| Hawthorne | 3 | 2 | 1,620 | $97,087 | $107,904 | Jan 15, 2026 |
-| Aspen | 4 | 2 | 1,620 | $98,246 | $108,493 | Jan 15, 2026 |
-| ... | ... | ... | ... | ... | ... | ... |
-
-**Features**:
-- Click any price cell to edit inline
-- "Save All Changes" button appears when edits are pending
-- Show which CMH quote number each price came from (for audit trail)
-
-### 2. Lot Inventory Tab
-
-Organized by community with status filters:
-
-**Community Selector** - Dropdown to choose development (Grand Haven, St. James Bay, etc.)
-
-| Lot # | Acreage | Premium | Status | Phase | Availability |
-|-------|---------|---------|--------|-------|--------------|
-| Lot 15 | 2.47 | $61,750 | 🟢 Available | 1 | Now |
-| Lot 16 | 2.46 | $61,500 | 🟢 Available | 1 | Now |
-| Lot 1 | 3.06 | $75,000 | 🟢 Available | 2 | Fall 2026 |
-| ... | ... | ... | ... | ... | ... |
-
-**Features**:
-- Filter by status (Available/Reserved/Sold)
-- Filter by phase (1, 2, 3)
-- Click premium to edit
-- Click status to change (with confirmation for Reserved/Sold)
-- Summary card: "18 lots | 4 available | $48,000 - $802,250"
-
-### 3. Sitework Costs Tab
-
-Regional installation cost baselines:
-
-| Zone | Baseline | Buffer (10%) | Total | Permits | Utility Fees |
-|------|----------|--------------|-------|---------|--------------|
-| Zone 3 - Michigan | $86,767 | $8,677 | $95,444 | $2,085 | $7,546 |
-
-**Features**:
-- "Add Zone" button for new regions
-- Inline editing for all cost components
-- Preview of "Typical Installed Price" calculation using current values
-
-### 4. Markups Tab
-
-Simple percentage-based markup display:
-
-| Markup Type | Current Rate | Description |
-|-------------|--------------|-------------|
-| Dealer Markup | 20% | Applied to home package cost |
-| Installer Markup | 20% | Applied to sitework baseline |
-| Developer Markup | 5% | Applied to community builds |
-
-**Features**:
-- Slider or simple input for percentage changes
-- Live preview: "A $100,000 home becomes $120,000 retail"
-
-### 5. Upgrades Tab
-
-All available options and add-ons:
-
-| Category | Option | Price | Active |
-|----------|--------|-------|--------|
-| Floor Plan | eBuilt Plus (DOE Certified) | $1,500 | ✓ |
-| Floor Plan | 9' Ceiling Height | $2,200 | ✓ |
-| Exterior | Black Fascia & Soffit | $525 | ✓ |
-| Foundation | Full Basement Upgrade | $17,907 | ✓ |
-| ... | ... | ... | ... |
-
-**Features**:
-- Group by category with expandable sections
-- Toggle active/inactive status
-- "Add New Option" button
-
----
-
-## Technical Implementation
-
-### File Changes
-
-1. **Create new component**: `src/components/admin/pricing/` directory
-   - `PricingHomePricesTab.tsx` - Model pricing table
-   - `PricingLotsTab.tsx` - Lot inventory manager
-   - `PricingSiteworkTab.tsx` - Zone costs editor
-   - `PricingMarkupsTab.tsx` - Markup percentages
-   - `PricingUpgradesTab.tsx` - Options manager
-   - `PriceEditCell.tsx` - Reusable inline edit component
-
-2. **Refactor**: `src/pages/admin/AdminPricing.tsx`
-   - Replace current complex JSONB editor with tab-based layout
-   - Use React Query hooks to fetch directly from relational tables
-   - Add mutation hooks for inline saves
-
-3. **Add new hooks**:
-   - `useModelPricingAdmin.ts` - CRUD for model_pricing with admin access
-   - `useLotsAdmin.ts` - CRUD for lots with development filtering
-   - `usePricingZonesAdmin.ts` - CRUD for pricing_zones
-   - `useUpgradeOptionsAdmin.ts` - CRUD for upgrade_options
-
-### Data Flow
+Update these existing records to match CMH spreadsheet:
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                    Admin Pricing Console                    │
-├──────────┬──────────┬───────────┬──────────┬───────────────┤
-│  Home    │   Lots   │ Sitework  │ Markups  │   Upgrades    │
-│  Prices  │          │  Costs    │          │               │
-├──────────┴──────────┴───────────┴──────────┴───────────────┤
-│                                                             │
-│   ┌─────────────┐     ┌──────────────┐     ┌────────────┐  │
-│   │ model_pricing│     │    lots      │     │ upgrade_   │  │
-│   │   table     │     │    table     │     │  options   │  │
-│   └─────────────┘     └──────────────┘     └────────────┘  │
-│          ↓                    ↓                    ↓        │
-│   React Query         React Query          React Query     │
-│   useMutation         useMutation          useMutation     │
-│          ↓                    ↓                    ↓        │
-│   Supabase Update     Supabase Update      Supabase Update │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+slug                    | Current  | New Price | Notes
+------------------------|----------|-----------|------------------
+storm-doors             | $450     | $230      | Per door, not package
+half-bath-addition      | $3,500   | $1,000    | CMH quoted price
+office-conversion       | $1,800   | $1,500    | CMH quoted price
+9ft-walls               | $2,200   | $11,050   | Hawthorne 30x64 specific
+plygem-siding-tier1     | $1,200   | $1,355    | 55'-64' length tier
 ```
 
-### Seed Data Migration
+### Step 2: Add Missing High-Priority Options
 
-Since the `developments` and `lots` tables are currently empty (app uses static fallbacks), we need to seed them:
+**Structural/Packages:**
+- R-38 Roof Insulation IPO R-30 ($425-$625 by length)
+- Reverse Side to Side ($500)
 
-1. Create a database migration to INSERT the Grand Haven development and its 18 lots
-2. Create a migration to INSERT St. James Bay and Ypsilanti developments
-3. This allows the admin to manage lot pricing via the database
+**Heating & Fireplaces:**
+- Half Stone Gas Fireplace ($2,995)
+- Electric Fireplace w/Panel ($2,385)
+
+**Appliances:**
+- Gas Range Upgrade ($225)
+- 25 CF Bottom Freezer Refrigerator ($495)
+- 26 CF Side-by-Side Refrigerator ($1,170)
+- 27 CF SxS w/Bottom Freezer ($1,780)
+- Washer ($1,010)
+- Electric Dryer ($795)
+- Gas Dryer Make Ready ($175)
+
+**Interior Doors & Trim:**
+- White Painted Pine Trim 48'-56' ($1,770)
+- White Painted Pine Trim 60'-68' ($1,985)
+- Interior Barn Door ($460)
+- Louvered Barn Door ($475)
+- Lever Locksets Black ($425)
+
+**Electrical:**
+- Ceiling Fan w/Light ($130)
+- Prep for Flat Screen ($110)
+- Ring Door Bell ($185)
+- Ring Floodlight Cam ($270)
+- Ring Interior Camera ($140)
+- USB-C Port & Receptacle ($75)
+
+**Plumbing:**
+- 27"x10" SS Kitchen Sink Upgrade ($705)
+- Gooseneck Kitchen Faucet - Brushed Nickel ($110)
+- Gooseneck Kitchen Faucet - Matte Black ($125)
+- Water Softener Prep ($230)
+
+**Baths:**
+- Lighted Vanity Mirror ($370)
+- 60" Ceramic Shower ($2,300)
+- Curved Shower Rod ($85)
+- Hi-Rise Commode ($50)
+
+**Countertops:**
+- Crescent Edging Kitchen ($190)
+- Crescent Edging Throughout ($240)
+- Quartz Island Countertop 82"x38" ($1,325)
+
+**Cabinets:**
+- Cabinet Color - White Linen ($410)
+- Cabinet Color - Carmel Latte ($450)
+- Hardwood Stiles - Timberwolf Grey ($795)
+- Hardwood Stiles - White Linen ($1,355)
+- Hardwood Stiles - Carmel Latte ($1,495)
+- Hardwood Stiles - Black Timber ($1,715)
+- Kitchen Hardware Black/Gold ($330)
+
+### Step 3: Add New Categories
+
+Create these additional category values:
+- `heating` - Fireplaces, furnace upgrades
+- `appliance` - Kitchen appliances
+- `electrical` - Smart home, outlets, fans
+- `plumbing` - Sinks, faucets, water systems
+- `bath` - Bathroom upgrades
+- `countertop` - Surface upgrades
+- `cabinet` - Cabinet options
+- `interior` - Doors, trim, flooring
+
+### Step 4: Remove or Deactivate Obsolete Options
+
+- `full-basement` - Keep at $17,907 (verified separately from CMH sectional sheet)
+- `plygem-siding-tier2` - Deactivate (spreadsheet shows single tier with length-based pricing)
+- `garage-door-upgrade` - Verify if still offered
 
 ---
 
-## User Experience Improvements
+## Database Changes Summary
 
-1. **Immediate Feedback**: Toast notifications on save ("Lot 15 premium updated to $65,000")
-2. **Bulk Actions**: Select multiple lots to update status simultaneously
-3. **Search/Filter**: Quick search across all tabs
-4. **Audit Trail**: "Last modified by [user] on [date]" shown on hover
-5. **Help Tooltips**: Explain what each field means (e.g., "Dealer Markup: The percentage added to factory cost for retail pricing")
+### Schema Changes Required
+
+Add new category enum values to support the expanded option catalog:
+
+```sql
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'heating';
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'appliance';
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'electrical';
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'plumbing';
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'bath';
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'countertop';
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'cabinet';
+ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'interior';
+```
+
+### Data Changes
+
+**Updates:** 6 existing records with corrected prices
+**Inserts:** ~45 new upgrade options
+**Deactivations:** 2 obsolete options
 
 ---
 
-## Migration Strategy
+## Technical Notes
 
-**Phase 1** (This implementation):
-- Seed lots and developments into database
-- Build read-only views of all pricing data
-- Add inline editing for most-changed fields (lot premiums, model prices)
+- The spreadsheet shows model-specific pricing (Hawthorne, Belmont, Aspen sections) - these will be mapped via the `applies_to_models` array
+- Length-based pricing (48'-56', 60'-68') will use the mid-tier as default with notes
+- All prices are CMH factory prices before markup
+- Options marked "STD" (standard) are included in base price and won't be added as upgrades
+- Color/style variants will be represented as separate options for admin clarity
 
-**Phase 2** (Future):
-- Add version history for pricing changes
-- Implement draft/publish workflow for major updates
-- Add pricing audit reports
+## Success Criteria
 
+1. All CMH spreadsheet options with pricing are represented in database
+2. Prices match the 1-14-26 dated spreadsheet exactly
+3. Model-specific restrictions are correctly applied
+4. Admin Pricing Console displays all options organized by category
+5. Configurator can filter applicable options by model and build type
