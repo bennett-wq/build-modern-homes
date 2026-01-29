@@ -149,9 +149,9 @@ export const PremiumLotCard = memo(forwardRef<HTMLButtonElement, PremiumLotCardP
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           'group relative overflow-hidden',
           isSelected
-            ? 'bg-accent/10 border-accent shadow-lg ' + statusConfig.glow
+            ? 'bg-gradient-to-br from-accent/15 to-accent/5 border-accent shadow-lg ring-2 ring-accent/30 ' + statusConfig.glow
             : isHovered
-            ? 'bg-muted/80 border-border shadow-md'
+            ? 'bg-muted/80 border-accent/50 shadow-md'
             : 'bg-card border-border/50 hover:border-border hover:shadow-sm',
           status === 'sold' && 'opacity-50 cursor-not-allowed',
           className
@@ -162,48 +162,68 @@ export const PremiumLotCard = memo(forwardRef<HTMLButtonElement, PremiumLotCardP
         aria-selected={isSelected}
         aria-label={`${label}, ${statusConfig.label}${acreage ? `, ${acreage} acres` : ''}${premium ? `, $${premium.toLocaleString()}` : ''}`}
       >
-        {/* Selection indicator */}
+        {/* Selection indicator - Enhanced */}
         {isSelected && (
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute top-3 right-3 w-6 h-6 rounded-full bg-accent flex items-center justify-center"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg"
           >
-            <Check className="h-4 w-4 text-accent-foreground" />
+            <Check className="h-4 w-4 text-accent-foreground" strokeWidth={3} />
           </motion.div>
         )}
 
         {/* Phase 1 / Available Now highlight */}
         {isPhase1 && isAvailable && (
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
         )}
 
         {/* Content */}
         <div className="flex flex-col gap-3">
-          {/* Header row */}
+          {/* Header row - Enhanced with larger lot number */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <div className={cn(
-                'w-3 h-3 rounded-full transition-all duration-300',
+                'w-4 h-4 rounded-full transition-all duration-300 ring-2 ring-offset-1 ring-offset-card',
                 statusConfig.dot,
-                isSelected && 'ring-2 ring-offset-2 ring-offset-card',
-                isSelected && statusConfig.glow,
+                isSelected ? 'ring-accent' : 'ring-transparent',
                 availability === 'Now' && 'animate-pulse'
               )} />
-              <span className="font-semibold text-foreground text-base">{label}</span>
-              {isPremiumLot && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-700 dark:text-amber-400 border-amber-200">
-                  Estate
-                </Badge>
-              )}
+              <div>
+                <span className="font-bold text-foreground text-lg tracking-tight">{label}</span>
+                {isPremiumLot && (
+                  <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 h-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-700 dark:text-amber-400 border-amber-200">
+                    Estate
+                  </Badge>
+                )}
+              </div>
             </div>
             
             <Badge
               variant="outline"
-              className={cn('text-xs font-medium shrink-0', statusConfig.badge)}
+              className={cn('text-xs font-semibold shrink-0', statusConfig.badge)}
             >
               {statusConfig.label}
             </Badge>
+          </div>
+
+          {/* Key details row - Always visible */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {acreage && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <Trees className="h-4 w-4 text-emerald-600" />
+                <span className="font-medium text-foreground">{acreage} acres</span>
+              </div>
+            )}
+            {premium !== undefined && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <MapPin className="h-4 w-4 text-accent" />
+                <span className="font-semibold text-foreground">
+                  <AnimatedPriceCompact value={premium} />
+                </span>
+                <span className="text-xs text-muted-foreground">lot premium</span>
+              </div>
+            )}
           </div>
 
           {/* Availability badge */}
@@ -219,44 +239,35 @@ export const PremiumLotCard = memo(forwardRef<HTMLButtonElement, PremiumLotCardP
             </div>
           )}
 
-          {/* Details row */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            {acreage && (
-              <div className="flex items-center gap-1.5">
-                <Trees className="h-3.5 w-3.5" />
-                <span>{acreage} acres</span>
-              </div>
-            )}
-            {premium !== undefined && (
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                <AnimatedPriceCompact value={premium} />
-              </div>
-            )}
-          </div>
-
-          {/* All-in price preview (when hovering or selected) */}
-          {estimatedAllIn !== undefined && isAvailable && (isSelected || isHovered) && (
+          {/* All-in price preview - Always show for selected, fade in on hover */}
+          {estimatedAllIn !== undefined && isAvailable && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="pt-2 border-t border-border/50"
+              initial={isSelected ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
+              animate={isSelected || isHovered ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Est. All-In Price</span>
-                <span className="text-sm font-semibold text-foreground">
-                  <AnimatedPriceCompact value={estimatedAllIn} />
-                </span>
+              <div className="pt-3 border-t border-border/50">
+                <div className="flex items-center justify-between bg-accent/5 rounded-lg p-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-accent/20 flex items-center justify-center">
+                      <Sparkles className="h-3.5 w-3.5 text-accent" />
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground">All-In Estimate</span>
+                  </div>
+                  <span className="text-base font-bold text-foreground">
+                    <AnimatedPriceCompact value={estimatedAllIn} />
+                  </span>
+                </div>
               </div>
             </motion.div>
           )}
 
           {/* Unavailable message */}
           {status !== 'available' && status !== 'sold' && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-              <AlertCircle className="h-3.5 w-3.5" />
-              <span>Join the waitlist for this lot</span>
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2">
+              <AlertCircle className="h-4 w-4" />
+              <span className="font-medium">Join the waitlist for this lot</span>
             </div>
           )}
         </div>

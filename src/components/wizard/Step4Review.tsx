@@ -371,6 +371,12 @@ export function Step4Review({
       {/* Financing Calculator Dialog */}
       <Dialog open={showFinancingCalculator} onOpenChange={setShowFinancingCalculator}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-auto p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>BaseMod Financial Calculator</DialogTitle>
+            <DialogDescription>
+              Calculate your estimated monthly payments
+            </DialogDescription>
+          </DialogHeader>
           <FinancingCalculator
             purchasePrice={buyerFacingBreakdown?.startingFromPrice || 0}
             onGetPreQualified={() => {
