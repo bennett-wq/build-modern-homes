@@ -66,23 +66,41 @@ export function WizardStickyFooter({
         className
       )}
     >
-      <div className="container mx-auto px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
+      <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        {/* Mobile: Show selection summary above buttons */}
+        <div className="md:hidden mb-3">
+          <AnimatePresence mode="wait">
+            {children && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.15 }}
+              >
+                {children}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 sm:gap-4">
           {/* Back Button */}
           {!hideBack && onBack ? (
             <Button 
               variant="outline" 
               onClick={onBack}
               className="shrink-0"
+              size="default"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {backLabel}
+              <ArrowLeft className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">{backLabel}</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           ) : (
             <div className="shrink-0" />
           )}
 
-          {/* Center content - selection summary + inline feedback */}
+          {/* Desktop: Center content - selection summary + inline feedback */}
           <div className="hidden md:flex items-center gap-3 min-w-0 flex-1 justify-center">
             <AnimatePresence mode="wait">
               {children && (
@@ -126,23 +144,23 @@ export function WizardStickyFooter({
           </div>
 
           {/* Continue Button with reassurance */}
-          <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
             <Button
               onClick={onContinue}
               disabled={!canContinue}
               size="lg"
               className={cn(
-                'min-w-[140px] transition-all duration-200',
+                'min-w-[120px] sm:min-w-[140px] transition-all duration-200',
                 canContinue 
                   ? 'shadow-md hover:shadow-lg' 
                   : 'opacity-60'
               )}
             >
               {continueLabel}
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-1.5 sm:ml-2 h-4 sm:h-5 w-4 sm:w-5" />
             </Button>
             {showReassurance && (
-              <span className="text-[11px] text-muted-foreground/70">
+              <span className="text-[10px] sm:text-[11px] text-muted-foreground/70">
                 You can change this later.
               </span>
             )}
