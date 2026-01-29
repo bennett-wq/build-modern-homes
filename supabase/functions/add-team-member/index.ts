@@ -7,10 +7,25 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { Resend } from 'resend'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Allowed origins for CORS - restrict to trusted domains
+const allowedOrigins = [
+  'https://build-modern-homes.lovable.app',
+  'https://id-preview--b6311393-fa2b-46a4-a734-59db659ebfc9.lovable.app',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
 }
+
+// Email validation regex (RFC 5321 compliant)
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 254;
 
 // Generate welcome email HTML
 function generateWelcomeEmail(role: string, loginUrl: string): string {
@@ -86,6 +101,8 @@ function generateWelcomeEmail(role: string, loginUrl: string): string {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -144,9 +161,25 @@ Deno.serve(async (req) => {
     // Parse request body
     const { email, role } = await req.json()
 
-    if (!email || !role) {
+    // Validate email format and length
+    if (!email || typeof email !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Email and role are required' }),
+        JSON.stringify({ error: 'Email is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const trimmedEmail = email.trim();
+    if (!EMAIL_REGEX.test(trimmedEmail) || trimmedEmail.length > MAX_EMAIL_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!role) {
+      return new Response(
+        JSON.stringify({ error: 'Role is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -158,7 +191,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(`Admin ${callerUser.email} adding ${email} as ${role}`)
+    console.log(`Admin ${callerUser.email} adding ${trimmedEmail} as ${role}`)
 
     // Look up the user by email using admin client
     const { data: { users }, error: lookupError } = await adminClient.auth.admin.listUsers()
@@ -171,7 +204,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    const targetUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+    const targetUser = users.find(u => u.email?.toLowerCase() === trimmedEmail.toLowerCase())
 
     if (!targetUser) {
       return new Response(
@@ -214,7 +247,7 @@ Deno.serve(async (req) => {
       }
 
       wasUpdated = true;
-      console.log(`Updated ${email} from ${existingRole.role} to ${role}`)
+      console.log(`Updated ${trimmedEmail} from ${existingRole.role} to ${role}`)
     } else {
       // Insert new role
       const { error: insertError } = await adminClient
@@ -229,7 +262,7 @@ Deno.serve(async (req) => {
         )
       }
 
-      console.log(`Added ${email} as ${role}`)
+      console.log(`Added ${trimmedEmail} as ${role}`)
     }
 
     // Send welcome email if configured and appropriate
@@ -266,7 +299,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `${action} ${email} as ${role}`,
+        message: `${action} ${trimmedEmail} as ${role}`,
         user_id: targetUser.id,
         email: targetUser.email,
         role,
@@ -277,6 +310,7 @@ Deno.serve(async (req) => {
     )
 
   } catch (err) {
+    const corsHeaders = getCorsHeaders(req);
     console.error('Unexpected error:', err)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),

@@ -1,11 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+// Allowed origins for CORS - restrict to trusted domains
+const allowedOrigins = [
+  'https://build-modern-homes.lovable.app',
+  'https://id-preview--b6311393-fa2b-46a4-a734-59db659ebfc9.lovable.app',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 function getPlaidBaseUrl(env: string) {
   if (env === "production") return "https://production.plaid.com";
@@ -14,6 +24,8 @@ function getPlaidBaseUrl(env: string) {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -81,6 +93,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: unknown) {
+    const corsHeaders = getCorsHeaders(req);
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("plaid-exchange-token error", message);
     return new Response(JSON.stringify({ error: message }), {
