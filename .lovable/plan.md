@@ -1,294 +1,186 @@
 
+# Fix: Plaid Popup Closes When Typing Phone Number
 
-# Next-Generation Loan Pre-Qualification System - Implementation Plan
+## Problem Analysis
 
-## Executive Summary
+The Plaid Link modal closes unexpectedly when you type in form fields (like the phone number) because of **unstable callback references** causing React re-renders to reinitialize the Plaid SDK.
 
-Transform BaseMod Financial from a basic lead capture form into a VC-grade, borrower-centric pre-qualification engine. This implementation adds Plaid integration for instant financial verification, smart DTI-based decisioning, and loan program matching for MH Advantage, CHOICEHome, and construction-to-perm programs.
+### Root Cause
 
----
+In `PreQualificationFlow.tsx` (lines 512-524), the `PlaidLinkButton` receives **inline arrow functions**:
 
-## Phase 1: Foundation & Infrastructure
-
-### 1.1 Database Schema Additions
-
-Create new tables and extend existing schema:
-
-**New Table: `plaid_connections`**
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid | Primary key |
-| application_id | uuid | FK to financing_applications |
-| plaid_item_id | text | Encrypted Plaid item identifier |
-| access_token | text | Encrypted (never client-exposed) |
-| institution_name | text | Bank name for display |
-| products_enabled | text[] | ['income', 'assets', 'liabilities'] |
-| consent_timestamp | timestamptz | Compliance tracking |
-| created_at | timestamptz | Auto-generated |
-
-**New Table: `verified_financials`**
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid | Primary key |
-| application_id | uuid | FK to financing_applications |
-| verified_annual_income | decimal | From Plaid income data |
-| verified_monthly_income | decimal | Calculated |
-| verified_assets_total | decimal | From Plaid assets |
-| verified_liabilities_total | decimal | From Plaid liabilities |
-| employment_verified | boolean | Employer confirmation |
-| employer_name | text | From payroll data |
-| income_sources | jsonb | Detailed income breakdown |
-| data_freshness | timestamptz | When data was pulled |
-
-**Extend `financing_applications`**
-- `verification_method` enum: 'manual' | 'plaid_verified'
-- `dti_ratio` decimal: Calculated debt-to-income
-- `front_end_dti` decimal: Housing-only DTI
-- `eligible_programs` text[]: ['mh_advantage', 'choicehome', etc.]
-- `prequal_letter_url` text: Generated PDF location
-- `consent_credit_pull` boolean: Soft pull consent
-- `consent_timestamp` timestamptz: Compliance tracking
-
-### 1.2 Plaid Edge Functions
-
-**`plaid-create-link-token`**
-- Generates Plaid Link initialization token
-- Configures products: income, assets, identity, liabilities
-- Includes redirect URI for mobile support
-- Returns token to frontend for Plaid Link SDK
-
-**`plaid-exchange-token`**
-- Receives public token from Plaid Link callback
-- Exchanges for permanent access token
-- Stores encrypted access token in `plaid_connections`
-- Never exposes access token to client
-
-**`plaid-get-financials`**
-- Fetches verified income, assets, and liabilities
-- Processes and normalizes data
-- Stores in `verified_financials` table
-- Returns sanitized summary to frontend
-
-**`prequal-engine`**
-- Calculates DTI ratios using verified data
-- Determines maximum loan amount
-- Matches eligible programs based on:
-  - Credit score thresholds
-  - LTV requirements
-  - Property use type
-- Returns tiered status: Pre-Qualified | Conditional | Needs Review
-
-### 1.3 Required Secrets
-
-Before implementation can begin:
-- `PLAID_CLIENT_ID` - From Plaid dashboard
-- `PLAID_SECRET` - From Plaid dashboard  
-- `PLAID_ENV` - 'sandbox' for testing, 'production' for launch
-
----
-
-## Phase 2: Smart Decisioning Engine
-
-### 2.1 DTI Calculation Logic
-
-```text
-Front-End DTI = (Monthly Housing Payment) / (Monthly Gross Income)
-- Target: < 28% for best rates
-- Maximum: 31% for conventional
-
-Back-End DTI = (Total Monthly Debt) / (Monthly Gross Income)
-- Target: < 36% for best rates
-- Maximum: 43% for QM loans, 50% for some programs
+```jsx
+<PlaidLinkButton
+  onSuccess={({ publicToken, institutionName }) => { ... }}  // NEW function every render
+  onError={(message) => toast({ ... })}                       // NEW function every render
+/>
 ```
 
-### 2.2 Loan Program Eligibility Rules
+Every time you type in ANY input field (name, email, phone), the `PreQualificationFlow` component re-renders. This creates **new function references** for `onSuccess` and `onError`.
 
-**MH Advantage (Fannie Mae)**
-- HUD-labeled manufactured home with MH Advantage sticker
-- Permanent foundation required
-- Real property titled
-- Primary: Up to 97% LTV (3% down)
-- Second home: 90% LTV
-- Credit minimum: 620
+In `PlaidLinkButton.tsx`:
+- Line 51: `useEffect` has `[onError]` as a dependency - so it re-runs on every parent render
+- Lines 53-68: `useMemo` config depends on `[linkToken, onSuccess, onError]` - so the Plaid config is recreated
 
-**CHOICEHome (Freddie Mac)**
-- Freddie Mac CHOICEHome label
-- Real property classification
-- Up to 97% LTV with Home Possible
-- Credit minimum: 620
+When the Plaid config object changes, the `usePlaidLink` hook reinitializes, which can close the modal.
 
-**Construction-to-Perm**
-- Single-close option
-- Interest-only during construction
-- Available for all BaseMod models
-- Converts to permanent mortgage at completion
+## Solution
 
-**FHA Title I**
-- Chattel (personal property) classification
-- 20-year max for single-wide
-- 25-year max for multi-section
-- Lower credit score tolerance (580+)
+### 1. Fix PlaidLinkButton.tsx - Stabilize Callbacks with useCallback
 
-### 2.3 Pre-Qualification Tiers
+Wrap callbacks in `useCallback` and use refs to avoid dependency array issues:
 
-| Tier | Criteria | Action |
-|------|----------|--------|
-| Pre-Qualified | DTI < 36%, Credit 680+, Verified income | Instant approval letter |
-| Conditionally Pre-Qualified | DTI 36-43%, Credit 620-679 | Review within 24 hours |
-| Needs Review | DTI > 43% OR Credit < 620 | Manual underwriting required |
+```typescript
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePlaidLink } from "react-plaid-link";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
----
+type PlaidLinkSuccessPayload = {
+  publicToken: string;
+  institutionName?: string;
+};
 
-## Phase 3: Enhanced User Experience
+export function PlaidLinkButton({
+  onSuccess,
+  onError,
+  disabled,
+}: {
+  onSuccess: (payload: PlaidLinkSuccessPayload) => void;
+  onError?: (message: string) => void;
+  disabled?: boolean;
+}) {
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Use refs to store latest callbacks without causing re-renders
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  
+  // Keep refs up to date
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
+  
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
-### 3.1 New Frontend Components
+  // Fetch link token ONCE on mount - no callback dependencies
+  useEffect(() => {
+    let cancelled = false;
 
-**`PlaidLinkButton.tsx`**
-- Wrapper for Plaid Link SDK
-- Branded styling matching BaseMod design
-- Loading states and error handling
-- Success/failure callbacks
+    async function init() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("plaid-create-link-token", {
+          body: {},
+        });
 
-**`VerificationProgress.tsx`**
-- Real-time status during Plaid data fetch
-- Animated progress indicators
-- Step-by-step status messages:
-  - "Connecting to your bank..."
-  - "Verifying income..."
-  - "Calculating eligibility..."
+        if (error) throw error;
 
-**`EligibilityResults.tsx`**
-- Program cards showing what you qualify for
-- Visual comparison of programs
-- Down payment requirements
-- Rate estimates by program
+        const token = (data as { link_token?: string } | null)?.link_token;
+        if (!token) throw new Error("Missing link_token");
+        if (!cancelled) setLinkToken(token);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to initialize bank connection";
+        if (!cancelled) onErrorRef.current?.(message);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
 
-**`PreQualLetter.tsx`**
-- Downloadable PDF generation
-- Shareable link option
-- Includes: Name, date, pre-qualified amount, programs
+    void init();
+    return () => {
+      cancelled = true;
+    };
+  }, []); // Empty dependency array - only run once
 
-**`FinancialSummary.tsx`**
-- Verified income display (partially redacted)
-- Asset verification status
-- Privacy-conscious presentation
+  // Stable callbacks that use refs
+  const handleSuccess = useCallback((publicToken: string, metadata: any) => {
+    const institutionName = metadata?.institution?.name as string | undefined;
+    onSuccessRef.current({ publicToken, institutionName });
+  }, []);
 
-### 3.2 Updated PreQualificationFlow
+  const handleExit = useCallback((err: any) => {
+    if (err) {
+      const message = err?.display_message || err?.error_message || "Bank connection cancelled";
+      onErrorRef.current?.(message);
+    }
+  }, []);
 
-**Step 1: Quick Contact (30 seconds)**
-- Name, email, phone
-- Intended use dropdown
-- Purchase price (auto-filled from quote)
+  // Config only depends on linkToken now
+  const config = useMemo(
+    () => ({
+      token: linkToken ?? "",
+      onSuccess: handleSuccess,
+      onExit: handleExit,
+    }),
+    [linkToken, handleSuccess, handleExit]
+  );
 
-**Step 2: Verify Financials (45 seconds)**
-- **Option A**: Connect Bank (Plaid - Recommended)
-  - Launch Plaid Link
-  - Auto-fetch verified data
-  - Skip manual entry entirely
-- **Option B**: Manual Entry (Fallback)
-  - Income range dropdown
-  - Credit score estimate
-  - Employment status
-- Down payment slider
+  const { open, ready } = usePlaidLink(config);
 
-**Step 3: Instant Results (15 seconds)**
-- Animated status reveal
-- Eligible programs display
-- Maximum loan amount
-- Monthly payment estimate (PITI)
-- Download pre-qual letter button
-- Schedule a call CTA
+  return (
+    <Button
+      type="button"
+      onClick={() => open()}
+      disabled={disabled || isLoading || !ready || !linkToken}
+      size="sm"
+    >
+      {isLoading ? "Preparing..." : "Connect"}
+    </Button>
+  );
+}
+```
 
----
+### 2. Optional Enhancement - Memoize Parent Callbacks
 
-## Phase 4: Admin Enhancements
+In `PreQualificationFlow.tsx`, wrap the callbacks with `useCallback` for additional stability:
 
-### 4.1 Leads Dashboard Updates
+```typescript
+const handlePlaidSuccess = useCallback(
+  ({ publicToken, institutionName }: { publicToken: string; institutionName?: string }) => {
+    setPlaidPublicToken(publicToken);
+    setPlaidInstitutionName(institutionName ?? null);
+  },
+  []
+);
 
-Add columns to `/admin/leads`:
-- **Verification Status**: Badge showing "Plaid Verified" vs "Self-Reported"
-- **DTI Ratio**: Color-coded (green < 36%, yellow 36-43%, red > 43%)
-- **Eligible Programs**: Tags for MH Advantage, CHOICEHome, etc.
-- **Pre-Qual Amount**: Calculated maximum
+const handlePlaidError = useCallback(
+  (message: string) => {
+    toast({
+      title: 'Bank connection failed',
+      description: message,
+      variant: 'destructive',
+    });
+  },
+  [toast]
+);
 
-### 4.2 Lead Detail Enhancements
+// Then use them:
+<PlaidLinkButton
+  onSuccess={handlePlaidSuccess}
+  onError={handlePlaidError}
+/>
+```
 
-In the lead detail drawer:
-- Verified financials section (if Plaid connected)
-- Income sources breakdown
-- Asset/liability summary
-- Program eligibility analysis
-- One-click "Generate Letter" button
+## Technical Details
 
----
+| Issue | Before | After |
+|-------|--------|-------|
+| useEffect dependency | `[onError]` - re-runs on every render | `[]` - runs once on mount |
+| Callback stability | Inline functions = new ref each render | Refs + useCallback = stable |
+| Plaid config | Recreated on parent re-render | Only changes when token changes |
 
-## Technical Implementation Order
+## Files to Modify
 
-### Week 1: Core Infrastructure
-1. Request Plaid secrets from user
-2. Create database migration for new tables
-3. Build `plaid-create-link-token` edge function
-4. Build `plaid-exchange-token` edge function
-5. Build `plaid-get-financials` edge function
-6. Test with Plaid sandbox
+1. `src/components/financing/PlaidLinkButton.tsx` - Main fix using refs pattern
+2. `src/components/financing/PreQualificationFlow.tsx` - Optional: memoize callbacks
 
-### Week 2: Decisioning Engine
-7. Build `prequal-engine` edge function
-8. Implement DTI calculation logic
-9. Implement program eligibility rules
-10. Create `PlaidLinkButton` component
-11. Create `VerificationProgress` component
-12. Update `PreQualificationFlow` with verification choice
+## Expected Result
 
-### Week 3: Results & Polish
-13. Build `EligibilityResults` component
-14. Build `FinancialSummary` component
-15. Create pre-qualification letter PDF generation
-16. Update admin leads dashboard
-17. Mobile optimization pass
-18. End-to-end testing
-
----
-
-## Security & Compliance
-
-### Data Protection
-- Plaid access tokens encrypted at rest (never client-exposed)
-- Verified financials encrypted in database
-- Automatic data expiration policy (30 days)
-- Consent timestamps for audit trail
-
-### Regulatory Compliance
-- Clear disclosures: "This is not a commitment to lend"
-- Soft credit pull consent language
-- ECOA-compliant decision language
-- Privacy policy integration
-
-### RLS Policies
-- Users can only view their own applications
-- Team members (admin/builder) can view all
-- Plaid connections restricted to system access only
-- Verified financials protected with same rules as applications
-
----
-
-## Success Metrics
-
-| Metric | Current State | Target |
-|--------|---------------|--------|
-| Pre-qual completion rate | ~40% | 70%+ |
-| Time to completion | 3-5 minutes | < 2 minutes |
-| Verified applications | 0% | 60%+ |
-| Lead-to-call conversion | Unknown | Track baseline |
-
----
-
-## Prerequisites Before Starting
-
-**Immediate Blocker**: Plaid credentials must be configured:
-1. `PLAID_CLIENT_ID`
-2. `PLAID_SECRET`
-3. `PLAID_ENV` (set to 'sandbox' for initial development)
-
-Once these secrets are provided, implementation can begin with Phase 1.
-
+After this fix:
+- Typing in any form field will NOT close the Plaid modal
+- The Plaid link token is fetched only once when the component mounts
+- The Plaid SDK configuration remains stable throughout the session
