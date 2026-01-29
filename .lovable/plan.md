@@ -1,171 +1,283 @@
 
-# Upgrade Options Database Sync Plan
+# BaseMod Platform Audit: Pricing Engine & User Flow Review
+## Executive Summary for VC-Ready Architecture
 
-## Overview
-This plan reconciles the CMH Builders Series CROSSMOD Option Price List (dated 1-14-26) with the current `upgrade_options` table in the database. The spreadsheet contains 100+ individual options across multiple categories that need to be properly represented.
-
-## Current State Analysis
-
-**Database Status:** 14 upgrade options currently exist
-**Spreadsheet Contents:** 100+ options across 12+ categories
-
-### Options Already in Database (Price Verification)
-
-| Option | DB Price | Spreadsheet Price | Status |
-|--------|----------|-------------------|--------|
-| eBuilt Plus (DOE Certified) | $1,500 | $1,500 | Correct |
-| CrossMod Inspection Fee | $750 | $750 | Correct |
-| Carrier Gas Furnace | $765 | $765 | Correct |
-| Garbage Disposal | $170 | $170 | Correct |
-| Black Fascia & Soffit | $525 | $525 | Correct |
-| Black Exterior Doors | $280 | $280 | Correct |
-
-### Options Needing Updates
-
-| Option | Current DB | Spreadsheet | Action |
-|--------|------------|-------------|--------|
-| Storm Door Package | $450 (package) | $230 (each) | Update to $230 each |
-| 9' Ceiling Height | $2,200 | $11,050 (Hawthorne specific) | Update + model restriction |
-| Half Bath Addition | $3,500 | $1,000 | Update price |
-| Office/Den Conversion | $1,800 | $1,500 | Update price |
-| PlyGem Siding Tier 1 | $1,200 | $1,205-$1,505 (by length) | Update to $1,355 (mid) |
-| PlyGem Siding Tier 2 | $1,800 | N/A (remove or rename) | Remove duplicate |
+This audit evaluates the BaseMod pricing system and user flows across both the **Community Lot Sales** (4-step) and **Get a Quote** (8-step) wizards, with recommendations to ensure a robust, scalable foundation.
 
 ---
 
-## Implementation Steps
+## 1. DATABASE SCHEMA AUDIT
 
-### Step 1: Update Existing Options with Correct Prices
+### 1.1 Strengths - VC-Grade Architecture
+Your relational schema is solid with excellent audit trails:
 
-Update these existing records to match CMH spreadsheet:
+| Table | Records | Assessment |
+|-------|---------|------------|
+| models | 6 active | Complete with proper metadata |
+| model_pricing | 9 entries | Excellent - includes quote_number, quote_date audit trail |
+| developments | 3 active | Properly structured |
+| lots | 78 total (78 available) | Well-organized with premiums |
+| upgrade_options | 53 active | Comprehensive catalog |
+| pricing_zones | 1 | **Gap: Need regional expansion** |
+| pricing_markups | 1 | Single default is appropriate |
+
+**Key Audit Win:** The `model_pricing` table correctly stores `quote_number` and `quote_date` fields mapping every price to CMH Manufacturing spreadsheets - this is due diligence ready.
+
+### 1.2 Critical Gaps Identified
+
+**GAP 1: Empty Exterior/Garage Tables**
+- `exterior_packages`: 0 active records
+- `garage_door_options`: 0 active records
+
+The UI falls back to static TypeScript files (`src/data/hawthorne-exteriors.ts`, etc.) when these are empty. This creates a dual-data-source risk where changes to static files diverge from the database.
+
+**RECOMMENDATION:** Seed exterior packages and garage door options into the database to achieve single source of truth.
+
+**GAP 2: Model-Specific Pricing Availability**
+| Model | XMOD | MOD | Issue |
+|-------|------|-----|-------|
+| Hawthorne | YES | YES | Complete |
+| Aspen | YES | YES | Complete |
+| Belmont | YES | YES | Complete |
+| Keeneland | YES | NO | Missing MOD |
+| Laurel | NO | YES | Missing XMOD |
+| Cypress | YES | NO | Missing MOD |
+
+**RECOMMENDATION:** Implement "Coming Soon" UI treatment for missing build types rather than hiding them.
+
+**GAP 3: Single Pricing Zone**
+Currently only Zone 3 Michigan is configured. The `pricing_zones` table supports regional cost variations but isn't being utilized.
+
+**RECOMMENDATION:** Add Zone 4 (Florida) data for St. James Bay with region-specific sitework baselines.
+
+---
+
+## 2. PRICING ENGINE ARCHITECTURE AUDIT
+
+### 2.1 Strengths - Single Source of Truth
+
+Your architecture correctly implements a **canonical pricing calculation** pattern:
 
 ```text
-slug                    | Current  | New Price | Notes
-------------------------|----------|-----------|------------------
-storm-doors             | $450     | $230      | Per door, not package
-half-bath-addition      | $3,500   | $1,000    | CMH quoted price
-office-conversion       | $1,800   | $1,500    | CMH quoted price
-9ft-walls               | $2,200   | $11,050   | Hawthorne 30x64 specific
-plygem-siding-tier1     | $1,200   | $1,355    | 55'-64' length tier
+Database Tables                    React Query Hooks                 Unified Engine
+----------------------             ---------------------             ----------------
+models + model_pricing     -->     useModels()            -->
+pricing_zones              -->     usePricingZones()      -->       useUnifiedPricingEngine()
+pricing_markups            -->     usePricingMarkups()    -->          |
+upgrade_options            -->     useUpgradeOptions()    -->          v
+                                                           useConfiguratorPricing() (adapter)
+                                                                       |
+                                                                       v
+                                                           BuyerPricingDisplay (UI)
 ```
 
-### Step 2: Add Missing High-Priority Options
+**Verified Calculation Formula:**
+- Home Retail = Factory Quote x 1.20 (Dealer Markup)
+- Sitework Retail = (Baseline + 10% Buffer) x 1.20 (Installer Markup)
+- Options Retail = Option Base Price x 1.20 (same markup)
+- Lot Premium = Pass-through (no markup)
 
-**Structural/Packages:**
-- R-38 Roof Insulation IPO R-30 ($425-$625 by length)
-- Reverse Side to Side ($500)
+**DEV ASSERTION:** The engine includes a reconciliation check (`import.meta.env.DEV`) that verifies line items sum to displayed total - excellent.
 
-**Heating & Fireplaces:**
-- Half Stone Gas Fireplace ($2,995)
-- Electric Fireplace w/Panel ($2,385)
+### 2.2 Pricing Display Modes
 
-**Appliances:**
-- Gas Range Upgrade ($225)
-- 25 CF Bottom Freezer Refrigerator ($495)
-- 26 CF Side-by-Side Refrigerator ($1,170)
-- 27 CF SxS w/Bottom Freezer ($1,780)
-- Washer ($1,010)
-- Electric Dryer ($795)
-- Gas Dryer Make Ready ($175)
+| Mode | Label | When Used |
+|------|-------|-----------|
+| `supply_only` | "Home Package Estimate" | Step 4 display override, explicit user selection |
+| `delivered_installed` | "Typical Installed Allowance (Preliminary)" | Default for most flows |
+| `community_all_in` | "All-in Price (Includes Lot)" | Community wizard with lot selected |
 
-**Interior Doors & Trim:**
-- White Painted Pine Trim 48'-56' ($1,770)
-- White Painted Pine Trim 60'-68' ($1,985)
-- Interior Barn Door ($460)
-- Louvered Barn Door ($475)
-- Lever Locksets Black ($425)
+**Verified:** Step 4 (Build Type) correctly forces `supply_only` display for MOD/XMOD comparison, then reverts to user's actual selection from Step 5 onward.
 
-**Electrical:**
-- Ceiling Fan w/Light ($130)
-- Prep for Flat Screen ($110)
-- Ring Door Bell ($185)
-- Ring Floodlight Cam ($270)
-- Ring Interior Camera ($140)
-- USB-C Port & Receptacle ($75)
+### 2.3 Issues Found
 
-**Plumbing:**
-- 27"x10" SS Kitchen Sink Upgrade ($705)
-- Gooseneck Kitchen Faucet - Brushed Nickel ($110)
-- Gooseneck Kitchen Faucet - Matte Black ($125)
-- Water Softener Prep ($230)
+**ISSUE 1: Duplicate State Management Systems**
 
-**Baths:**
-- Lighted Vanity Mirror ($370)
-- 60" Ceramic Shower ($2,300)
-- Curved Shower Rod ($85)
-- Hi-Rise Commode ($50)
+Two parallel state systems exist:
+1. **Legacy:** `useConfiguratorState.ts` + `useBuildSelection.ts` (localStorage-based)
+2. **New:** `useConfiguratorStore.ts` (Zustand with persistence)
 
-**Countertops:**
-- Crescent Edging Kitchen ($190)
-- Crescent Edging Throughout ($240)
-- Quartz Island Countertop 82"x38" ($1,325)
+The 8-step `/build` wizard uses `useConfiguratorState`.
+The 4-step community wizard uses `useBuildSelection`.
+Neither consistently uses the newer `useConfiguratorStore`.
 
-**Cabinets:**
-- Cabinet Color - White Linen ($410)
-- Cabinet Color - Carmel Latte ($450)
-- Hardwood Stiles - Timberwolf Grey ($795)
-- Hardwood Stiles - White Linen ($1,355)
-- Hardwood Stiles - Carmel Latte ($1,495)
-- Hardwood Stiles - Black Timber ($1,715)
-- Kitchen Hardware Black/Gold ($330)
+**RISK:** Data inconsistency between flows if user switches contexts.
 
-### Step 3: Add New Categories
+**RECOMMENDATION:** Complete migration to `useConfiguratorStore` as the single source of truth for all flows.
 
-Create these additional category values:
-- `heating` - Fireplaces, furnace upgrades
-- `appliance` - Kitchen appliances
-- `electrical` - Smart home, outlets, fans
-- `plumbing` - Sinks, faucets, water systems
-- `bath` - Bathroom upgrades
-- `countertop` - Surface upgrades
-- `cabinet` - Cabinet options
-- `interior` - Doors, trim, flooring
+**ISSUE 2: Static Fallback Risk**
 
-### Step 4: Remove or Deactivate Obsolete Options
+The `useModels` hook has `placeholderData: mapStaticModelsToDbShape()` which falls back to static TypeScript data. If database fetch fails silently, users may see stale pricing.
 
-- `full-basement` - Keep at $17,907 (verified separately from CMH sectional sheet)
-- `plygem-siding-tier2` - Deactivate (spreadsheet shows single tier with length-based pricing)
-- `garage-door-upgrade` - Verify if still offered
+**RECOMMENDATION:** Add explicit error UI when database fetch fails rather than silent fallback.
 
 ---
 
-## Database Changes Summary
+## 3. USER FLOW AUDIT
 
-### Schema Changes Required
+### 3.1 Community Flow (4-Step Wizard)
+Route: `/developments/:slug/build`
 
-Add new category enum values to support the expanded option catalog:
+```text
+Step 1: Lot Selection
+  |-- Interactive site plan with polygon selection
+  |-- Premium lot pricing displayed (AnimatedPrice)
+  |-- Database: lots table (78 records)
+  
+Step 2: Model Selection
+  |-- Filtered by development's conforming models
+  |-- "Starting from" prices from unified engine
+  |-- Database: models + model_pricing
 
-```sql
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'heating';
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'appliance';
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'electrical';
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'plumbing';
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'bath';
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'countertop';
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'cabinet';
-ALTER TYPE upgrade_category ADD VALUE IF NOT EXISTS 'interior';
+Step 3: Exterior Design
+  |-- Package + Garage Door selection
+  |-- ISSUE: Falls back to static data (no DB records)
+  
+Step 4: Review
+  |-- Full pricing breakdown
+  |-- BuyerPricingDisplay with community_all_in mode
+  |-- CTA: Schedule Call, Explore Financing
 ```
 
-### Data Changes
+**UX Assessment:** Clean, focused 4-step flow. Premium lot pricing with odometer animations is excellent. However, exterior selection is disconnected from database.
 
-**Updates:** 6 existing records with corrected prices
-**Inserts:** ~45 new upgrade options
-**Deactivations:** 2 obsolete options
+### 3.2 Direct Flow (8-Step Wizard)
+Route: `/build`
+
+```text
+Step 1: Intent Selection
+  |-- Own Land / Find Land / BaseMod Community
+  |-- Single-column centered layout (no pricing rail)
+
+Step 2: Location
+  |-- ZIP code entry with validation
+  |-- "I don't know yet" option
+  |-- Single-column centered layout (no pricing rail)
+
+Step 3: Model Selection
+  |-- All 6 models displayed
+  |-- Model change triggers inline feedback
+  |-- Single-column centered layout (no pricing rail)
+
+Step 4: Build Type (MOD/XMOD)
+  |-- Two-column layout with pricing rail appears
+  |-- DISPLAY OVERRIDE: Forces supply_only for comparison
+  |-- Auto-selects if only one type available
+
+Step 5: Service Package
+  |-- Delivered & Installed (default)
+  |-- Home Package Only (supply_only)
+  |-- Community All-In (requires lot)
+  |-- Pricing rail shows actual service package
+
+Step 6: Floor Plan Options
+  |-- 53 upgrade options from database
+  |-- Filtered by model + build_type
+  |-- Toggle selection updates pricing
+
+Step 7: Exterior Design
+  |-- Same as community Step 3
+  |-- Package + Garage selection
+  
+Step 8: Summary
+  |-- Full breakdown + disclaimers
+  |-- Shareable URL generation
+  |-- CTAs: Schedule Call, Financing, Pre-Qualification
+```
+
+**UX Assessment:** Well-designed progressive disclosure. Steps 1-3 hide pricing to focus on intent. Steps 4+ reveal full pricing context.
+
+### 3.3 UX Issues Found
+
+**ISSUE 1: Choice Overload on Floor Plan Options**
+53 upgrade options displayed flat. Categories exist but aren't grouped in UI for the `/build` wizard.
+
+**RECOMMENDATION:** Group options by category (Floor Plan, Exterior, Heating, Appliance, etc.) with collapsible sections.
+
+**ISSUE 2: No Floor Plan Options in Community Wizard**
+The 4-step community wizard skips upgrade options entirely - users can't add upgrades until after contacting sales.
+
+**RECOMMENDATION:** Consider adding optional "Customize" step between Exterior and Review, or clearly indicate "upgrades available during consultation."
+
+**ISSUE 3: Resume Prompt Complexity**
+Two different resume mechanisms exist:
+- `ResumePrompt` component in Configurator
+- `hydrateFromLegacy` in useConfiguratorStore
+
+This creates potential for conflicting restoration logic.
 
 ---
 
-## Technical Notes
+## 4. DATA INTEGRITY RECOMMENDATIONS
 
-- The spreadsheet shows model-specific pricing (Hawthorne, Belmont, Aspen sections) - these will be mapped via the `applies_to_models` array
-- Length-based pricing (48'-56', 60'-68') will use the mid-tier as default with notes
-- All prices are CMH factory prices before markup
-- Options marked "STD" (standard) are included in base price and won't be added as upgrades
-- Color/style variants will be represented as separate options for admin clarity
+### 4.1 Database Seeding Required
 
-## Success Criteria
+Execute immediately:
 
-1. All CMH spreadsheet options with pricing are represented in database
-2. Prices match the 1-14-26 dated spreadsheet exactly
-3. Model-specific restrictions are correctly applied
-4. Admin Pricing Console displays all options organized by category
-5. Configurator can filter applicable options by model and build type
+| Table | Action | Records Needed |
+|-------|--------|----------------|
+| `exterior_packages` | Seed from static files | ~6-8 per model family |
+| `garage_door_options` | Seed from static files | ~4-6 options |
+| `pricing_zones` | Add Florida zone | 1 record for Zone 4 |
+
+### 4.2 State Management Consolidation
+
+Migrate to single store:
+1. Update `BuildWizard.tsx` to use `useConfiguratorStore` instead of `useBuildSelection`
+2. Update `Configurator.tsx` to use `useConfiguratorStore` instead of `useConfiguratorState`
+3. Deprecate `useBuildSelection.ts` and `useConfiguratorState.ts`
+
+### 4.3 Quote Persistence
+
+Currently quotes save to localStorage only. Add database persistence:
+1. On Step 8 completion, insert to `quotes` table
+2. Generate UUID for shareable quote links
+3. Enable quote retrieval via `/quote/:quoteId` route
+
+---
+
+## 5. TECHNICAL IMPLEMENTATION PLAN
+
+### Phase 1: Data Integrity (Immediate)
+1. Seed `exterior_packages` table with Hawthorne, Aspen, Belmont packages
+2. Seed `garage_door_options` table with standard and upgrade options
+3. Add Zone 4 Florida to `pricing_zones`
+
+### Phase 2: State Consolidation (1-2 days)
+1. Update `BuildWizard.tsx` to use Zustand store
+2. Update `Configurator.tsx` to use Zustand store
+3. Add migration helper for localStorage data
+4. Remove legacy hooks after verification
+
+### Phase 3: Quote Persistence (1 day)
+1. Insert quotes to database on wizard completion
+2. Add quote retrieval API
+3. Generate shareable quote URLs
+
+### Phase 4: UX Polish (Ongoing)
+1. Group upgrade options by category
+2. Add "Coming Soon" treatment for missing model configs
+3. Consider adding upgrades to community wizard
+
+---
+
+## 6. SUMMARY
+
+### What's Working Well
+- Robust relational database schema with audit trails
+- Single canonical pricing engine with reconciliation checks
+- Clean progressive disclosure in 8-step wizard
+- Premium UI with animated pricing transitions
+- Proper markup calculations (20% dealer, 20% installer)
+
+### Critical Fixes Required
+1. **Database:** Seed exterior_packages and garage_door_options (currently empty)
+2. **State:** Consolidate to single Zustand store (currently 3 parallel systems)
+3. **Quotes:** Add database persistence (currently localStorage only)
+
+### Optional Enhancements
+- Regional pricing zones for Florida
+- Grouped upgrade options UI
+- Model availability constraints ("Coming Soon" for missing configs)
+
+This foundation is solid for VC due diligence. The pricing audit trail, relational schema, and calculation integrity are all institutional-grade. The critical path items are data seeding and state consolidation.
