@@ -296,6 +296,7 @@ export type Database = {
       }
       model_pricing: {
         Row: {
+          base_cost: number | null
           base_home_price: number
           build_type: Database["public"]["Enums"]["build_type"]
           created_at: string
@@ -307,9 +308,14 @@ export type Database = {
           id: string
           is_current: boolean
           model_id: string
+          options_delta: number | null
           pricing_source: string | null
+          quote_date: string | null
+          quote_number: string | null
+          shipping_charge: number | null
         }
         Insert: {
+          base_cost?: number | null
           base_home_price: number
           build_type: Database["public"]["Enums"]["build_type"]
           created_at?: string
@@ -321,9 +327,14 @@ export type Database = {
           id?: string
           is_current?: boolean
           model_id: string
+          options_delta?: number | null
           pricing_source?: string | null
+          quote_date?: string | null
+          quote_number?: string | null
+          shipping_charge?: number | null
         }
         Update: {
+          base_cost?: number | null
           base_home_price?: number
           build_type?: Database["public"]["Enums"]["build_type"]
           created_at?: string
@@ -335,7 +346,11 @@ export type Database = {
           id?: string
           is_current?: boolean
           model_id?: string
+          options_delta?: number | null
           pricing_source?: string | null
+          quote_date?: string | null
+          quote_number?: string | null
+          shipping_charge?: number | null
         }
         Relationships: [
           {
@@ -735,7 +750,7 @@ export type Database = {
         | "delivered_installed"
         | "supply_only"
         | "community_all_in"
-      upgrade_category: "floor_plan" | "exterior" | "garage"
+      upgrade_category: "floor_plan" | "exterior" | "garage" | "foundation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -875,7 +890,7 @@ export const Constants = {
         "supply_only",
         "community_all_in",
       ],
-      upgrade_category: ["floor_plan", "exterior", "garage"],
+      upgrade_category: ["floor_plan", "exterior", "garage", "foundation"],
     },
   },
 } as const
