@@ -1,244 +1,202 @@
 
 
-## Next-Generation Loan Pre-Qualification System
+# Admin Pricing Console Redesign
 
-### Vision: "Get Pre-Qualified in Under 2 Minutes"
+## Overview
 
-Transform BaseMod Financial from a basic lead capture form into a VC-grade, borrower-centric pre-qualification engine that rivals the best fintech experiences. This system will securely verify financial credentials through Plaid integration, provide instant DTI-based decisions, and deliver a premium experience aligned with Fannie Mae MH Advantage and Freddie Mac CHOICEHome programs.
+The current Admin Pricing page is technically oriented and difficult for non-technical users to navigate. This plan redesigns it into an intuitive, tabbed dashboard that presents all pricing data in easy-to-understand tables with inline editing capabilities.
+
+## Current State Analysis
+
+The existing admin pricing console has several usability issues:
+
+1. **Complex Draft/Publish Workflow** - Uses a JSONB config blob approach that requires creating drafts before viewing or editing any pricing
+2. **No Direct Database Editing** - Model prices, lots, and markups are stored in relational tables, but the admin only shows the JSONB config
+3. **Missing Data Visibility** - Cannot see lot pricing, upgrade options, or exterior packages
+4. **Technical Interface** - Form inputs without context; requires understanding of pricing formulas
+
+## Proposed Solution
+
+A redesigned admin pricing console with 5 intuitive tabs, each presenting data in clear tables with inline editing:
+
+### Tab Structure
+
+| Tab | Purpose | Data Source |
+|-----|---------|-------------|
+| **Home Prices** | Model base prices by build type | `models` + `model_pricing` tables |
+| **Lot Inventory** | Lot prices and status by community | `developments` + `lots` tables |
+| **Sitework Costs** | Regional installation baselines | `pricing_zones` table |
+| **Markups** | Dealer/installer/developer percentages | `pricing_markups` table |
+| **Upgrades** | Options and add-on pricing | `upgrade_options` + `exterior_packages` tables |
+
+### Visual Design Principles
+
+- **Clean Tables**: Each section displays data in a sortable, readable table format
+- **Inline Editing**: Click-to-edit cells with immediate save confirmation
+- **Plain English Labels**: "Dealer Markup (20%)" instead of "dealerMarkupPct: 0.20"
+- **Visual Status Indicators**: Color-coded badges for lot status (Available/Reserved/Sold)
+- **Price Formatting**: All prices shown with dollar signs and commas ($97,087)
 
 ---
 
-## What You'll Get
+## Detailed Tab Designs
 
-### 1. Instant Financial Verification via Plaid
-- **One-click bank connection** instead of manual income/asset entry
-- Verified income data (paystubs, W-2 equivalents, bank deposits)
-- Asset verification for down payment proof
-- Real credit score (with soft pull consent)
-- Eliminates guessing and self-reported ranges
+### 1. Home Prices Tab
 
-### 2. Smart DTI-Based Decisioning Engine
-- Real-time Debt-to-Income calculation using verified data
-- Automatic loan amount calculation based on actual financials
-- MH Advantage / CHOICEHome eligibility flagging
-- Tiered results: Pre-Qualified / Conditionally Pre-Qualified / Needs Review
+Displays all models with their base prices in a clear table format:
 
-### 3. Premium User Experience
-- 3-step streamlined flow (60-90 seconds typical)
-- Progress animations and real-time feedback
-- Mobile-first responsive design
-- Save and resume capability
-- Instant downloadable pre-qualification letter
+| Model | Beds | Baths | Sqft | Factory-Built Price | Modular Price | Last Updated |
+|-------|------|-------|------|---------------------|---------------|--------------|
+| Hawthorne | 3 | 2 | 1,620 | $97,087 | $107,904 | Jan 15, 2026 |
+| Aspen | 4 | 2 | 1,620 | $98,246 | $108,493 | Jan 15, 2026 |
+| ... | ... | ... | ... | ... | ... | ... |
 
-### 4. Loan Program Intelligence
-- Automatic matching to eligible programs (MH Advantage, CHOICEHome, FHA Title I, VA, Construction-to-Perm)
-- Program comparison cards showing benefits
-- Down payment requirement optimization
-- Rate estimates by program type
+**Features**:
+- Click any price cell to edit inline
+- "Save All Changes" button appears when edits are pending
+- Show which CMH quote number each price came from (for audit trail)
+
+### 2. Lot Inventory Tab
+
+Organized by community with status filters:
+
+**Community Selector** - Dropdown to choose development (Grand Haven, St. James Bay, etc.)
+
+| Lot # | Acreage | Premium | Status | Phase | Availability |
+|-------|---------|---------|--------|-------|--------------|
+| Lot 15 | 2.47 | $61,750 | 🟢 Available | 1 | Now |
+| Lot 16 | 2.46 | $61,500 | 🟢 Available | 1 | Now |
+| Lot 1 | 3.06 | $75,000 | 🟢 Available | 2 | Fall 2026 |
+| ... | ... | ... | ... | ... | ... |
+
+**Features**:
+- Filter by status (Available/Reserved/Sold)
+- Filter by phase (1, 2, 3)
+- Click premium to edit
+- Click status to change (with confirmation for Reserved/Sold)
+- Summary card: "18 lots | 4 available | $48,000 - $802,250"
+
+### 3. Sitework Costs Tab
+
+Regional installation cost baselines:
+
+| Zone | Baseline | Buffer (10%) | Total | Permits | Utility Fees |
+|------|----------|--------------|-------|---------|--------------|
+| Zone 3 - Michigan | $86,767 | $8,677 | $95,444 | $2,085 | $7,546 |
+
+**Features**:
+- "Add Zone" button for new regions
+- Inline editing for all cost components
+- Preview of "Typical Installed Price" calculation using current values
+
+### 4. Markups Tab
+
+Simple percentage-based markup display:
+
+| Markup Type | Current Rate | Description |
+|-------------|--------------|-------------|
+| Dealer Markup | 20% | Applied to home package cost |
+| Installer Markup | 20% | Applied to sitework baseline |
+| Developer Markup | 5% | Applied to community builds |
+
+**Features**:
+- Slider or simple input for percentage changes
+- Live preview: "A $100,000 home becomes $120,000 retail"
+
+### 5. Upgrades Tab
+
+All available options and add-ons:
+
+| Category | Option | Price | Active |
+|----------|--------|-------|--------|
+| Floor Plan | eBuilt Plus (DOE Certified) | $1,500 | ✓ |
+| Floor Plan | 9' Ceiling Height | $2,200 | ✓ |
+| Exterior | Black Fascia & Soffit | $525 | ✓ |
+| Foundation | Full Basement Upgrade | $17,907 | ✓ |
+| ... | ... | ... | ... |
+
+**Features**:
+- Group by category with expandable sections
+- Toggle active/inactive status
+- "Add New Option" button
 
 ---
 
-## Technical Architecture
+## Technical Implementation
 
-### New Edge Functions
+### File Changes
 
-| Function | Purpose |
-|----------|---------|
-| `plaid-create-link-token` | Generate Plaid Link token for frontend |
-| `plaid-exchange-token` | Exchange public token for access token |
-| `plaid-get-financials` | Fetch verified income, assets, liabilities |
-| `prequal-engine` | Run DTI calculations and eligibility logic |
-| `generate-prequal-letter` | Create downloadable PDF letter |
+1. **Create new component**: `src/components/admin/pricing/` directory
+   - `PricingHomePricesTab.tsx` - Model pricing table
+   - `PricingLotsTab.tsx` - Lot inventory manager
+   - `PricingSiteworkTab.tsx` - Zone costs editor
+   - `PricingMarkupsTab.tsx` - Markup percentages
+   - `PricingUpgradesTab.tsx` - Options manager
+   - `PriceEditCell.tsx` - Reusable inline edit component
 
-### Database Schema Additions
+2. **Refactor**: `src/pages/admin/AdminPricing.tsx`
+   - Replace current complex JSONB editor with tab-based layout
+   - Use React Query hooks to fetch directly from relational tables
+   - Add mutation hooks for inline saves
+
+3. **Add new hooks**:
+   - `useModelPricingAdmin.ts` - CRUD for model_pricing with admin access
+   - `useLotsAdmin.ts` - CRUD for lots with development filtering
+   - `usePricingZonesAdmin.ts` - CRUD for pricing_zones
+   - `useUpgradeOptionsAdmin.ts` - CRUD for upgrade_options
+
+### Data Flow
 
 ```text
-plaid_connections (new table)
-├── id (uuid, PK)
-├── application_id (FK → financing_applications)
-├── plaid_item_id (encrypted)
-├── access_token (encrypted, never exposed to client)
-├── institution_name
-├── products_enabled (income, assets, identity, liabilities)
-├── consent_timestamp
-├── created_at
-
-verified_financials (new table)
-├── id (uuid, PK)
-├── application_id (FK → financing_applications)
-├── verified_annual_income (decimal)
-├── verified_monthly_income (decimal)
-├── verified_assets_total (decimal)
-├── verified_liabilities_total (decimal)
-├── employment_verified (boolean)
-├── employer_name
-├── income_sources (jsonb)
-├── data_freshness (timestamp)
-├── created_at
-
-financing_applications (additions)
-├── verification_method (enum: 'manual', 'plaid_verified')
-├── dti_ratio (decimal)
-├── front_end_dti (decimal)
-├── eligible_programs (text[])
-├── prequal_letter_url (text)
-├── consent_credit_pull (boolean)
-├── consent_timestamp
+┌─────────────────────────────────────────────────────────────┐
+│                    Admin Pricing Console                    │
+├──────────┬──────────┬───────────┬──────────┬───────────────┤
+│  Home    │   Lots   │ Sitework  │ Markups  │   Upgrades    │
+│  Prices  │          │  Costs    │          │               │
+├──────────┴──────────┴───────────┴──────────┴───────────────┤
+│                                                             │
+│   ┌─────────────┐     ┌──────────────┐     ┌────────────┐  │
+│   │ model_pricing│     │    lots      │     │ upgrade_   │  │
+│   │   table     │     │    table     │     │  options   │  │
+│   └─────────────┘     └──────────────┘     └────────────┘  │
+│          ↓                    ↓                    ↓        │
+│   React Query         React Query          React Query     │
+│   useMutation         useMutation          useMutation     │
+│          ↓                    ↓                    ↓        │
+│   Supabase Update     Supabase Update      Supabase Update │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Frontend Components
+### Seed Data Migration
 
-| Component | Description |
-|-----------|-------------|
-| `PlaidLinkButton` | Wrapper for Plaid Link SDK with branded styling |
-| `VerificationProgress` | Real-time status during Plaid data fetch |
-| `EligibilityResults` | Program cards showing what you qualify for |
-| `PreQualLetter` | Downloadable/shareable pre-qualification letter |
-| `FinancialSummary` | Verified income/assets display (redacted for privacy) |
+Since the `developments` and `lots` tables are currently empty (app uses static fallbacks), we need to seed them:
+
+1. Create a database migration to INSERT the Grand Haven development and its 18 lots
+2. Create a migration to INSERT St. James Bay and Ypsilanti developments
+3. This allows the admin to manage lot pricing via the database
 
 ---
 
-## User Flow
+## User Experience Improvements
 
-```text
-Step 1: Quick Contact (30 sec)
-├── Name, email, phone
-├── Intended use (primary/second/investment)
-├── Purchase price (auto-filled from quote)
-└── [Continue]
-
-Step 2: Verify Financials (45 sec)
-├── Option A: Connect Bank (Plaid - recommended)
-│   ├── Launch Plaid Link
-│   ├── User selects bank & logs in
-│   ├── Grant income/asset permissions
-│   └── Auto-fetch verified data
-├── Option B: Manual Entry (fallback)
-│   ├── Income range dropdown
-│   ├── Credit score estimate
-│   └── Employment status
-└── Down payment % selector
-
-Step 3: Instant Results (15 sec)
-├── Pre-Qualification Status (animated reveal)
-├── Eligible Programs (MH Advantage, CHOICEHome, etc.)
-├── Maximum loan amount
-├── Estimated monthly payment (PITI)
-├── Download Pre-Qual Letter button
-└── Schedule a Call CTA
-```
+1. **Immediate Feedback**: Toast notifications on save ("Lot 15 premium updated to $65,000")
+2. **Bulk Actions**: Select multiple lots to update status simultaneously
+3. **Search/Filter**: Quick search across all tabs
+4. **Audit Trail**: "Last modified by [user] on [date]" shown on hover
+5. **Help Tooltips**: Explain what each field means (e.g., "Dealer Markup: The percentage added to factory cost for retail pricing")
 
 ---
 
-## Loan Program Logic
+## Migration Strategy
 
-### MH Advantage Eligibility
-- HUD-labeled manufactured home with MH Advantage sticker
-- Permanent foundation
-- Real property titled
-- Up to 97% LTV (3% down) for primary residence
-- 90% LTV for second homes
-- Standard conventional underwriting
+**Phase 1** (This implementation):
+- Seed lots and developments into database
+- Build read-only views of all pricing data
+- Add inline editing for most-changed fields (lot premiums, model prices)
 
-### CHOICEHome Eligibility
-- Freddie Mac CHOICEHome label
-- Real property classification
-- Up to 97% LTV with Home Possible
-- 620+ credit score minimum
-
-### Construction-to-Perm
-- Single-close option
-- Converts to permanent mortgage upon completion
-- Interest-only during construction phase
-- Available for all BaseMod models
-
-### FHA Title I
-- For chattel (personal property) classification
-- 20-year max term for single-wide
-- 25-year max for multi-section
-- Lower credit score tolerance
-
----
-
-## Security & Compliance
-
-### Data Protection
-- Plaid access tokens stored encrypted (never client-exposed)
-- Verified financials encrypted at rest
-- Automatic data expiration (30 days)
-- Consent timestamps for compliance
-
-### Regulatory Considerations
-- Clear disclosures: "This is not a commitment to lend"
-- Soft credit pull consent language
-- ECOA-compliant language
-- Privacy policy link
-
----
-
-## Implementation Phases
-
-### Phase 1: Core Engine (Week 1)
-- Create Plaid edge functions (link token, exchange, fetch)
-- Add database tables for verified financials
-- Build DTI calculation engine
-- Update `PreQualificationFlow` with verification choice
-
-### Phase 2: Smart Decisioning (Week 2)
-- Implement program eligibility logic
-- Build results display with program cards
-- Add conditional pre-qual paths
-- Create verified financials display
-
-### Phase 3: Premium Polish (Week 3)
-- Pre-qualification letter PDF generation
-- Email delivery of results
-- Save and resume functionality
-- Mobile optimization pass
-
-### Phase 4: Admin Enhancements
-- Leads dashboard: show verification status
-- Verified vs manual indicators
-- DTI and program eligibility columns
-- One-click "call now" for hot leads
-
----
-
-## Prerequisites
-
-### Plaid Account Setup
-1. Create account at [plaid.com](https://plaid.com)
-2. Enable products: Income, Assets, Liabilities, Identity
-3. Get Client ID and Secret (Sandbox for testing, Production for launch)
-4. Configure webhook URL for async updates
-
-### Secrets Required
-- `PLAID_CLIENT_ID`
-- `PLAID_SECRET`
-- `PLAID_ENV` (sandbox / development / production)
-
----
-
-## Success Metrics
-
-| Metric | Current | Target |
-|--------|---------|--------|
-| Pre-qual completion rate | ~40% | 70%+ |
-| Time to completion | 3-5 min | <2 min |
-| Verified applications | 0% | 60%+ |
-| Lead-to-call conversion | Unknown | Track |
-
----
-
-## Summary
-
-This upgrade transforms your pre-qualification from a basic form into a true fintech-grade experience:
-
-- **Plaid Integration** for instant, verified financial data
-- **Smart DTI Engine** for real-time eligibility decisions
-- **Program Matching** for MH Advantage, CHOICEHome, and construction-to-perm
-- **Premium UX** with animations, progress tracking, and instant letters
-- **Admin Insights** with verification status and eligibility flags
-
-The result: borrowers get instant, credible answers. Your team gets pre-qualified leads with verified financials. Everyone wins.
+**Phase 2** (Future):
+- Add version history for pricing changes
+- Implement draft/publish workflow for major updates
+- Add pricing audit reports
 
