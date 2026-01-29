@@ -61,6 +61,16 @@ export function StepLocation({
     }
   }, [isCommunityIntent]);
   
+  // Auto-advance when valid ZIP is entered
+  useEffect(() => {
+    if (isValidZip && locationKnown === true) {
+      const timer = setTimeout(() => {
+        onNext();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isValidZip, locationKnown, onNext]);
+  
   // Handle ZIP input - only allow digits, max 5
   const handleZipChange = (value: string) => {
     const digitsOnly = value.replace(/\D/g, '').slice(0, 5);
@@ -157,7 +167,7 @@ export function StepLocation({
   
   // Default: ZIP code flow for on-your-land or find-land intents
   return (
-    <div className="space-y-10 max-w-xl mx-auto pb-8">
+    <div className="space-y-10 max-w-xl mx-auto pb-24">
       {/* Header */}
       <div className="text-center space-y-3">
         <motion.div
@@ -363,27 +373,26 @@ export function StepLocation({
         </button>
       </motion.div>
       
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.35 }}
-        className="flex items-center justify-between pt-4"
-      >
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <div className="flex flex-col items-end gap-1">
-          <Button size="lg" onClick={onNext} disabled={!canContinue}>
-            Continue
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-          <span className="text-xs text-muted-foreground/60">
-            You can change this later
-          </span>
+      {/* Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3 max-w-xl mx-auto">
+            <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <div className="flex flex-col items-end gap-0.5">
+              <Button size="lg" onClick={onNext} disabled={!canContinue}>
+                Continue
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <span className="text-[10px] text-muted-foreground/70">
+                You can change this later
+              </span>
+            </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

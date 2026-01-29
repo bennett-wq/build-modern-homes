@@ -41,8 +41,17 @@ interface StepIntentProps {
 }
 
 export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepIntentProps) {
+  // Auto-advance after selection
+  const handleSelect = (intent: BuildIntent) => {
+    onSelectIntent(intent);
+    // Brief delay for visual feedback, then auto-advance
+    setTimeout(() => {
+      onNext();
+    }, 600);
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24">
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
@@ -72,7 +81,7 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              onClick={() => onSelectIntent(option.id)}
+              onClick={() => handleSelect(option.id)}
               className={cn(
                 'relative p-6 rounded-xl border-2 text-left transition-all duration-200',
                 'hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5',
@@ -123,25 +132,37 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
         Most buyers choose "Build on My Land" or "Find Land to Build". You can change this later.
       </motion.p>
       
-      {/* CTA with reassurance */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: selectedIntent ? 1 : 0.5 }}
-        className="flex flex-col items-center gap-2"
-      >
-        <Button
-          size="lg"
-          onClick={onNext}
-          disabled={!selectedIntent}
-          className="min-w-[200px]"
-        >
-          Continue
-          <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
-        <span className="text-xs text-muted-foreground/70">
-          You can change this later.
-        </span>
-      </motion.div>
+      {/* Sticky Footer CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              {selectedIntent ? (
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-accent" />
+                  {intentOptions.find(o => o.id === selectedIntent)?.name}
+                </span>
+              ) : (
+                <span>Select an option above</span>
+              )}
+            </div>
+            <div className="flex flex-col items-end gap-0.5">
+              <Button
+                size="lg"
+                onClick={onNext}
+                disabled={!selectedIntent}
+                className="min-w-[140px]"
+              >
+                Continue
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <span className="text-[10px] text-muted-foreground/70">
+                You can change this later.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

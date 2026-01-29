@@ -140,7 +140,7 @@ export function StepSummary({
   const hasLegacyExterior = selectedSiding || selectedShingle || selectedDoor || exteriorSelection?.blackFasciaPackage;
   
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24">
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
@@ -428,18 +428,35 @@ export function StepSummary({
         </motion.div>
       </div>
       
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="flex items-center justify-start pt-4 max-w-4xl mx-auto"
-      >
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-      </motion.div>
+      {/* Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
+            <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                variant="outline"
+                onClick={handleCopyLink}
+                className="hidden sm:flex"
+              >
+                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                {copied ? 'Copied!' : 'Share'}
+              </Button>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-accent to-accent/90 hover:from-accent/90 hover:to-accent/80 text-accent-foreground shadow-lg min-w-[140px] sm:min-w-[180px]"
+                onClick={() => setLeadFormOpen(true)}
+              >
+                <Phone className="mr-2 h-4 w-4" />
+                Get Your Quote
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Lead Form Dialog */}
       <LeadFormDialog
