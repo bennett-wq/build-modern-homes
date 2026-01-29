@@ -120,10 +120,16 @@ export function StepSummary({
     setTimeout(() => setCopied(false), 2000);
   };
   
-  // Get legacy exterior selections
-  const selectedSiding = exteriorConfig.sidingColors.find(c => c.id === exteriorSelection.sidingColorId);
-  const selectedShingle = exteriorConfig.shingleColors.find(c => c.id === exteriorSelection.shingleColorId);
-  const selectedDoor = exteriorConfig.doorStyles.find(d => d.id === exteriorSelection.doorStyleId);
+  // Get legacy exterior selections (with null guards)
+  const selectedSiding = exteriorSelection?.sidingColorId 
+    ? exteriorConfig.sidingColors.find(c => c.id === exteriorSelection.sidingColorId)
+    : null;
+  const selectedShingle = exteriorSelection?.shingleColorId
+    ? exteriorConfig.shingleColors.find(c => c.id === exteriorSelection.shingleColorId)
+    : null;
+  const selectedDoor = exteriorSelection?.doorStyleId
+    ? exteriorConfig.doorStyles.find(d => d.id === exteriorSelection.doorStyleId)
+    : null;
   
   // Get unified exterior preview info (if packageId/garageDoorId are provided)
   const exteriorInfo = getExteriorPreviewInfo(model.slug, packageId || null, garageDoorId || null);
@@ -273,7 +279,7 @@ export function StepSummary({
                   <span className="text-muted-foreground">Door Style</span>
                   <span className="font-medium text-foreground">{selectedDoor?.name}</span>
                 </div>
-                {exteriorSelection.blackFasciaPackage && (
+                {exteriorSelection?.blackFasciaPackage && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Black Trim Package</span>
                     <Check className="w-4 h-4 text-accent" />
