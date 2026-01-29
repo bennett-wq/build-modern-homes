@@ -11,6 +11,8 @@ import {
   Check, 
   AlertCircle,
   Star,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -99,9 +101,15 @@ export function StepServicePackage({
       onNext();
     }
   };
+  
+  // Auto-advance handler for selection
+  const handleSelect = (pkg: ServicePackageType) => {
+    onSelectPackage(pkg);
+    setTimeout(() => onNext(), 700);
+  };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24">
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
@@ -124,7 +132,7 @@ export function StepServicePackage({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              onClick={() => onSelectPackage(pkg.id)}
+              onClick={() => handleSelect(pkg.id)}
               className={cn(
                 'relative w-full p-6 rounded-xl border-2 text-left transition-all duration-200',
                 'hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -243,23 +251,31 @@ export function StepServicePackage({
         </motion.div>
       )}
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-border max-w-3xl mx-auto">
-        <Button variant="ghost" onClick={onBack}>
-          Back
-        </Button>
-        
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            You can change this later
-          </span>
-          <Button 
-            onClick={handleContinue}
-            disabled={!selectedPackage}
-            className="min-w-[120px]"
-          >
-            Continue
-          </Button>
+      {/* Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+            <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <div className="flex items-center gap-3">
+              {selectedPackage && (
+                <span className="text-sm text-muted-foreground hidden sm:flex items-center gap-2">
+                  <Check className="w-4 h-4 text-accent" />
+                  {SERVICE_PACKAGES.find(p => p.id === selectedPackage)?.shortName}
+                </span>
+              )}
+              <Button 
+                size="lg"
+                onClick={handleContinue}
+                disabled={!selectedPackage}
+              >
+                Continue
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
