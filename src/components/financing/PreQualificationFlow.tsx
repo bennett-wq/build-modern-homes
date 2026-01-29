@@ -1,7 +1,10 @@
 // PreQualificationFlow - 3-Step Pre-Qualification Wizard for BaseMod Financial
 // Captures leads with financial qualification data
+// 
+// Architecture: Uses popup-based bank connection to avoid iframe/overlay conflicts
+// in embedded environments (Lovable editor preview, etc.)
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -18,7 +21,9 @@ import {
   Shield,
   Home,
   Landmark,
-  Keyboard
+  Keyboard,
+  ExternalLink,
+  AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,7 +39,6 @@ import {
 import { InfoDrawer } from '@/components/ui/info-drawer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { PlaidLinkButton } from '@/components/financing/PlaidLinkButton';
 
 interface PreQualificationFlowProps {
   open: boolean;
@@ -114,13 +118,12 @@ export function PreQualificationFlow({
   const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
   const [plaidInstitutionName, setPlaidInstitutionName] = useState<string | null>(null);
   const [isVerifyingFinancials, setIsVerifyingFinancials] = useState(false);
-  const [isPlaidModalOpen, setIsPlaidModalOpen] = useState(false);
-  // Ref is used to synchronously guard against Radix/overlay dismiss events firing
-  // before React state has a chance to commit.
-  const isPlaidModalOpenRef = useRef(false);
-  // When Plaid exits, the same user click can be interpreted as an outside click on our drawer.
-  // This can close the entire flow right after Plaid closes, which feels like a total shutdown.
-  const lastPlaidCloseAtRef = useRef(0);
+  const [isBankConnecting, setIsBankConnecting] = useState(false);
+  const [bankConnectError, setBankConnectError] = useState<string | null>(null);
+  
+  // Session ID for secure popup communication
+  const connectSessionIdRef = useRef<string | null>(null);
+  
   const [prequalResults, setPrequalResults] = useState<{
     eligiblePrograms: Array<{ name: string; matchQuality: string; description: string }>;
     dtiRatio: number | null;
@@ -146,56 +149,120 @@ export function PreQualificationFlow({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Memoized Plaid callbacks to prevent unnecessary re-renders
-  // These use useCallback with empty deps to ensure stability
-  const handlePlaidSuccess = useCallback(
-    ({ publicToken, institutionName }: { publicToken: string; institutionName?: string }) => {
-      setPlaidPublicToken(publicToken);
-      setPlaidInstitutionName(institutionName ?? null);
-    },
-    []
-  );
+  // Listen for messages from the bank connect popup
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Validate origin
+      if (event.origin !== window.location.origin) {
+        console.warn('[PreQualificationFlow] Ignoring message from unknown origin:', event.origin);
+        return;
+      }
 
-  const handlePlaidError = useCallback(
-    (message: string) => {
-      toast({
-        title: 'Bank connection failed',
-        description: message,
-        variant: 'destructive',
-      });
-    },
-    // Note: We intentionally don't include toast in deps to keep this stable
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+      const data = event.data;
+      
+      // Check if this is a Plaid connect result
+      if (data?.type !== 'plaid-connect-result') return;
 
-  // Track when Plaid modal is open to prevent interference
-  const handlePlaidOpenChange = useCallback((isOpen: boolean) => {
-    isPlaidModalOpenRef.current = isOpen;
-    if (!isOpen) {
-      lastPlaidCloseAtRef.current = Date.now();
+      // Validate session ID
+      if (data.sessionId !== connectSessionIdRef.current) {
+        console.warn('[PreQualificationFlow] Ignoring message with mismatched sessionId');
+        return;
+      }
+
+      console.log('[PreQualificationFlow] Received bank connect result:', data);
+      setIsBankConnecting(false);
+
+      if (data.success) {
+        setPlaidPublicToken(data.publicToken);
+        setPlaidInstitutionName(data.institutionName || null);
+        setBankConnectError(null);
+        toast({
+          title: 'Bank connected',
+          description: `Successfully connected to ${data.institutionName || 'your bank'}.`,
+        });
+      } else {
+        setBankConnectError(data.error || 'Connection failed');
+        if (data.error && data.error !== 'User cancelled') {
+          toast({
+            title: 'Connection failed',
+            description: data.error,
+            variant: 'destructive',
+          });
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [toast]);
+
+  // Open bank connect in a popup (handles embedded environment)
+  const openBankConnect = useCallback(() => {
+    // Generate a unique session ID for this connection attempt
+    const sessionId = crypto.randomUUID();
+    connectSessionIdRef.current = sessionId;
+    
+    setBankConnectError(null);
+    setIsBankConnecting(true);
+
+    // Build the URL with session ID
+    const url = `/secure-bank-connect?sessionId=${encodeURIComponent(sessionId)}`;
+
+    // Try to open as popup
+    const popup = window.open(
+      url,
+      'plaid_connect',
+      'width=450,height=700,left=200,top=100,toolbar=no,menubar=no'
+    );
+
+    if (!popup || popup.closed) {
+      // Popup was blocked - show error with fallback
+      console.warn('[PreQualificationFlow] Popup blocked');
+      setIsBankConnecting(false);
+      setBankConnectError('popup_blocked');
+    } else {
+      // Focus the popup
+      popup.focus();
+
+      // Poll to detect if user closes popup without completing
+      const pollTimer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollTimer);
+          // Check localStorage for result (fallback communication)
+          const storedResult = localStorage.getItem(`plaid-connect-${sessionId}`);
+          if (storedResult) {
+            try {
+              const result = JSON.parse(storedResult);
+              if (result.success) {
+                setPlaidPublicToken(result.publicToken);
+                setPlaidInstitutionName(result.institutionName || null);
+              }
+              localStorage.removeItem(`plaid-connect-${sessionId}`);
+            } catch (e) {
+              console.warn('[PreQualificationFlow] Failed to parse stored result');
+            }
+          }
+          setIsBankConnecting(false);
+        }
+      }, 500);
     }
-    setIsPlaidModalOpen(isOpen);
   }, []);
 
-  // IMPORTANT: Plaid Link opens in a separate iframe overlay (mounted to <body>).
-  // Radix Dialog/Sheet will often interpret focusing/clicking inside that iframe as
-  // an "outside interaction" and attempt to dismiss this drawer, which unmounts the
-  // Plaid Link instance and makes the Plaid popup close mid-entry.
-  //
-  // We hard-block drawer dismissal while Plaid is open.
-  const handleDrawerOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      if (!nextOpen) {
-        // Block dismissal while Plaid is open
-        if (isPlaidModalOpenRef.current) return;
-        // Also block the immediate "click-through" dismissal right after Plaid exits
-        if (Date.now() - lastPlaidCloseAtRef.current < 800) return;
-      }
-      onOpenChange(nextOpen);
-    },
-    [onOpenChange]
-  );
+  // Fallback: Open in same tab (when popup is blocked)
+  const openBankConnectInTab = useCallback(() => {
+    const sessionId = crypto.randomUUID();
+    connectSessionIdRef.current = sessionId;
+    
+    // Store current state so we can resume
+    sessionStorage.setItem('prequal-return-state', JSON.stringify({
+      formData,
+      purchasePrice,
+      quoteId,
+      step: currentStep,
+    }));
+
+    window.location.href = `/secure-bank-connect?sessionId=${encodeURIComponent(sessionId)}&returnUrl=${encodeURIComponent(window.location.href)}`;
+  }, [formData, purchasePrice, quoteId, currentStep]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -609,21 +676,74 @@ export function PreQualificationFlow({
         </div>
 
         {verificationMethod === 'plaid_verified' && (
-          <div className="rounded-xl border border-border bg-muted/20 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium">Bank verification</p>
-                <p className="text-xs text-muted-foreground">
-                  {plaidInstitutionName
-                    ? `Connected to ${plaidInstitutionName}`
-                    : 'Connect your bank to continue.'}
-                </p>
+          <div className="space-y-3">
+            {/* Connection status card */}
+            <div className="rounded-xl border border-border bg-muted/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Bank verification</p>
+                  <p className="text-xs text-muted-foreground">
+                    {plaidInstitutionName
+                      ? `Connected to ${plaidInstitutionName}`
+                      : 'Connect your bank to continue.'}
+                  </p>
+                </div>
+                {plaidPublicToken ? (
+                  <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Connected</span>
+                  </div>
+                ) : isBankConnecting ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Connecting...</span>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={openBankConnect}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                    Connect
+                  </Button>
+                )}
               </div>
-              <PlaidLinkButton
-                onSuccess={handlePlaidSuccess}
-                onError={handlePlaidError}
-                onOpenChange={handlePlaidOpenChange}
-              />
+            </div>
+
+            {/* Popup blocked fallback */}
+            {bankConnectError === 'popup_blocked' && (
+              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Pop-up blocked
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                      Your browser blocked the secure connection window.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={openBankConnectInTab}
+                    >
+                      Open in this tab instead
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Security notice */}
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <Shield className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <p>
+                Bank connection opens in a secure window. Your credentials are encrypted
+                and never shared with us.
+              </p>
             </div>
           </div>
         )}
@@ -983,10 +1103,9 @@ export function PreQualificationFlow({
   return (
     <InfoDrawer
       open={open}
-      onOpenChange={handleDrawerOpenChange}
+      onOpenChange={onOpenChange}
       title="BaseMod Financial"
       description="Pre-qualify in 2 minutes"
-      allowOutsideInteraction={isPlaidModalOpen}
     >
       {renderStepIndicator()}
       

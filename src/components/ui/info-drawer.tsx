@@ -4,7 +4,6 @@
 // Uses portal to render at document.body level, prevents layout reflow
 
 import * as React from 'react';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -20,7 +19,6 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
-  DrawerClose,
 } from '@/components/ui/drawer';
 
 interface InfoDrawerProps {
@@ -30,11 +28,6 @@ interface InfoDrawerProps {
   description?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  /**
-   * When true, the drawer does NOT trap focus or disable pointer events outside.
-   * This is critical for third-party overlays (e.g. Plaid Link) that mount to <body>.
-   */
-  allowOutsideInteraction?: boolean;
 }
 
 export function InfoDrawer({
@@ -44,15 +37,14 @@ export function InfoDrawer({
   description,
   children,
   className,
-  allowOutsideInteraction,
 }: InfoDrawerProps) {
   const isMobile = useIsMobile();
 
   // Mobile: Bottom sheet with drag handle
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange} modal={!allowOutsideInteraction}>
-        <DrawerContent hideOverlay={allowOutsideInteraction} className="max-h-[85vh]">
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle>{title}</DrawerTitle>
             {description && (
@@ -69,10 +61,9 @@ export function InfoDrawer({
 
   // Desktop: Right-side slide-over drawer
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} modal={!allowOutsideInteraction}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        hideOverlay={allowOutsideInteraction}
         className={cn(
           'w-[420px] sm:w-[480px] sm:max-w-[520px] overflow-y-auto',
           'flex flex-col'
