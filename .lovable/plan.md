@@ -1,6 +1,7 @@
 
 
 # Unified Pricing Architecture Plan
+> **Status**: In Progress - Phase 1 & 2 Complete ✅
 ## Establishing a Single Source of Truth for BaseMod
 
 ---
@@ -301,12 +302,32 @@ For `/developments/:slug/build`:
 
 ## Implementation Order
 
-1. Seed `pricing_zones` and `pricing_markups` tables
-2. Create `usePricingZones` and `usePricingMarkups` hooks
-3. Refactor `calculatePriceBreakdown` to accept database data
-4. Update `usePricingEngine` to orchestrate all hooks
+1. ✅ Seed `pricing_zones` and `pricing_markups` tables
+2. ✅ Create `usePricingZones` and `usePricingMarkups` hooks
+3. ✅ Create `useUnifiedPricingEngine` to orchestrate all hooks
+4. 🔄 Wire UI components to use unified engine (Phase 3)
 5. Test pricing flow end-to-end
 6. Enhance Admin Console with visual editors
 7. Add publish/preview workflow
 8. Remove local TypeScript fallbacks (final cleanup)
+
+---
+
+## Completed Work Log
+
+### 2026-01-29: Phase 1 & 2 Complete
+
+**Database Seeded:**
+- `pricing_zones`: Zone 3 Michigan baseline ($86,767 + 10% buffer)
+- `pricing_markups`: Standard Retail (20% dealer, 20% installer, 5% developer)
+
+**New Hooks Created:**
+- `src/hooks/usePricingZones.ts` - Fetches sitework costs from DB
+- `src/hooks/usePricingMarkups.ts` - Fetches markup percentages from DB
+- `src/hooks/useUnifiedPricingEngine.ts` - Orchestrates all pricing data
+
+**Verified Data:**
+- 9 model_pricing records with `foundation_type = 'crawl'`
+- 14 upgrade_options with CMH-verified prices
+- All pricing mapped to CMH quote numbers for audit trail
 
