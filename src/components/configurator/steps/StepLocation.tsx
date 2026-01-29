@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getZoneForZip } from '@/lib/pricing-mode-utils';
 import type { BuildIntent } from '@/data/pricing-config';
+import { cn } from '@/lib/utils';
 
 interface StepLocationProps {
   buildIntent: BuildIntent | null;
@@ -39,7 +40,9 @@ export function StepLocation({
   onBack,
 }: StepLocationProps) {
   const [showAddressField, setShowAddressField] = useState(!!address);
+  const [isPulsing, setIsPulsing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const prevCanContinueRef = useRef(false);
   
   // Check if user is building in a BaseMod community
   const isCommunityIntent = buildIntent === 'basemod-community';
@@ -53,6 +56,17 @@ export function StepLocation({
   
   // Can continue if: community intent, valid ZIP entered, or "don't know yet" selected
   const canContinue = isCommunityIntent || isValidZip || locationKnown === false;
+  
+  // Trigger pulse when canContinue becomes true
+  useEffect(() => {
+    if (canContinue && !prevCanContinueRef.current) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => setIsPulsing(false), 2000);
+      prevCanContinueRef.current = canContinue;
+      return () => clearTimeout(timer);
+    }
+    prevCanContinueRef.current = canContinue;
+  }, [canContinue]);
   
   // Remove auto-advance - let users click Continue to feel in control
   // Auto-focus ZIP input on mount
@@ -373,7 +387,14 @@ export function StepLocation({
               Back
             </Button>
             <div className="flex flex-col items-end gap-0.5">
-              <Button size="lg" onClick={onNext} disabled={!canContinue}>
+              <Button 
+                size="lg" 
+                onClick={onNext} 
+                disabled={!canContinue}
+                className={cn(
+                  isPulsing && canContinue && "animate-[pulse-attention_0.6s_ease-in-out_2]"
+                )}
+              >
                 Continue
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>

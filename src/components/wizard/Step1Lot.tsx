@@ -303,6 +303,7 @@ export function Step1Lot({
         canContinue={!!canProceed}
         continueLabel="Continue"
         hideBack={true}
+        pulseOnReady={selectedLotId}
       >
         {selectedLot ? (
           <div className="flex items-center gap-3 sm:gap-4 w-full">

@@ -184,6 +184,7 @@ export function StepModel({
         continueLabel="Continue to Build Type"
         showUpdatedIndicator={showUpdatedIndicator}
         onUndo={onUndo}
+        pulseOnReady={selectedModelSlug}
       >
         {selectedModel && (
           <div className="flex items-center gap-3">

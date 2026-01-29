@@ -1,7 +1,7 @@
 // WizardStickyFooter - consistent, premium footer for all wizard steps
 // Fixed to viewport bottom, never requires scrolling to find Continue
 // Includes non-blocking inline feedback for selections (no toasts)
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,10 +24,14 @@ interface WizardStickyFooterProps {
   showUpdatedIndicator?: boolean;
   /** Callback for undo action (if provided, shows Undo button with indicator) */
   onUndo?: () => void;
+  /** Trigger pulse animation on the Continue button (pass a changing value to trigger) */
+  pulseOnReady?: string | number | boolean | null;
 }
 
 // Inline feedback indicator duration (ms)
 const INDICATOR_DURATION = 2500;
+// Pulse animation duration (ms)
+const PULSE_DURATION = 2000;
 
 export function WizardStickyFooter({
   onBack,
@@ -41,8 +45,11 @@ export function WizardStickyFooter({
   className,
   showUpdatedIndicator = false,
   onUndo,
+  pulseOnReady,
 }: WizardStickyFooterProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(false);
+  const isFirstRender = useRef(true);
   
   // Show indicator when showUpdatedIndicator becomes true, auto-hide after duration
   useEffect(() => {
@@ -54,6 +61,22 @@ export function WizardStickyFooter({
       return () => clearTimeout(timer);
     }
   }, [showUpdatedIndicator]);
+  
+  // Trigger pulse animation when pulseOnReady changes (skip initial render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    
+    if (pulseOnReady !== null && pulseOnReady !== undefined && canContinue) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => {
+        setIsPulsing(false);
+      }, PULSE_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [pulseOnReady, canContinue]);
   
   return (
     <div 
@@ -153,7 +176,9 @@ export function WizardStickyFooter({
                 'min-w-[120px] sm:min-w-[140px] transition-all duration-200',
                 canContinue 
                   ? 'shadow-md hover:shadow-lg' 
-                  : 'opacity-60'
+                  : 'opacity-60',
+                // Subtle pulse animation to draw attention after selection
+                isPulsing && 'animate-[pulse-attention_0.6s_ease-in-out_2]'
               )}
             >
               {continueLabel}

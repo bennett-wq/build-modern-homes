@@ -2,6 +2,7 @@
 // Step 1: Build Intent - How do you want to build?
 // ============================================================================
 
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Search, Building2, ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,22 @@ interface StepIntentProps {
 }
 
 export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepIntentProps) {
+  const [isPulsing, setIsPulsing] = useState(false);
+  const isFirstRender = useRef(true);
+  
+  // Trigger pulse when selection changes (skip initial render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (selectedIntent) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => setIsPulsing(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedIntent]);
+  
   // No auto-advance - let users confirm with Continue button
   const handleSelect = (intent: BuildIntent) => {
     onSelectIntent(intent);
@@ -147,7 +164,10 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
                 size="lg"
                 onClick={onNext}
                 disabled={!selectedIntent}
-                className="min-w-[140px]"
+                className={cn(
+                  "min-w-[140px]",
+                  isPulsing && selectedIntent && "animate-[pulse-attention_0.6s_ease-in-out_2]"
+                )}
               >
                 Continue
                 <ArrowRight className="ml-2 h-5 w-5" />
