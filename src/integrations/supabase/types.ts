@@ -849,6 +849,15 @@ export type Database = {
           model_id: string
         }[]
       }
+      get_public_pricing_zones: {
+        Args: never
+        Returns: {
+          baseline_total: number
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
