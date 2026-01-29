@@ -16,7 +16,9 @@ import {
   Briefcase,
   Calendar,
   Shield,
-  Home
+  Home,
+  Landmark,
+  Keyboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -32,6 +34,7 @@ import {
 import { InfoDrawer } from '@/components/ui/info-drawer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { PlaidLinkButton } from '@/components/financing/PlaidLinkButton';
 
 interface PreQualificationFlowProps {
   open: boolean;
@@ -42,6 +45,9 @@ interface PreQualificationFlowProps {
 }
 
 type Step = 1 | 2 | 3;
+
+type VerificationMethod = 'manual' | 'plaid_verified';
+type PreQualStatus = 'pending' | 'pre_qualified' | 'needs_review' | null;
 
 interface FormData {
   contactName: string;
@@ -103,7 +109,10 @@ export function PreQualificationFlow({
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applicationId, setApplicationId] = useState<string | null>(null);
-  const [preQualStatus, setPreQualStatus] = useState<'pending' | 'pre_qualified' | 'needs_review' | null>(null);
+  const [preQualStatus, setPreQualStatus] = useState<PreQualStatus>(null);
+  const [verificationMethod, setVerificationMethod] = useState<VerificationMethod>('manual');
+  const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
+  const [plaidInstitutionName, setPlaidInstitutionName] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<FormData>({
@@ -148,7 +157,8 @@ export function PreQualificationFlow({
     try {
       const downPaymentAmount = purchasePrice * (formData.downPaymentPercent / 100);
       const loanAmount = purchasePrice - downPaymentAmount;
-      const status = calculatePreQualStatus();
+      const status: 'pending' | 'pre_qualified' | 'needs_review' =
+        verificationMethod === 'plaid_verified' ? 'pending' : calculatePreQualStatus();
 
       // Calculate monthly payment estimate for storage
       const monthlyRate = 6.875 / 100 / 12;
@@ -159,9 +169,9 @@ export function PreQualificationFlow({
       const monthlyPMI = formData.downPaymentPercent < 20 ? (loanAmount * 0.005) / 12 : 0;
       const monthlyPayment = Math.round(monthlyPI + monthlyTax + monthlyInsurance + monthlyPMI);
 
-      const { error } = await supabase
-        .from('financing_applications')
-        .insert({
+       const { data: inserted, error } = await supabase
+         .from('financing_applications')
+         .insert({
           quote_id: quoteId || null,
           user_id: null, // Explicitly set to null for anonymous submissions
           contact_name: formData.contactName,
@@ -181,16 +191,37 @@ export function PreQualificationFlow({
           purchase_timeframe: formData.purchaseTimeframe as '0_3_months' | '3_6_months' | '6_12_months' | '12_plus',
           pre_qualification_status: status,
           pre_qualified_amount: status === 'pre_qualified' ? loanAmount * 1.1 : null,
-        });
+           verification_method: verificationMethod,
+         })
+         .select('id')
+         .single();
 
       if (error) throw error;
 
-      // Generate a local reference ID for UI purposes (the actual DB ID isn't needed for the success flow)
-      const localRefId = crypto.randomUUID();
-      setApplicationId(localRefId);
-      setPreQualStatus(status);
+       // If Plaid was selected, save the public_token server-side (never store access tokens in the client)
+       if (verificationMethod === 'plaid_verified' && plaidPublicToken) {
+         const { error: exchangeError } = await supabase.functions.invoke('plaid-exchange-token', {
+           body: {
+             application_id: inserted?.id,
+             public_token: plaidPublicToken,
+             institution_name: plaidInstitutionName,
+           },
+         });
+
+         if (exchangeError) {
+           console.error('Plaid exchange error:', exchangeError);
+           toast({
+             title: 'Bank connection issue',
+             description: "We saved your application, but couldn't finalize the bank connection. We'll follow up to complete verification.",
+           });
+         }
+       }
+
+      const newApplicationId = inserted?.id ?? crypto.randomUUID();
+      setApplicationId(newApplicationId);
+      setPreQualStatus(status === 'pending' ? 'pending' : status);
       setCurrentStep(3);
-      onComplete?.(localRefId);
+      onComplete?.(newApplicationId);
 
       toast({
         title: status === 'pre_qualified' ? '🎉 Congratulations!' : '✓ Application Received',
@@ -224,6 +255,9 @@ export function PreQualificationFlow({
   };
 
   const validateStep2 = () => {
+    if (verificationMethod === 'plaid_verified') {
+      return Boolean(plaidPublicToken) && formData.downPaymentPercent >= 3;
+    }
     return (
       formData.employmentStatus &&
       formData.annualIncomeRange &&
@@ -385,72 +419,176 @@ export function PreQualificationFlow({
         <div className="inline-flex items-center justify-center p-3 bg-emerald-100 dark:bg-emerald-900 rounded-full mb-3">
           <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
         </div>
-        <h3 className="text-lg font-semibold">Financial Profile</h3>
+        <h3 className="text-lg font-semibold">Verify your financials</h3>
         <p className="text-sm text-muted-foreground">
-          Help us find the best options for you
+          Choose quick bank verification or enter details manually
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>Employment Status</Label>
-          <Select
-            value={formData.employmentStatus}
-            onValueChange={(v) => updateField('employmentStatus', v)}
-          >
-            <SelectTrigger>
-              <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {EMPLOYMENT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Verification Method</Label>
+          <div className="grid grid-cols-1 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setVerificationMethod('plaid_verified');
+              }}
+              className={cn(
+                'w-full text-left rounded-xl border p-4 transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background',
+                verificationMethod === 'plaid_verified'
+                  ? 'bg-muted/50 border-ring'
+                  : 'bg-background border-border hover:bg-muted/30'
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md border border-border bg-background p-2">
+                    <Landmark className="h-4 w-4 text-foreground" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">Connect bank (recommended)</p>
+                      <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">Fast</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Verify income & assets securely to speed up your decision.
+                    </p>
+                  </div>
+                </div>
+                {verificationMethod === 'plaid_verified' ? (
+                  <CheckCircle2 className="h-5 w-5 text-foreground" />
+                ) : null}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setVerificationMethod('manual');
+                setPlaidPublicToken(null);
+                setPlaidInstitutionName(null);
+              }}
+              className={cn(
+                'w-full text-left rounded-xl border p-4 transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background',
+                verificationMethod === 'manual'
+                  ? 'bg-muted/50 border-ring'
+                  : 'bg-background border-border hover:bg-muted/30'
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md border border-border bg-background p-2">
+                    <Keyboard className="h-4 w-4 text-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Manual entry</p>
+                    <p className="text-sm text-muted-foreground">
+                      Answer a few questions to estimate eligibility.
+                    </p>
+                  </div>
+                </div>
+                {verificationMethod === 'manual' ? (
+                  <CheckCircle2 className="h-5 w-5 text-foreground" />
+                ) : null}
+              </div>
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Annual Household Income</Label>
-          <Select
-            value={formData.annualIncomeRange}
-            onValueChange={(v) => updateField('annualIncomeRange', v)}
-          >
-            <SelectTrigger>
-              <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {INCOME_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {verificationMethod === 'plaid_verified' && (
+          <div className="rounded-xl border border-border bg-muted/20 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Bank verification</p>
+                <p className="text-xs text-muted-foreground">
+                  {plaidInstitutionName
+                    ? `Connected to ${plaidInstitutionName}`
+                    : 'Connect your bank to continue.'}
+                </p>
+              </div>
+              <PlaidLinkButton
+                onSuccess={({ publicToken, institutionName }) => {
+                  setPlaidPublicToken(publicToken);
+                  setPlaidInstitutionName(institutionName ?? null);
+                }}
+                onError={(message) =>
+                  toast({
+                    title: 'Bank connection failed',
+                    description: message,
+                    variant: 'destructive',
+                  })
+                }
+              />
+            </div>
+          </div>
+        )}
 
-        <div className="space-y-2">
-          <Label>Estimated Credit Score</Label>
-          <Select
-            value={formData.creditScoreRange}
-            onValueChange={(v) => updateField('creditScoreRange', v)}
-          >
-            <SelectTrigger>
-              <Shield className="h-4 w-4 mr-2 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CREDIT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {verificationMethod === 'manual' && (
+          <>
+            <div className="space-y-2">
+              <Label>Employment Status</Label>
+              <Select
+                value={formData.employmentStatus}
+                onValueChange={(v) => updateField('employmentStatus', v)}
+              >
+                <SelectTrigger>
+                  <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EMPLOYMENT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Annual Household Income</Label>
+              <Select
+                value={formData.annualIncomeRange}
+                onValueChange={(v) => updateField('annualIncomeRange', v)}
+              >
+                <SelectTrigger>
+                  <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INCOME_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Estimated Credit Score</Label>
+              <Select
+                value={formData.creditScoreRange}
+                onValueChange={(v) => updateField('creditScoreRange', v)}
+              >
+                <SelectTrigger>
+                  <Shield className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CREDIT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
 
         <div className="space-y-2">
           <Label>Down Payment</Label>
@@ -518,7 +656,7 @@ export function PreQualificationFlow({
             </>
           ) : (
             <>
-              Get Results
+              {verificationMethod === 'plaid_verified' ? 'Submit Application' : 'Get Results'}
               <ArrowRight className="h-4 w-4 ml-2" />
             </>
           )}
@@ -529,6 +667,7 @@ export function PreQualificationFlow({
 
   const renderStep3 = () => {
     const isPreQualified = preQualStatus === 'pre_qualified';
+    const isPending = preQualStatus === 'pending';
     const loanAmount = purchasePrice * (1 - formData.downPaymentPercent / 100);
 
     return (
@@ -560,11 +699,15 @@ export function PreQualificationFlow({
           <h3 className="text-xl font-bold text-foreground mb-2">
             {isPreQualified
               ? "You're Pre-Qualified!"
+              : isPending
+              ? 'Verifying your financials'
               : 'Application Received'}
           </h3>
           <p className="text-muted-foreground">
             {isPreQualified
               ? 'Great news! Based on your profile, you may qualify for financing.'
+              : isPending
+              ? 'Thanks! We’re confirming your bank data and will follow up shortly.'
               : "We've received your application and will review it shortly."}
           </p>
         </div>
