@@ -445,6 +445,12 @@ export default function AdminPricing() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/admin/leads">
+                <FileText className="h-4 w-4 mr-1" />
+                Leads
+              </Link>
+            </Button>
             {isAdmin && (
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/admin/users">
