@@ -126,31 +126,36 @@ export default function AdminUsers() {
     setSuccessMessage(null);
 
     try {
-      // First, we need to find the user by email in auth.users
-      // Since we can't query auth.users directly from client, we'll need the user to sign up first
-      // For now, we'll create an invitation system or assume the user exists
-      
-      // Check if we're adding by user_id or email
-      // In production, you'd use an edge function to look up the user by email
-      // For this demo, we'll provide instructions
+      const { data, error: fnError } = await supabase.functions.invoke('add-team-member', {
+        body: { email: newUserEmail.trim(), role: newUserRole }
+      });
 
-      setError(
-        `To add "${newUserEmail}" as a ${newUserRole}:\n\n` +
-        `1. Have them sign up at /admin/login\n` +
-        `2. Get their user ID from the Auth dashboard\n` +
-        `3. Run this SQL:\n\n` +
-        `INSERT INTO user_roles (user_id, role)\n` +
-        `VALUES ('<user-id>', '${newUserRole}');`
-      );
-      
-      // In a production app, you'd implement this via an edge function:
-      // const { error } = await supabase.functions.invoke('add-team-member', {
-      //   body: { email: newUserEmail, role: newUserRole }
-      // });
+      if (fnError) {
+        console.error('Function error:', fnError);
+        setError(fnError.message || 'Failed to add team member');
+        return;
+      }
+
+      if (data?.error) {
+        if (data.code === 'USER_NOT_FOUND') {
+          setError(
+            `"${newUserEmail}" hasn't signed up yet.\n\n` +
+            `Ask them to create an account at /admin/login first, then try again.`
+          );
+        } else {
+          setError(data.error);
+        }
+        return;
+      }
+
+      const action = data?.updated ? 'Updated' : 'Added';
+      setSuccessMessage(`${action} ${newUserEmail} as ${newUserRole}`);
+      setNewUserEmail('');
+      await loadUsers();
 
     } catch (err) {
       console.error('Failed to add user:', err);
-      setError('Failed to add user');
+      setError('Failed to add team member. Please try again.');
     } finally {
       setIsAddingUser(false);
     }
@@ -296,6 +301,15 @@ export default function AdminUsers() {
               </div>
             </form>
             <p className="text-sm text-muted-foreground mt-4">
+              <strong>How to add partners:</strong>
+              <br />
+              1. Have your partner sign up at <code className="bg-muted px-1 rounded">/admin/login</code>
+              <br />
+              2. Enter their email above and select their role
+              <br />
+              3. They can then sign in and access the admin console
+            </p>
+            <p className="text-sm text-muted-foreground mt-3">
               <strong>Role Permissions:</strong>
               <br />
               • <strong>Builder</strong>: Can view and edit pricing drafts
@@ -389,22 +403,6 @@ export default function AdminUsers() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Bootstrap Instructions */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-sm">Bootstrap First Admin</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-2">
-              After creating your first user account, run this SQL in the Lovable Cloud dashboard to grant admin access:
-            </p>
-            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
-{`INSERT INTO user_roles (user_id, role) 
-VALUES ('<your-auth-user-id>', 'admin');`}
-            </pre>
           </CardContent>
         </Card>
       </main>
