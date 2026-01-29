@@ -1,186 +1,163 @@
 
-# Fix: Plaid Popup Closes When Typing Phone Number
+## Goal
+Make the “Connect bank” (Plaid Link) flow reliable and usable in the Lovable editor preview (where your app runs inside an iframe), while also improving the production-grade architecture so it feels like a top-tier fintech experience.
 
-## Problem Analysis
+## What we know (from the investigation + your answers)
+- The failure happens in **Editor preview** on **Desktop Chrome/Edge**.
+- The symptom is: **Plaid closes (“shuts down”)** when interacting with inputs (e.g., phone number).
+- We have already tried the common “drawer focus trap / overlay” mitigations (disable modal, hide overlay, close guards, memoization). Those got us different failure modes (freeze/close), but it’s still unstable.
+- This strongly points to a **host environment constraint**: Plaid Link is far less reliable when the host app itself is running inside a parent iframe (Lovable editor preview), especially when additional portals/overlays are involved.
 
-The Plaid Link modal closes unexpectedly when you type in form fields (like the phone number) because of **unstable callback references** causing React re-renders to reinitialize the Plaid SDK.
+## Working hypothesis (root cause)
+Even with our Radix/Drawer mitigations, the editor preview iframe environment can still cause Plaid Link to exit unexpectedly due to:
+- Nested iframe + portal layers + focus/blur events being interpreted as “dismiss/exit”
+- Cross-frame event handling differences in embedded contexts
+- Potential restrictions/quirks of an “app inside an iframe” environment that Plaid doesn’t consistently tolerate (especially on sensitive input steps like phone verification)
 
-### Root Cause
+In other words: continuing to fight the modal-in-drawer approach inside an embedded iframe is high-risk and has already proven brittle.
 
-In `PreQualificationFlow.tsx` (lines 512-524), the `PlaidLinkButton` receives **inline arrow functions**:
+## Strategy: Make Plaid run in a clean, top-level context (always reliable)
+Instead of opening Plaid Link inside the drawer in the embedded preview, we will launch the bank connection in a **dedicated top-level page** (full-screen) and communicate the result back to the wizard.
 
-```jsx
-<PlaidLinkButton
-  onSuccess={({ publicToken, institutionName }) => { ... }}  // NEW function every render
-  onError={(message) => toast({ ... })}                       // NEW function every render
-/>
-```
+This is a standard enterprise approach used by large fintech platforms: isolate the bank-link flow into a controlled surface with minimal UI interference.
 
-Every time you type in ANY input field (name, email, phone), the `PreQualificationFlow` component re-renders. This creates **new function references** for `onSuccess` and `onError`.
+---
 
-In `PlaidLinkButton.tsx`:
-- Line 51: `useEffect` has `[onError]` as a dependency - so it re-runs on every parent render
-- Lines 53-68: `useMemo` config depends on `[linkToken, onSuccess, onError]` - so the Plaid config is recreated
+## Implementation plan (phased, with clear acceptance criteria)
 
-When the Plaid config object changes, the `usePlaidLink` hook reinitializes, which can close the modal.
+### Phase 1 — Add a dedicated “Secure Bank Connection” page (clean environment)
+**What we will build**
+- A new route/page (example: `/secure-bank-connect`) that:
+  - Renders a minimal layout (no drawers, no Radix Sheet/Drawer, no Framer Motion wrappers).
+  - Initializes Plaid Link with a freshly generated link token.
+  - Optionally auto-opens Plaid when ready (with a clear “Continue” button fallback).
+  - On success:
+    - Sends `{ public_token, institution_name }` back to the opener via `window.opener.postMessage(...)` (if opened as a popup/new tab).
+    - Shows a “Success — return to application” UX and closes itself if possible.
+  - On exit/error:
+    - Shows a clear retry UI and records diagnostics.
 
-## Solution
+**Why this works**
+- It avoids the drawer/overlay and embedded iframe interaction that’s currently causing Plaid to exit.
 
-### 1. Fix PlaidLinkButton.tsx - Stabilize Callbacks with useCallback
+**Files involved**
+- `src/App.tsx` (add route)
+- New page: `src/pages/SecureBankConnect.tsx` (or similar)
 
-Wrap callbacks in `useCallback` and use refs to avoid dependency array issues:
+**Acceptance criteria**
+- From the editor preview, the bank connection page can open and Plaid no longer exits when typing phone number / interacting.
 
-```typescript
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePlaidLink } from "react-plaid-link";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+---
 
-type PlaidLinkSuccessPayload = {
-  publicToken: string;
-  institutionName?: string;
-};
+### Phase 2 — Change the Pre-Qualification flow to open Plaid in a top-level window when embedded
+**What we will change**
+- Detect when the app is running embedded:
+  - `const isEmbedded = window.self !== window.top;`
+- In `PreQualificationFlow` Step 2:
+  - Replace the current inline Plaid modal launch with:
+    - “Open secure bank connection” button
+    - On click:
+      1. Create a link token (either via existing backend function or by reusing existing client invoke)
+      2. `window.open('/secure-bank-connect?...', 'plaid_connect', 'width=420,height=720')`
+      3. Listen for a `message` event from the new window
+      4. When message arrives, set:
+         - `plaidPublicToken`
+         - `plaidInstitutionName`
+         - keep the drawer on Step 2 and show “Connected”
+- Add robust handshake safety:
+  - Generate a `connectSessionId` (UUID)
+  - Pass it to the new window in the querystring
+  - Require that same `connectSessionId` in the returning `postMessage`
+  - Validate `event.origin === window.location.origin`
 
-export function PlaidLinkButton({
-  onSuccess,
-  onError,
-  disabled,
-}: {
-  onSuccess: (payload: PlaidLinkSuccessPayload) => void;
-  onError?: (message: string) => void;
-  disabled?: boolean;
-}) {
-  const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Use refs to store latest callbacks without causing re-renders
-  const onSuccessRef = useRef(onSuccess);
-  const onErrorRef = useRef(onError);
-  
-  // Keep refs up to date
-  useEffect(() => {
-    onSuccessRef.current = onSuccess;
-  }, [onSuccess]);
-  
-  useEffect(() => {
-    onErrorRef.current = onError;
-  }, [onError]);
+**Why this works**
+- In editor preview: Plaid runs top-level, not nested under the preview iframe.
+- In published site: we can choose to keep the same approach for maximum reliability, or only use it when embedded.
 
-  // Fetch link token ONCE on mount - no callback dependencies
-  useEffect(() => {
-    let cancelled = false;
+**Files involved**
+- `src/components/financing/PreQualificationFlow.tsx`
+- `src/components/financing/PlaidLinkButton.tsx` (may be refactored into a “token-driven” component for the new page)
 
-    async function init() {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase.functions.invoke("plaid-create-link-token", {
-          body: {},
-        });
+**Acceptance criteria**
+- In editor preview, clicking “Connect bank” opens a new window/tab that completes the bank connection without exiting.
+- After completion, the main wizard shows “Connected to {Institution}” and allows submit.
 
-        if (error) throw error;
+---
 
-        const token = (data as { link_token?: string } | null)?.link_token;
-        if (!token) throw new Error("Missing link_token");
-        if (!cancelled) setLinkToken(token);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to initialize bank connection";
-        if (!cancelled) onErrorRef.current?.(message);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
+### Phase 3 — Reduce complexity and remove the fragile overlay hacks (stabilize UX)
+Once Phase 2 is working, we’ll simplify the existing drawer logic to reduce regressions:
+- Remove/stop relying on:
+  - `allowOutsideInteraction={isPlaidModalOpen}`
+  - close debounces and dismissal guards intended for inline Plaid overlays
+- Keep the pre-qualification drawer as a normal modal drawer again (predictable UI).
+- This reduces the chance that other drawers/sheets across the app are impacted by Plaid-specific workarounds.
 
-    void init();
-    return () => {
-      cancelled = true;
-    };
-  }, []); // Empty dependency array - only run once
+**Files involved**
+- `src/components/financing/PreQualificationFlow.tsx`
+- Potentially `src/components/ui/info-drawer.tsx`, `src/components/ui/sheet.tsx`, `src/components/ui/drawer.tsx` (only if cleanup is needed)
 
-  // Stable callbacks that use refs
-  const handleSuccess = useCallback((publicToken: string, metadata: any) => {
-    const institutionName = metadata?.institution?.name as string | undefined;
-    onSuccessRef.current({ publicToken, institutionName });
-  }, []);
+**Acceptance criteria**
+- Drawer behaves normally (overlay/focus trap works) and bank connect still works (because it’s now externalized).
 
-  const handleExit = useCallback((err: any) => {
-    if (err) {
-      const message = err?.display_message || err?.error_message || "Bank connection cancelled";
-      onErrorRef.current?.(message);
-    }
-  }, []);
+---
 
-  // Config only depends on linkToken now
-  const config = useMemo(
-    () => ({
-      token: linkToken ?? "",
-      onSuccess: handleSuccess,
-      onExit: handleExit,
-    }),
-    [linkToken, handleSuccess, handleExit]
-  );
+### Phase 4 — Fintech-grade polish + resilience (what “top of the line” looks like)
+**User experience upgrades**
+- Add a “Secure connection” explanation panel before launching:
+  - “We’ll open a secure window to connect your bank. This keeps your session stable and protected.”
+- Handle popup blockers:
+  - If `window.open` returns `null`, show:
+    - “Pop-up blocked. Click here to open in this tab instead.”
+    - Fallback: navigate current tab to `/secure-bank-connect` and provide a “Back to application” return flow.
+- Add a deterministic “Resume” state:
+  - If user returns without success, keep them on Step 2 with a clear “Try again” CTA.
+- Show richer error messages:
+  - If Plaid exits with an error, display:
+    - Friendly summary
+    - “Try again” button (generates a fresh link token)
+    - Optional “Contact support” CTA
 
-  const { open, ready } = usePlaidLink(config);
+**Operational excellence (PM-level instrumentation)**
+- Add structured logging/telemetry (client-side) for:
+  - link token creation start/success/fail
+  - connect window opened / blocked
+  - message received / invalid origin / invalid sessionId
+  - Plaid onExit metadata (sanitized)
+- Optionally persist minimal event rows to the backend for debugging (non-PII) so we can diagnose real-world failures.
 
-  return (
-    <Button
-      type="button"
-      onClick={() => open()}
-      disabled={disabled || isLoading || !ready || !linkToken}
-      size="sm"
-    >
-      {isLoading ? "Preparing..." : "Connect"}
-    </Button>
-  );
-}
-```
+**Acceptance criteria**
+- Clear, guided flow with reliable retries and no “dead ends.”
+- If anything fails, the user always has a visible, simple path to recover.
 
-### 2. Optional Enhancement - Memoize Parent Callbacks
+---
 
-In `PreQualificationFlow.tsx`, wrap the callbacks with `useCallback` for additional stability:
+## How we’ll use your uploaded video (Screenflick_Movie.mp4)
+During implementation we’ll use it to validate:
+- The exact click sequence that triggers shutdown
+- Whether the shutdown happens at a consistent input step
+- Whether the drawer or Plaid window is losing focus/closing first
+This will help confirm the fix actually addresses the observed behavior, not just the theory.
 
-```typescript
-const handlePlaidSuccess = useCallback(
-  ({ publicToken, institutionName }: { publicToken: string; institutionName?: string }) => {
-    setPlaidPublicToken(publicToken);
-    setPlaidInstitutionName(institutionName ?? null);
-  },
-  []
-);
+---
 
-const handlePlaidError = useCallback(
-  (message: string) => {
-    toast({
-      title: 'Bank connection failed',
-      description: message,
-      variant: 'destructive',
-    });
-  },
-  [toast]
-);
+## Test plan (must pass before we call it “fixed”)
+1. **Editor preview (embedded iframe)**
+   - Open Pre-Qual → Step 2 → Connect bank
+   - New secure window opens
+   - Enter phone number and proceed (no shutdown)
+   - Success returns to wizard and shows “Connected”
+2. **Published site (normal top-level browser tab)**
+   - Same flow, confirm consistent behavior
+3. **Popup blocked scenario**
+   - Verify fallback (open in same tab) works
+4. **Retry scenario**
+   - Exit Plaid, retry, ensure a fresh link token is used and it still works
 
-// Then use them:
-<PlaidLinkButton
-  onSuccess={handlePlaidSuccess}
-  onError={handlePlaidError}
-/>
-```
+---
 
-## Technical Details
+## Deliverables summary
+- A dedicated, clean `/secure-bank-connect` experience
+- Pre-qualification wizard updated to use secure top-level bank connect when embedded (editor preview)
+- Simplified drawer behavior (remove brittle Plaid-in-drawer hacks)
+- Fintech-grade UX polish + failure recovery + optional telemetry
 
-| Issue | Before | After |
-|-------|--------|-------|
-| useEffect dependency | `[onError]` - re-runs on every render | `[]` - runs once on mount |
-| Callback stability | Inline functions = new ref each render | Refs + useCallback = stable |
-| Plaid config | Recreated on parent re-render | Only changes when token changes |
-
-## Files to Modify
-
-1. `src/components/financing/PlaidLinkButton.tsx` - Main fix using refs pattern
-2. `src/components/financing/PreQualificationFlow.tsx` - Optional: memoize callbacks
-
-## Expected Result
-
-After this fix:
-- Typing in any form field will NOT close the Plaid modal
-- The Plaid link token is fetched only once when the component mounts
-- The Plaid SDK configuration remains stable throughout the session
