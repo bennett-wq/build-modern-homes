@@ -54,22 +54,13 @@ export function StepLocation({
   // Can continue if: community intent, valid ZIP entered, or "don't know yet" selected
   const canContinue = isCommunityIntent || isValidZip || locationKnown === false;
   
+  // Remove auto-advance - let users click Continue to feel in control
   // Auto-focus ZIP input on mount
   useEffect(() => {
     if (!isCommunityIntent && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isCommunityIntent]);
-  
-  // Auto-advance when valid ZIP is entered
-  useEffect(() => {
-    if (isValidZip && locationKnown === true) {
-      const timer = setTimeout(() => {
-        onNext();
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [isValidZip, locationKnown, onNext]);
   
   // Handle ZIP input - only allow digits, max 5
   const handleZipChange = (value: string) => {

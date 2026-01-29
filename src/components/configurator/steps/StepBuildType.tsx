@@ -155,10 +155,9 @@ export function StepBuildType({
           const info = buildTypeInfo[type];
           const isSelected = selectedBuildType === type;
           
-          // Auto-advance handler
+          // No auto-advance - let users click Continue to feel in control
           const handleSelect = () => {
             onSelectBuildType(type);
-            setTimeout(() => onNext(), 600);
           };
           
           return (

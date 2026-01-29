@@ -41,13 +41,9 @@ interface StepIntentProps {
 }
 
 export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepIntentProps) {
-  // Auto-advance after selection
+  // No auto-advance - let users confirm with Continue button
   const handleSelect = (intent: BuildIntent) => {
     onSelectIntent(intent);
-    // Brief delay for visual feedback, then auto-advance
-    setTimeout(() => {
-      onNext();
-    }, 600);
   };
 
   return (
