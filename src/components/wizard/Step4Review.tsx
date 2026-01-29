@@ -1,5 +1,5 @@
 // Step 4: Review + Get Started - final summary with CTAs
-// Premium polish with proper Dialog handling and financing integration
+// Premium polish with proper Dialog handling and BaseMod Financial integration
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,8 @@ import {
   Sparkles,
   MessageCircle,
   Eye,
-  Info
+  Info,
+  Calculator
 } from 'lucide-react';
 import { Development } from '@/data/developments';
 import { Lot } from '@/data/lots/grand-haven';
@@ -35,12 +36,13 @@ import { HomeModel } from '@/data/models';
 import { ExteriorPackage, GarageDoor } from '@/data/packages';
 import { HawthornePackage, HawthorneGarage } from '@/data/hawthorne-exteriors';
 import { BelmontPackage } from '@/data/belmont-exteriors';
-import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink } from '@/components/appraisal/AppraisalBadge';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { NextStepCards } from '@/components/quote/QuoteRequestForms';
 import { WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
+import { FinancingCalculator } from '@/components/financing/FinancingCalculator';
+import { PreQualificationFlow } from '@/components/financing/PreQualificationFlow';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { SelectionSummary } from '@/types/quote-request';
 import { useToast } from '@/hooks/use-toast';
@@ -82,7 +84,8 @@ export function Step4Review({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showFinancingModal, setShowFinancingModal] = useState(false);
+  const [showFinancingCalculator, setShowFinancingCalculator] = useState(false);
+  const [showPreQualFlow, setShowPreQualFlow] = useState(false);
 
   // Default fallback flags if not provided
   const defaultFlags: BuyerPricingFlags = {
@@ -346,12 +349,11 @@ export function Step4Review({
 
               <Button
                 size="lg"
-                variant="outline"
-                className="h-12"
-                onClick={() => setShowFinancingModal(true)}
+                className="h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                onClick={() => setShowFinancingCalculator(true)}
               >
-                <DollarSign className="mr-2 h-4 w-4" />
-                Check Financing
+                <Calculator className="mr-2 h-4 w-4" />
+                Explore Financing
               </Button>
             </div>
 
@@ -366,15 +368,24 @@ export function Step4Review({
         </div>
       </div>
 
-      {/* Financing Modal */}
-      <FinancingModal
-        open={showFinancingModal}
-        onOpenChange={setShowFinancingModal}
-        developmentSlug={development.slug}
-        lotId={lot?.id}
-        modelSlug={model?.slug}
-        packageId={package_?.id}
-        garageDoorId={garageDoor?.id}
+      {/* Financing Calculator Dialog */}
+      <Dialog open={showFinancingCalculator} onOpenChange={setShowFinancingCalculator}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-auto p-0">
+          <FinancingCalculator
+            purchasePrice={buyerFacingBreakdown?.startingFromPrice || 0}
+            onGetPreQualified={() => {
+              setShowFinancingCalculator(false);
+              setShowPreQualFlow(true);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-Qualification Flow */}
+      <PreQualificationFlow
+        open={showPreQualFlow}
+        onOpenChange={setShowPreQualFlow}
+        purchasePrice={buyerFacingBreakdown?.startingFromPrice || 0}
       />
 
       {/* Schedule Modal */}

@@ -1,6 +1,7 @@
 // ============================================================================
 // Buyer-Facing Pricing Display Component
 // Shows retail prices without exposing cost-plus markup data
+// Integrated with BaseMod Financial for monthly payment estimates
 // ============================================================================
 
 import { useState } from 'react';
@@ -17,6 +18,8 @@ import {
   Package,
   FileText,
   MapPin,
+  Calculator,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +39,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { InlineInclusionsAccordion } from './InclusionsAccordion';
+import { MonthlyPaymentBadge } from '@/components/financing/MonthlyPaymentBadge';
+import { FinancingCalculator } from '@/components/financing/FinancingCalculator';
+import { PreQualificationFlow } from '@/components/financing/PreQualificationFlow';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { PricingMode } from '@/data/pricing-layers';
 
@@ -62,6 +68,10 @@ export interface BuyerPricingDisplayProps {
   showPlaceholder?: boolean;
   /** Callback to switch to delivered_installed mode (for supply_only upsell) */
   onSwitchToInstalled?: () => void;
+  /** Show financing calculator section */
+  showFinancing?: boolean;
+  /** Quote ID for pre-qualification flow */
+  quoteId?: string;
 }
 
 // ============================================================================
@@ -258,8 +268,12 @@ export function BuyerPricingDisplay({
   actionLabel,
   showPlaceholder = false,
   onSwitchToInstalled,
+  showFinancing = true,
+  quoteId,
 }: BuyerPricingDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showFinancingCalculator, setShowFinancingCalculator] = useState(false);
+  const [showPreQualFlow, setShowPreQualFlow] = useState(false);
   const isSupplyOnly = flags.pricingMode === 'supply_only';
 
   // Show placeholder when requested (e.g., during model selection step)
@@ -527,6 +541,47 @@ export function BuyerPricingDisplay({
         <InlineInclusionsAccordion />
       )}
       
+      {/* Monthly Payment Estimate - BaseMod Financial */}
+      {flags.hasPricing && showFinancing && breakdown.startingFromPrice > 0 && (
+        <div className="px-5 py-4 border-t border-border">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="text-sm font-medium text-foreground">BaseMod Financial</span>
+            </div>
+            <Badge variant="secondary" className="text-xs">6.875% APR</Badge>
+          </div>
+          
+          <MonthlyPaymentBadge
+            purchasePrice={breakdown.startingFromPrice}
+            downPaymentPercent={5}
+            onClick={() => setShowFinancingCalculator(true)}
+          />
+          
+          <div className="flex gap-2 mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={() => setShowFinancingCalculator(true)}
+            >
+              <Calculator className="h-3 w-3 mr-1.5" />
+              Explore Payments
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1 text-xs bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+              onClick={() => setShowPreQualFlow(true)}
+            >
+              <Sparkles className="h-3 w-3 mr-1.5" />
+              Get Pre-Qualified
+            </Button>
+          </div>
+        </div>
+      )}
+      
       {/* Disclaimers */}
       <div className="px-5 py-4 bg-muted/30 border-t border-border space-y-1">
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -547,6 +602,27 @@ export function BuyerPricingDisplay({
           </Button>
         </div>
       )}
+      
+      {/* Financing Calculator Dialog */}
+      <Dialog open={showFinancingCalculator} onOpenChange={setShowFinancingCalculator}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-auto p-0">
+          <FinancingCalculator
+            purchasePrice={breakdown.startingFromPrice}
+            onGetPreQualified={() => {
+              setShowFinancingCalculator(false);
+              setShowPreQualFlow(true);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Pre-Qualification Flow */}
+      <PreQualificationFlow
+        open={showPreQualFlow}
+        onOpenChange={setShowPreQualFlow}
+        purchasePrice={breakdown.startingFromPrice}
+        quoteId={quoteId}
+      />
     </div>
   );
 }
