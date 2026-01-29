@@ -614,27 +614,28 @@ test('direct flow persists selections across page reload', async ({ page }) => {
 ## Technical Implementation Order
 
 ```text
-Day 1:
-├── Create src/types/database.ts (map Supabase types)
-├── Create src/state/useConfiguratorStore.ts (full schema)
-└── Create src/hooks/useModels.ts (with static fallback)
+Day 1: ✅ COMPLETE
+├── ✅ Create src/types/database.ts (map Supabase types)
+├── ✅ Create src/state/useConfiguratorStore.ts (full schema)
+├── ✅ Create src/hooks/useModels.ts (with static fallback)
+├── ✅ Create src/hooks/useDevelopments.ts
+├── ✅ Create src/hooks/useLots.ts
+├── ✅ Create src/hooks/useExteriorPackages.ts
+├── ✅ Create src/hooks/useGarageDoors.ts
+└── ✅ Create src/hooks/useUpgradeOptions.ts
 
-Day 2:
-├── Create src/hooks/useDevelopments.ts
-├── Create src/hooks/useLots.ts
-└── Create src/hooks/useExteriorPackages.ts + useGarageDoors.ts
-
-Day 3:
+Day 2: 🔜 NEXT
+├── Seed database tables with existing static data
 ├── Migrate BuildWizard.tsx to use store
 ├── Update Step1Lot to use useLots()
 └── Update Step2Model to use useModels()
 
-Day 4:
+Day 3:
 ├── Migrate Configurator.tsx to use store
 ├── Update all StepXxx components to use store selectors
 └── Update usePricingEngine to accept DB data
 
-Day 5:
+Day 4:
 ├── Add legacy hydration logic
 ├── Write unit tests for store
 ├── Write integration tests for flows
