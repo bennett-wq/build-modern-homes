@@ -28,59 +28,78 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: st
 // API timeout constant
 const PLAID_API_TIMEOUT = 10000; // 10 seconds per API call
 
-// Loan program eligibility thresholds
+// Real-world manufactured housing loan program eligibility thresholds
+// Based on actual Fannie Mae, Freddie Mac, and FHA guidelines for 2024
 
-// Loan program eligibility thresholds
 const LOAN_PROGRAMS = {
+  // MH Advantage - Fannie Mae's manufactured housing program
+  // Requires home to meet specific construction standards (MH Advantage eligible)
   mh_advantage: {
-    name: 'MH Advantage (Fannie Mae)',
-    description: 'Best rates for factory-built homes meeting site-built standards',
-    minCredit: 620,
-    maxLTV: 97,
-    maxFrontDTI: 36,
-    maxBackDTI: 45,
-    primaryOnly: false,
-    minDownPayment: 3,
+    name: 'MH Advantage',
+    description: 'Fannie Mae program for factory-built homes meeting site-built standards',
+    minCredit: 620,           // Fannie Mae minimum for manufactured housing
+    maxLTV: 97,               // Up to 97% LTV with PMI
+    maxFrontDTI: 36,          // Housing expense ratio
+    maxBackDTI: 45,           // Total DTI (can go to 50% with strong compensating factors)
+    primaryOnly: false,       // Available for primary, second home, and investment
+    minDownPayment: 3,        // 3% minimum down payment
+    priority: 1,              // Higher priority = shown first when eligible
   },
+  
+  // CHOICEHome - Freddie Mac's factory-built housing program
+  // Similar to MH Advantage but through Freddie Mac
   choicehome: {
-    name: 'CHOICEHome (Freddie Mac)',
-    description: 'Competitive conventional rates for qualifying manufactured homes',
-    minCredit: 620,
-    maxLTV: 97,
-    maxFrontDTI: 36,
-    maxBackDTI: 45,
-    primaryOnly: false,
-    minDownPayment: 3,
+    name: 'CHOICEHome',
+    description: 'Freddie Mac program for qualifying manufactured homes',
+    minCredit: 620,           // Freddie Mac minimum
+    maxLTV: 97,               // Up to 97% LTV
+    maxFrontDTI: 36,          // Housing ratio
+    maxBackDTI: 45,           // Total DTI limit
+    primaryOnly: false,       // Primary, second home, investment
+    minDownPayment: 3,        // 3% minimum
+    priority: 2,
   },
-  construction_to_perm: {
-    name: 'Construction-to-Perm',
-    description: 'Single-close loan covering construction and permanent financing',
-    minCredit: 680,
-    maxLTV: 90,
-    maxFrontDTI: 33,
-    maxBackDTI: 43,
-    primaryOnly: false,
-    minDownPayment: 10,
-  },
+  
+  // FHA Title I - Government-backed manufactured housing loans
+  // More lenient credit requirements, primary residence only
   fha_title_1: {
     name: 'FHA Title I',
-    description: 'Government-backed option with flexible qualification',
-    minCredit: 580,
-    maxLTV: 100,
-    maxFrontDTI: 43,
-    maxBackDTI: 50,
-    primaryOnly: true,
-    minDownPayment: 0,
+    description: 'FHA-insured manufactured home loan with flexible qualification',
+    minCredit: 580,           // FHA minimum (500-579 requires 10% down)
+    maxLTV: 96.5,             // 96.5% LTV with 3.5% down
+    maxFrontDTI: 31,          // FHA standard front-end ratio
+    maxBackDTI: 43,           // FHA standard back-end (can go to 50% with compensating factors)
+    primaryOnly: true,        // Primary residence only
+    minDownPayment: 3.5,      // 3.5% minimum (10% if credit 500-579)
+    priority: 3,
   },
+  
+  // Construction-to-Permanent - Single-close loan for land + construction
+  // Higher credit and down payment requirements
+  construction_to_perm: {
+    name: 'Construction-to-Perm',
+    description: 'Single-close loan covering land purchase and home construction',
+    minCredit: 680,           // Typically higher credit required
+    maxLTV: 90,               // Generally 80-90% max LTV
+    maxFrontDTI: 33,          // More conservative ratios
+    maxBackDTI: 43,           // Standard QM limit
+    primaryOnly: false,       // Can be primary or second home
+    minDownPayment: 10,       // 10-20% typically required
+    priority: 4,
+  },
+  
+  // Conventional - Standard mortgage, best with 20% down to avoid PMI
+  // Baseline option for qualified borrowers
   conventional: {
     name: 'Conventional',
-    description: 'Standard financing with 20% down to avoid PMI',
-    minCredit: 620,
-    maxLTV: 80,
-    maxFrontDTI: 28,
-    maxBackDTI: 43,
-    primaryOnly: false,
-    minDownPayment: 20,
+    description: 'Standard mortgage financing with competitive rates',
+    minCredit: 620,           // Conventional minimum
+    maxLTV: 97,               // Can go up to 97% but 80% avoids PMI
+    maxFrontDTI: 28,          // Conservative front-end for best rates
+    maxBackDTI: 43,           // QM safe harbor limit
+    primaryOnly: false,       // All property types
+    minDownPayment: 3,        // 3% min but 20% avoids PMI
+    priority: 5,
   },
 };
 
@@ -360,50 +379,98 @@ serve(async (req) => {
       ? ((monthlyHousingPayment + monthlyDebt) / monthlyIncome) * 100 
       : 100;
 
-    // Determine eligible programs
+    // Determine eligible programs based on real lending criteria
     const eligiblePrograms: string[] = [];
-    const programDetails: Array<{ key: string; name: string; description: string; match_strength: string }> = [];
+    const programDetails: Array<{ key: string; name: string; description: string; match_strength: string; priority: number }> = [];
     const isPrimary = application.intended_use === 'primary';
+    const isSecondHome = application.intended_use === 'second_home';
+    const isInvestment = application.intended_use === 'investment';
+
+    console.log('Program eligibility check:', {
+      creditScore,
+      ltv: Math.round(ltv * 100) / 100,
+      frontEndDTI: Math.round(frontEndDTI * 100) / 100,
+      backEndDTI: Math.round(backEndDTI * 100) / 100,
+      downPaymentPercent,
+      isPrimary,
+    });
 
     for (const [programKey, program] of Object.entries(LOAN_PROGRAMS)) {
+      const reasons: string[] = [];
+      let eligible = true;
+      
       // Check credit score
-      if (creditScore < program.minCredit) continue;
+      if (creditScore < program.minCredit) {
+        reasons.push(`Credit ${creditScore} < ${program.minCredit} required`);
+        eligible = false;
+      }
       
       // Check LTV
-      if (ltv > program.maxLTV) continue;
+      if (ltv > program.maxLTV) {
+        reasons.push(`LTV ${ltv.toFixed(1)}% > ${program.maxLTV}% max`);
+        eligible = false;
+      }
       
-      // Check back-end DTI
-      if (backEndDTI > program.maxBackDTI) continue;
+      // Check back-end DTI (primary qualification metric)
+      if (backEndDTI > program.maxBackDTI) {
+        reasons.push(`Back-end DTI ${backEndDTI.toFixed(1)}% > ${program.maxBackDTI}% max`);
+        eligible = false;
+      }
       
       // Check primary residence requirement
-      if (program.primaryOnly && !isPrimary) continue;
+      if (program.primaryOnly && !isPrimary) {
+        reasons.push('Primary residence only');
+        eligible = false;
+      }
       
       // Check minimum down payment
-      if (downPaymentPercent < program.minDownPayment) continue;
+      if (downPaymentPercent < program.minDownPayment) {
+        reasons.push(`Down payment ${downPaymentPercent}% < ${program.minDownPayment}% required`);
+        eligible = false;
+      }
+
+      if (!eligible) {
+        console.log(`${programKey} ineligible:`, reasons);
+        continue;
+      }
       
       eligiblePrograms.push(programKey);
       
-      // Calculate match strength
+      // Calculate match strength based on how well they qualify
       let matchStrength = 'good';
-      if (frontEndDTI <= program.maxFrontDTI && backEndDTI <= program.maxBackDTI - 5 && creditScore >= program.minCredit + 40) {
+      const creditBuffer = creditScore - program.minCredit;
+      const dtiBuffer = program.maxBackDTI - backEndDTI;
+      const frontDtiOk = frontEndDTI <= program.maxFrontDTI;
+      
+      if (creditBuffer >= 60 && dtiBuffer >= 8 && frontDtiOk) {
         matchStrength = 'excellent';
-      } else if (backEndDTI > program.maxBackDTI - 3 || creditScore < program.minCredit + 20) {
+      } else if (creditBuffer < 20 || dtiBuffer < 3) {
         matchStrength = 'fair';
       }
+      
+      console.log(`${programKey} eligible: strength=${matchStrength}, creditBuffer=${creditBuffer}, dtiBuffer=${dtiBuffer.toFixed(1)}`);
       
       programDetails.push({
         key: programKey,
         name: program.name,
         description: program.description,
         match_strength: matchStrength,
+        priority: program.priority,
       });
     }
 
-    // Sort programs by match strength
+    // Sort programs by: 1) match strength, 2) priority
     programDetails.sort((a, b) => {
-      const order = { excellent: 0, good: 1, fair: 2 };
-      return order[a.match_strength as keyof typeof order] - order[b.match_strength as keyof typeof order];
+      const strengthOrder = { excellent: 0, good: 1, fair: 2 };
+      const strengthDiff = strengthOrder[a.match_strength as keyof typeof strengthOrder] - strengthOrder[b.match_strength as keyof typeof strengthOrder];
+      if (strengthDiff !== 0) return strengthDiff;
+      return a.priority - b.priority;
     });
+    
+    // Reorder eligiblePrograms to match sorted order
+    const sortedProgramKeys = programDetails.map(p => p.key);
+    eligiblePrograms.length = 0;
+    eligiblePrograms.push(...sortedProgramKeys);
 
     // Calculate maximum loan amount based on DTI limits
     const maxDTI = 43; // Conservative QM limit
