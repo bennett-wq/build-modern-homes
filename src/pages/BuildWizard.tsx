@@ -12,15 +12,13 @@ import { getPackageById, getGarageDoorById } from '@/data/packages';
 import { 
   getHawthornePackageById, 
   getHawthorneGarageById, 
-  isPhotoBasedModel,
   normalizeModelSlug 
 } from '@/data/hawthorne-exteriors';
 import { getAspenPackageById } from '@/data/aspen-exteriors';
 import { getBelmontPackageById } from '@/data/belmont-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { usePricingEngine, defaultBuildSelection, type BuildSelection } from '@/hooks/usePricingEngine';
-import { derivePricingMode } from '@/lib/pricing-mode-utils';
+import { useConfiguratorPricing } from '@/hooks/useConfiguratorPricing';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
 import { Step2Model } from '@/components/wizard/Step2Model';
 import { Step3Design } from '@/components/wizard/Step3Design';
@@ -112,28 +110,15 @@ export default function BuildWizard() {
         : getGarageDoorById(selection.garageDoorId)) || null 
     : null;
 
-  // Derive correct pricing mode based on context
-  // BuildWizard is always in a BaseMod Community context
-  const derivedPricingMode = useMemo(() => {
-    return derivePricingMode({
-      buildIntent: 'basemod-community',
-      hasLotSelected: selection.lotId !== null,
-      servicePackage: 'delivered_installed', // Default for community
-    });
-  }, [selection.lotId]);
-
-  // Build pricing selection for the engine
-  const pricingSelection: BuildSelection = useMemo(() => ({
-    ...defaultBuildSelection,
+  // Use unified pricing engine via adapter
+  // BuildWizard is always in a BaseMod Community context with lot selection
+  const pricing = useConfiguratorPricing({
     modelSlug: normalizedModelSlug,
-    buildType: 'xmod' as const, // Default to XMOD for community wizard
-    pricingMode: derivedPricingMode,
+    buildType: 'xmod', // Default to XMOD for community wizard
+    servicePackage: 'community_all_in', // Community builds include lot
     includeUtilityFees: true,
     includePermitsCosts: true,
-  }), [normalizedModelSlug, derivedPricingMode]);
-
-  // Get pricing from the engine
-  const { pricing } = usePricingEngine(pricingSelection);
+  });
 
   // Build selection summary for quote forms
   const selectionSummary = useMemo(() => ({
@@ -355,14 +340,8 @@ export default function BuildWizard() {
                 shareableUrl={getShareableUrl()}
                 onBack={() => setCurrentStep(3)}
                 isMobile={isMobile}
-                buyerFacingBreakdown={pricing.buyerFacingBreakdown}
-                pricingFlags={{
-                  freightPending: pricing.freightPending,
-                  basementSelectedRequiresQuote: pricing.basementSelectedRequiresQuote,
-                  estimateConfidence: pricing.estimateConfidence,
-                  hasPricing: pricing.hasPricing,
-                  pricingMode: pricing.pricingMode,
-                }}
+                buyerFacingBreakdown={pricing.breakdown}
+                pricingFlags={pricing.flags}
                 selectionSummary={selectionSummary}
               />
             </motion.div>

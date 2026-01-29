@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useConfiguratorState } from '@/hooks/useConfiguratorState';
-import { usePricingEngine } from '@/hooks/usePricingEngine';
+import { useConfiguratorPricing } from '@/hooks/useConfiguratorPricing';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
@@ -82,22 +82,35 @@ export default function Configurator() {
     preselectedModel,
   } = useConfiguratorState();
   
-  const { breakdown, formatPrice, model, pricing } = usePricingEngine(selection);
+  // Use unified pricing engine via adapter
+  const mainPricing = useConfiguratorPricing({
+    modelSlug: selection.modelSlug,
+    buildType: selection.buildType,
+    servicePackage: selection.servicePackage,
+    selectedOptionIds: selection.floorPlanSelections.filter(s => s.selected).map(s => s.optionId),
+    includeUtilityFees: selection.includeUtilityFees,
+    includePermitsCosts: selection.includePermitsCosts,
+    zipCode: selection.zipCode,
+    locationKnown: selection.locationKnown,
+  });
   
   // Step 4 override: Force supply_only pricing for MOD/XMOD comparison DISPLAY ONLY
-  // This helps users compare home package costs before install is applied in Step 5
-  // IMPORTANT: This is a display-only override - it does NOT mutate the actual selection
-  const step4Selection = {
-    ...selection,
-    servicePackage: 'supply_only' as const,
-  };
-  const { pricing: step4Pricing } = usePricingEngine(step4Selection);
+  const step4Pricing = useConfiguratorPricing({
+    modelSlug: selection.modelSlug,
+    buildType: selection.buildType,
+    servicePackage: 'supply_only',
+    selectedOptionIds: selection.floorPlanSelections.filter(s => s.selected).map(s => s.optionId),
+    includeUtilityFees: selection.includeUtilityFees,
+    includePermitsCosts: selection.includePermitsCosts,
+    zipCode: selection.zipCode,
+    locationKnown: selection.locationKnown,
+  });
   
   // Compute effective pricing mode:
   // - Step 4 (Build Type): ALWAYS show supply_only for MOD/XMOD comparison
   // - Step 5+: Use the actual selected service package
   const isStep4 = currentStep === 4;
-  const displayPricing = isStep4 ? step4Pricing : pricing;
+  const displayPricing = isStep4 ? step4Pricing : mainPricing;
   
   // Track previous model for undo functionality
   const previousModelRef = useRef<string | null>(null);
@@ -107,12 +120,9 @@ export default function Configurator() {
   // Build buyer-facing pricing flags
   // CRITICAL: For Step 4, use the step4 override; for all other steps, use the actual selection
   const pricingFlags: BuyerPricingFlags = {
-    freightPending: displayPricing.freightPending,
-    basementSelectedRequiresQuote: displayPricing.basementSelectedRequiresQuote,
-    estimateConfidence: displayPricing.estimateConfidence,
-    hasPricing: displayPricing.hasPricing,
+    ...displayPricing.flags,
     // This is the key fix: Step 4 shows supply_only, Step 5+ uses actual selection
-    pricingMode: isStep4 ? 'supply_only' : pricing.pricingMode,
+    pricingMode: isStep4 ? 'supply_only' : mainPricing.pricing.pricingMode,
   };
   
   // Determine if we should show the pricing rail
@@ -283,10 +293,10 @@ export default function Configurator() {
                       <StepSummary
                         model={currentModel}
                         buildType={selection.buildType}
-                        breakdown={breakdown}
+                        breakdown={mainPricing.breakdown as any}
                         exteriorSelection={selection.exteriorSelection}
                         intent={selection.intent}
-                        formatPrice={formatPrice}
+                        formatPrice={mainPricing.formatPrice}
                         onCopyLink={copyShareableLink}
                         onBack={prevStep}
                         packageId={selection.packageId}
@@ -296,6 +306,8 @@ export default function Configurator() {
                         includePermitsCosts={selection.includePermitsCosts}
                         onUtilityFeesChange={setIncludeUtilityFees}
                         onPermitsCostsChange={setIncludePermitsCosts}
+                        servicePackage={selection.servicePackage}
+                        selectedOptionIds={selection.floorPlanSelections.filter(s => s.selected).map(s => s.optionId)}
                       />
                     )}
                   </motion.div>
@@ -308,7 +320,7 @@ export default function Configurator() {
                 <div className="hidden lg:block">
                   <div className="sticky top-32">
                     <BuyerPricingDisplay
-                      breakdown={displayPricing.buyerFacingBreakdown}
+                      breakdown={displayPricing.breakdown}
                       flags={pricingFlags}
                       variant="full"
                       showPlaceholder={false}
@@ -383,7 +395,7 @@ export default function Configurator() {
         {/* Step 4 forces supply_only display for MOD/XMOD comparison */}
         {isMobile && showPricingRail && (
           <BuyerPricingDisplay
-            breakdown={displayPricing.buyerFacingBreakdown}
+            breakdown={displayPricing.breakdown}
             flags={pricingFlags}
             variant="mobile"
             showPlaceholder={false}
