@@ -2,6 +2,7 @@
 // /build - Buyer Configurator Wizard
 // Multi-step build configuration with live pricing
 // Enhanced with intelligent preselection and resume capability
+// Now using unified ConfiguratorStore for state management
 // 
 // LAYOUT ARCHITECTURE:
 // - Steps 1-3 (Intent, Location, Model): Single-column centered layout, no pricing rail
@@ -13,8 +14,9 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useConfiguratorState } from '@/hooks/useConfiguratorState';
+import { useConfiguratorStore, type BuildIntent as StoreIntent } from '@/state/useConfiguratorStore';
 import { useConfiguratorPricing } from '@/hooks/useConfiguratorPricing';
+import type { BuildIntent } from '@/data/pricing-config';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
@@ -48,62 +50,95 @@ const stepVariants = {
 
 export default function Configurator() {
   const isMobile = useIsMobile();
+  
+  // Use unified Zustand store
   const {
-    selection,
+    // Selections
+    intent,
+    location,
+    modelSlug,
+    buildType,
+    servicePackage,
+    exteriorPackageId,
+    garageDoorId,
+    selectedOptionIds,
+    includeUtilityFees,
+    includePermitsCosts,
+    // Step management
     currentStep,
-    currentModel,
+    // Actions
+    initDirectFlow,
+    setIntent,
+    setLocation,
+    setModel,
+    setBuildType,
+    setServicePackage,
+    setExteriorPackage,
+    setGarageDoor,
+    setFeeToggles,
+    toggleOption,
     goToStep,
     nextStep,
     prevStep,
-    setIntent,
-    setModelSlug,
-    setBuildType,
-    setServicePackage,
-    setIncludeUtilityFees,
-    setIncludePermitsCosts,
-    toggleFloorPlanOption,
-    updateExteriorSelection,
-    isFloorPlanOptionSelected,
-    setPackageId,
-    setGarageDoorId,
-    copyShareableLink,
-    resetBuild,
-    // Location setters
-    setZipCode,
-    setAddress,
-    setLocationKnown,
-    // Resume prompt
-    showResumePrompt,
-    pendingResumeState,
-    resumeSavedState,
-    startFresh,
-    // Model change tracking
-    isModelChangeFromPreselected,
-    preselectedModel,
-  } = useConfiguratorState();
+    resetSelections,
+    getShareableUrl,
+    hasSelections,
+  } = useConfiguratorStore();
+  
+  // Initialize direct flow on mount
+  useEffect(() => {
+    initDirectFlow();
+  }, [initDirectFlow]);
+  
+  // Resume prompt state (simplified - store handles persistence)
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [pendingResumeState, setPendingResumeState] = useState<{ modelSlug: string | null; currentStep: number } | null>(null);
+  
+  // Check for saved state on mount
+  useEffect(() => {
+    if (hasSelections() && currentStep === 1) {
+      setPendingResumeState({ modelSlug, currentStep: 3 }); // Resume at model step
+      setShowResumePrompt(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  const resumeSavedState = useCallback(() => {
+    setShowResumePrompt(false);
+    if (modelSlug) {
+      goToStep(3); // Go to model step
+    }
+  }, [modelSlug, goToStep]);
+  
+  const startFresh = useCallback(() => {
+    resetSelections();
+    setShowResumePrompt(false);
+  }, [resetSelections]);
+  
+  // Get current model config
+  const currentModel = modelSlug ? getModelBySlug(modelSlug) : null;
   
   // Use unified pricing engine via adapter
   const mainPricing = useConfiguratorPricing({
-    modelSlug: selection.modelSlug,
-    buildType: selection.buildType,
-    servicePackage: selection.servicePackage,
-    selectedOptionIds: selection.floorPlanSelections.filter(s => s.selected).map(s => s.optionId),
-    includeUtilityFees: selection.includeUtilityFees,
-    includePermitsCosts: selection.includePermitsCosts,
-    zipCode: selection.zipCode,
-    locationKnown: selection.locationKnown,
+    modelSlug,
+    buildType,
+    servicePackage,
+    selectedOptionIds,
+    includeUtilityFees,
+    includePermitsCosts,
+    zipCode: location.zipCode,
+    locationKnown: location.known,
   });
   
   // Step 4 override: Force supply_only pricing for MOD/XMOD comparison DISPLAY ONLY
   const step4Pricing = useConfiguratorPricing({
-    modelSlug: selection.modelSlug,
-    buildType: selection.buildType,
+    modelSlug,
+    buildType,
     servicePackage: 'supply_only',
-    selectedOptionIds: selection.floorPlanSelections.filter(s => s.selected).map(s => s.optionId),
-    includeUtilityFees: selection.includeUtilityFees,
-    includePermitsCosts: selection.includePermitsCosts,
-    zipCode: selection.zipCode,
-    locationKnown: selection.locationKnown,
+    selectedOptionIds,
+    includeUtilityFees,
+    includePermitsCosts,
+    zipCode: location.zipCode,
+    locationKnown: location.known,
   });
   
   // Compute effective pricing mode:
@@ -130,35 +165,30 @@ export default function Configurator() {
   const showPricingRail = currentStep >= 4;
   
   // Handle model selection - immediate, non-blocking inline feedback
-  const handleModelSelect = useCallback((modelSlug: string) => {
-    const prevSlug = selection.modelSlug;
+  const handleModelSelect = useCallback((slug: string) => {
+    const prevSlug = modelSlug;
     const prevModel = prevSlug ? getModelBySlug(prevSlug) : null;
-    const newModel = getModelBySlug(modelSlug);
+    const newModel = getModelBySlug(slug);
     
     // Store previous for undo
     previousModelRef.current = prevSlug;
     
-    // Immediately update model
-    setModelSlug(modelSlug);
+    // Immediately update model (store handles clearing dependent selections)
+    setModel(null, slug);
     
     // Trigger inline feedback if changing models (no toast)
-    if (prevModel && newModel && prevSlug !== modelSlug) {
+    if (prevModel && newModel && prevSlug !== slug) {
       setModelJustChanged(true);
     }
-  }, [selection.modelSlug, setModelSlug]);
+  }, [modelSlug, setModel]);
   
   // Undo model change handler
   const handleUndoModelChange = useCallback(() => {
     if (previousModelRef.current) {
-      setModelSlug(previousModelRef.current);
+      setModel(null, previousModelRef.current);
       setModelJustChanged(false);
     }
-  }, [setModelSlug]);
-  
-  // Clear feedback flag when it's consumed
-  const clearModelChangeFeedback = useCallback(() => {
-    setModelJustChanged(false);
-  }, []);
+  }, [setModel]);
   
   // Scroll to top on step change
   useEffect(() => {
@@ -168,19 +198,79 @@ export default function Configurator() {
   // Auto-select build type if only one available
   useEffect(() => {
     if (currentStep === 4 && currentModel && currentModel.buildTypes.length === 1) {
-      if (!selection.buildType) {
+      if (!buildType) {
         setBuildType(currentModel.buildTypes[0]);
       }
     }
-  }, [currentStep, currentModel, selection.buildType, setBuildType]);
+  }, [currentStep, currentModel, buildType, setBuildType]);
+  
+  // Wrapped handlers for step components
+  const handleSetPackageId = useCallback((id: string | null) => {
+    setExteriorPackage(id);
+  }, [setExteriorPackage]);
+  
+  const handleSetGarageDoorId = useCallback((id: string | null) => {
+    setGarageDoor(id);
+  }, [setGarageDoor]);
+  
+  // Location handlers
+  const handleZipCodeChange = useCallback((zipCode: string) => {
+    setLocation({ zipCode });
+  }, [setLocation]);
+  
+  const handleAddressChange = useCallback((address: string) => {
+    setLocation({ address });
+  }, [setLocation]);
+  
+  const handleLocationKnownChange = useCallback((known: boolean) => {
+    setLocation({ known });
+  }, [setLocation]);
+  
+  // Fee toggle handlers
+  const handleUtilityFeesChange = useCallback((value: boolean) => {
+    setFeeToggles({ utility: value });
+  }, [setFeeToggles]);
+  
+  const handlePermitsCostsChange = useCallback((value: boolean) => {
+    setFeeToggles({ permits: value });
+  }, [setFeeToggles]);
+  
+  // Floor plan option check
+  const isFloorPlanOptionSelected = useCallback((optionId: string) => {
+    return selectedOptionIds.includes(optionId);
+  }, [selectedOptionIds]);
+  
+  // Copy shareable link - return the URL as a promise
+  const copyShareableLink = useCallback(async (): Promise<string> => {
+    const url = getShareableUrl();
+    await navigator.clipboard.writeText(url);
+    return url;
+  }, [getShareableUrl]);
+  
+  // Map store intent type to component's expected type
+  const mapIntent = (storeIntent: StoreIntent): BuildIntent | null => {
+    if (storeIntent === 'own-land') return 'my-land';
+    if (storeIntent === 'find-land') return 'find-land';
+    if (storeIntent === 'basemod-community') return 'basemod-community';
+    return null;
+  };
+  
+  const handleSetIntent = useCallback((componentIntent: BuildIntent) => {
+    // Map component intent back to store type
+    let storeIntent: StoreIntent = null;
+    if (componentIntent === 'my-land') storeIntent = 'own-land';
+    else if (componentIntent === 'find-land') storeIntent = 'find-land';
+    else if (componentIntent === 'basemod-community') storeIntent = 'basemod-community';
+    setIntent(storeIntent);
+  }, [setIntent]);
   
   return (
     <>
       {/* Resume Prompt Overlay */}
       <ResumePrompt
         isOpen={showResumePrompt}
-        savedModelSlug={pendingResumeState?.selection.modelSlug}
-        savedStep={pendingResumeState?.step || 1}
+        savedModelSlug={pendingResumeState?.modelSlug}
+        savedStep={pendingResumeState?.currentStep || 1}
         onResume={resumeSavedState}
         onStartFresh={startFresh}
       />
@@ -248,7 +338,7 @@ export default function Configurator() {
                     {currentStep === 4 && currentModel && (
                       <StepBuildType
                         model={currentModel}
-                        selectedBuildType={selection.buildType}
+                        selectedBuildType={buildType}
                         onSelectBuildType={setBuildType}
                         onNext={nextStep}
                         onBack={prevStep}
@@ -257,7 +347,7 @@ export default function Configurator() {
                     
                     {currentStep === 5 && (
                       <StepServicePackage
-                        selectedPackage={selection.servicePackage}
+                        selectedPackage={servicePackage}
                         onSelectPackage={setServicePackage}
                         onNext={nextStep}
                         onBack={prevStep}
@@ -265,12 +355,12 @@ export default function Configurator() {
                       />
                     )}
                     
-                    {currentStep === 6 && currentModel && selection.buildType && (
+                    {currentStep === 6 && currentModel && buildType && (
                       <StepFloorPlan
                         model={currentModel}
-                        buildType={selection.buildType}
+                        buildType={buildType}
                         isOptionSelected={isFloorPlanOptionSelected}
-                        onToggleOption={toggleFloorPlanOption}
+                        onToggleOption={toggleOption}
                         onNext={nextStep}
                         onBack={prevStep}
                       />
@@ -278,36 +368,36 @@ export default function Configurator() {
                     
                     {currentStep === 7 && currentModel && (
                       <Step3Design
-                        selectedPackageId={selection.packageId}
-                        selectedGarageDoorId={selection.garageDoorId}
-                        onSelectPackage={setPackageId}
-                        onSelectGarageDoor={setGarageDoorId}
+                        selectedPackageId={exteriorPackageId}
+                        selectedGarageDoorId={garageDoorId}
+                        onSelectPackage={handleSetPackageId}
+                        onSelectGarageDoor={handleSetGarageDoorId}
                         onNext={nextStep}
                         onBack={prevStep}
                         isMobile={isMobile}
-                        modelSlug={selection.modelSlug}
+                        modelSlug={modelSlug}
                       />
                     )}
                     
-                    {currentStep === 8 && currentModel && selection.buildType && (
+                    {currentStep === 8 && currentModel && buildType && (
                       <StepSummary
                         model={currentModel}
-                        buildType={selection.buildType}
+                        buildType={buildType}
                         breakdown={mainPricing.breakdown as any}
-                        exteriorSelection={selection.exteriorSelection}
-                        intent={selection.intent}
+                        exteriorSelection={null}
+                        intent={mapIntent(intent)}
                         formatPrice={mainPricing.formatPrice}
                         onCopyLink={copyShareableLink}
                         onBack={prevStep}
-                        packageId={selection.packageId}
-                        garageDoorId={selection.garageDoorId}
-                        zipCode={selection.zipCode}
-                        includeUtilityFees={selection.includeUtilityFees}
-                        includePermitsCosts={selection.includePermitsCosts}
-                        onUtilityFeesChange={setIncludeUtilityFees}
-                        onPermitsCostsChange={setIncludePermitsCosts}
-                        servicePackage={selection.servicePackage}
-                        selectedOptionIds={selection.floorPlanSelections.filter(s => s.selected).map(s => s.optionId)}
+                        packageId={exteriorPackageId}
+                        garageDoorId={garageDoorId}
+                        zipCode={location.zipCode}
+                        includeUtilityFees={includeUtilityFees}
+                        includePermitsCosts={includePermitsCosts}
+                        onUtilityFeesChange={handleUtilityFeesChange}
+                        onPermitsCostsChange={handlePermitsCostsChange}
+                        servicePackage={servicePackage}
+                        selectedOptionIds={selectedOptionIds}
                       />
                     )}
                   </motion.div>
@@ -331,7 +421,7 @@ export default function Configurator() {
                         // Never show if user selected delivered_installed
                         isStep4 
                           ? undefined // Step 4 doesn't show upsell - they haven't made service choice yet
-                          : (selection.servicePackage === 'supply_only' 
+                          : (servicePackage === 'supply_only' 
                               ? () => setServicePackage('delivered_installed')
                               : undefined)
                       }
@@ -355,21 +445,21 @@ export default function Configurator() {
                 >
                   {currentStep === 1 && (
                     <StepIntent
-                      selectedIntent={selection.intent}
-                      onSelectIntent={setIntent}
+                      selectedIntent={mapIntent(intent)}
+                      onSelectIntent={handleSetIntent}
                       onNext={nextStep}
                     />
                   )}
                   
                   {currentStep === 2 && (
                     <StepLocation
-                      buildIntent={selection.intent}
-                      zipCode={selection.zipCode}
-                      address={selection.address}
-                      locationKnown={selection.locationKnown}
-                      onZipCodeChange={setZipCode}
-                      onAddressChange={setAddress}
-                      onLocationKnownChange={setLocationKnown}
+                      buildIntent={mapIntent(intent)}
+                      zipCode={location.zipCode}
+                      address={location.address}
+                      locationKnown={location.known}
+                      onZipCodeChange={handleZipCodeChange}
+                      onAddressChange={handleAddressChange}
+                      onLocationKnownChange={handleLocationKnownChange}
                       onNext={nextStep}
                       onBack={prevStep}
                     />
@@ -377,7 +467,7 @@ export default function Configurator() {
                   
                   {currentStep === 3 && (
                     <StepModel
-                      selectedModelSlug={selection.modelSlug}
+                      selectedModelSlug={modelSlug}
                       onSelectModel={handleModelSelect}
                       onNext={nextStep}
                       onBack={prevStep}
@@ -403,7 +493,7 @@ export default function Configurator() {
               // Same logic as desktop: no upsell on Step 4, only on Step 5+ if supply_only selected
               isStep4 
                 ? undefined 
-                : (selection.servicePackage === 'supply_only' 
+                : (servicePackage === 'supply_only' 
                     ? () => setServicePackage('delivered_installed')
                     : undefined)
             }
