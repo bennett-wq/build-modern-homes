@@ -811,7 +811,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      model_pricing_public: {
+        Row: {
+          base_home_price: number | null
+          build_type: Database["public"]["Enums"]["build_type"] | null
+          effective_from: string | null
+          foundation_type: Database["public"]["Enums"]["foundation_type"] | null
+          id: string | null
+          is_current: boolean | null
+          model_id: string | null
+        }
+        Insert: {
+          base_home_price?: number | null
+          build_type?: Database["public"]["Enums"]["build_type"] | null
+          effective_from?: string | null
+          foundation_type?:
+            | Database["public"]["Enums"]["foundation_type"]
+            | null
+          id?: string | null
+          is_current?: boolean | null
+          model_id?: string | null
+        }
+        Update: {
+          base_home_price?: number | null
+          build_type?: Database["public"]["Enums"]["build_type"] | null
+          effective_from?: string | null
+          foundation_type?:
+            | Database["public"]["Enums"]["foundation_type"]
+            | null
+          id?: string | null
+          is_current?: boolean | null
+          model_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_pricing_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_public_lot_data: {
