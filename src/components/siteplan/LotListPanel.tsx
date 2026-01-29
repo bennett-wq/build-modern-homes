@@ -1,43 +1,65 @@
-// Lot List Panel - searchable, filterable lot directory
+// ============================================================================
+// Premium Lot List Panel
+// World-class lot directory with pricing, phases, and availability
+// ============================================================================
+
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Filter, Sparkles, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PremiumLotCard } from '@/components/wizard/PremiumLotCard';
+import { LotPricingBadge } from '@/components/wizard/LotPricingPreview';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { Lot, LotStatus } from '@/data/lots/grand-haven';
+import type { Lot as StaticLot, LotStatus } from '@/data/lots/grand-haven';
+import type { Lot as DbLot } from '@/types/database';
+
+// Support both static and DB lot types
+type LotType = StaticLot | (DbLot & { availability?: string; phase?: number });
 
 interface LotListPanelProps {
-  lots: Lot[];
+  lots: LotType[];
   selectedLotId: number | null;
   hoveredLotId: number | null;
-  onSelectLot: (lot: Lot) => void;
+  onSelectLot: (lot: LotType) => void;
   onHoverLot: (lotId: number | null) => void;
   className?: string;
   style?: React.CSSProperties;
+  isLoading?: boolean;
+  // Pricing context for all-in estimates
+  baseHomePackage?: number;
+  baseSitework?: number;
+  baseFeesAllowance?: number;
 }
 
-const STATUS_STYLES: Record<LotStatus, { badge: string; dot: string; label: string }> = {
-  available: {
-    badge: 'bg-green-500/10 text-green-600 border-green-200',
-    dot: 'bg-green-500',
-    label: 'Available',
-  },
-  reserved: {
-    badge: 'bg-amber-500/10 text-amber-600 border-amber-200',
-    dot: 'bg-amber-500',
-    label: 'Reserved',
-  },
-  sold: {
-    badge: 'bg-gray-500/10 text-gray-500 border-gray-200',
-    dot: 'bg-gray-400',
-    label: 'Sold',
-  },
-};
+type FilterOption = 'all' | 'available' | 'phase-1' | 'reserved' | 'sold';
 
-type FilterOption = 'all' | 'available' | 'reserved' | 'sold';
+// Helper to get lot ID as string for comparison
+function getLotIdString(lot: LotType): string {
+  return String(lot.id);
+}
+
+function getLotPhase(lot: LotType): number | undefined {
+  if ('phase' in lot) return lot.phase;
+  return undefined;
+}
+
+function getLotPremium(lot: LotType): number {
+  return lot.premium ?? 0;
+}
+
+function getLotLabel(lot: LotType): string {
+  if ('label' in lot) return lot.label;
+  return lot.lot_number;
+}
+
+function getLotAvailability(lot: LotType): string | undefined {
+  if ('availability' in lot) return lot.availability;
+  return undefined;
+}
 
 export function LotListPanel({
   lots,
@@ -47,52 +69,131 @@ export function LotListPanel({
   onHoverLot,
   className,
   style,
+  isLoading = false,
+  baseHomePackage = 129485, // Default Hawthorne XMOD
+  baseSitework = 114533,
+  baseFeesAllowance = 9631,
 }: LotListPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterOption>('all');
 
+  // Calculate all-in estimate for a lot
+  const calculateAllIn = useCallback((lot: LotType): number => {
+    const premium = getLotPremium(lot);
+    return baseHomePackage + baseSitework + baseFeesAllowance + premium;
+  }, [baseHomePackage, baseSitework, baseFeesAllowance]);
+
   const filteredLots = useMemo(() => {
     return lots.filter(lot => {
       // Search filter
-      const matchesSearch = lot.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lot.id.toString().includes(searchQuery);
+      const label = getLotLabel(lot);
+      const matchesSearch = label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(lot.id).includes(searchQuery);
 
       // Status filter
-      const matchesStatus = statusFilter === 'all' || lot.status === statusFilter;
+      const phase = getLotPhase(lot);
+      let matchesStatus = true;
+      
+      switch (statusFilter) {
+        case 'available':
+          matchesStatus = lot.status === 'available';
+          break;
+        case 'phase-1':
+          matchesStatus = phase === 1 && lot.status === 'available';
+          break;
+        case 'reserved':
+          matchesStatus = lot.status === 'reserved';
+          break;
+        case 'sold':
+          matchesStatus = lot.status === 'sold';
+          break;
+        default:
+          matchesStatus = true;
+      }
 
       return matchesSearch && matchesStatus;
     });
   }, [lots, searchQuery, statusFilter]);
 
+  // Sort: Phase 1 first, then by lot number/label
+  const sortedLots = useMemo(() => {
+    return [...filteredLots].sort((a, b) => {
+      const phaseA = getLotPhase(a) ?? 99;
+      const phaseB = getLotPhase(b) ?? 99;
+      if (phaseA !== phaseB) return phaseA - phaseB;
+      
+      const labelA = getLotLabel(a);
+      const labelB = getLotLabel(b);
+      return labelA.localeCompare(labelB, undefined, { numeric: true });
+    });
+  }, [filteredLots]);
+
   const counts = useMemo(() => ({
     all: lots.length,
     available: lots.filter(l => l.status === 'available').length,
+    phase1: lots.filter(l => getLotPhase(l) === 1 && l.status === 'available').length,
     reserved: lots.filter(l => l.status === 'reserved').length,
     sold: lots.filter(l => l.status === 'sold').length,
   }), [lots]);
 
-  const filterOptions: { value: FilterOption; label: string; shortLabel: string }[] = [
-    { value: 'all', label: `All (${counts.all})`, shortLabel: 'All' },
-    { value: 'available', label: `Available (${counts.available})`, shortLabel: `${counts.available}` },
-    { value: 'reserved', label: `Reserved (${counts.reserved})`, shortLabel: `${counts.reserved}` },
-    { value: 'sold', label: `Sold (${counts.sold})`, shortLabel: `${counts.sold}` },
+  const filterOptions: { value: FilterOption; label: string; count: number; highlight?: boolean }[] = [
+    { value: 'all', label: 'All', count: counts.all },
+    { value: 'phase-1', label: 'Available Now', count: counts.phase1, highlight: true },
+    { value: 'available', label: 'Available', count: counts.available },
+    { value: 'reserved', label: 'Reserved', count: counts.reserved },
+    { value: 'sold', label: 'Sold', count: counts.sold },
   ];
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, lot: Lot) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSelectLot(lot);
-    }
-  }, [onSelectLot]);
+  // Price range summary
+  const priceRange = useMemo(() => {
+    const availableLots = lots.filter(l => l.status === 'available' && getLotPremium(l) > 0);
+    if (availableLots.length === 0) return null;
+    
+    const premiums = availableLots.map(l => getLotPremium(l));
+    const minPremium = Math.min(...premiums);
+    const maxPremium = Math.max(...premiums);
+    
+    return {
+      min: baseHomePackage + baseSitework + baseFeesAllowance + minPremium,
+      max: baseHomePackage + baseSitework + baseFeesAllowance + maxPremium,
+    };
+  }, [lots, baseHomePackage, baseSitework, baseFeesAllowance]);
 
   return (
     <div className={cn('flex flex-col h-full bg-card', className)} style={style}>
       {/* Header */}
-      <div className="p-4 border-b border-border space-y-3 shrink-0">
-        <h3 className="font-semibold text-foreground flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-accent" />
-          Lot Directory
-        </h3>
+      <div className="p-4 border-b border-border space-y-4 shrink-0">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+              <MapPin className="h-4 w-4 text-accent" />
+            </div>
+            Select Your Lot
+          </h3>
+          {counts.phase1 > 0 && (
+            <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-xs">
+              <Sparkles className="h-3 w-3 mr-1" />
+              {counts.phase1} Available Now
+            </Badge>
+          )}
+        </div>
+
+        {/* Price range indicator */}
+        {priceRange && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
+            <TrendingUp className="h-4 w-4 text-accent shrink-0" />
+            <div className="text-sm">
+              <span className="text-muted-foreground">All-in prices from </span>
+              <span className="font-semibold text-foreground">
+                ${priceRange.min.toLocaleString()}
+              </span>
+              <span className="text-muted-foreground"> to </span>
+              <span className="font-semibold text-foreground">
+                ${priceRange.max.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative">
@@ -101,7 +202,7 @@ export function LotListPanel({
             placeholder="Search lots..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 transition-shadow focus:shadow-sm"
+            className="pl-9 h-10 transition-shadow focus:shadow-md bg-background"
             aria-label="Search lots"
           />
         </div>
@@ -114,18 +215,15 @@ export function LotListPanel({
               variant={statusFilter === option.value ? 'default' : 'outline'}
               size="sm"
               className={cn(
-                'h-7 text-xs px-2.5 transition-all duration-200',
-                statusFilter === option.value && 'bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm'
+                'h-8 text-xs px-3 transition-all duration-200',
+                statusFilter === option.value && option.highlight && 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 border-0',
+                statusFilter === option.value && !option.highlight && 'bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm'
               )}
               onClick={() => setStatusFilter(option.value)}
               aria-pressed={statusFilter === option.value}
             >
-              {option.value === 'all' ? option.label : (
-                <>
-                  <span className="sm:hidden">{option.shortLabel}</span>
-                  <span className="hidden sm:inline">{option.label}</span>
-                </>
-              )}
+              {option.label}
+              <span className="ml-1 opacity-70">({option.count})</span>
             </Button>
           ))}
         </div>
@@ -133,85 +231,81 @@ export function LotListPanel({
 
       {/* Lot List */}
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1" role="listbox" aria-label="Available lots">
-          {filteredLots.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              No lots match your search
+        <div className="p-3 space-y-2" role="listbox" aria-label="Available lots">
+          {isLoading ? (
+            // Loading skeletons
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="p-4 rounded-xl border border-border/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+                <Skeleton className="h-4 w-32" />
+                <div className="flex gap-4">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            ))
+          ) : sortedLots.length === 0 ? (
+            <div className="text-center py-12">
+              <Filter className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+              <p className="text-muted-foreground text-sm font-medium">
+                No lots match your search
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                }}
+                className="mt-2"
+              >
+                Clear filters
+              </Button>
             </div>
           ) : (
-            filteredLots.map(lot => {
-              const statusStyle = STATUS_STYLES[lot.status];
-              const isSelected = lot.id === selectedLotId;
-              const isHovered = lot.id === hoveredLotId;
+            sortedLots.map(lot => {
+              const lotIdStr = getLotIdString(lot);
+              const isSelected = String(selectedLotId) === lotIdStr;
+              const isHovered = String(hoveredLotId) === lotIdStr;
+              const estimatedAllIn = calculateAllIn(lot);
 
               return (
-                <motion.button
-                  key={lot.id}
+                <PremiumLotCard
+                  key={lotIdStr}
+                  lot={lot}
+                  isSelected={isSelected}
+                  isHovered={isHovered}
                   onClick={() => onSelectLot(lot)}
-                  onMouseEnter={() => onHoverLot(lot.id)}
+                  onMouseEnter={() => onHoverLot(typeof lot.id === 'number' ? lot.id : Number(lot.id))}
                   onMouseLeave={() => onHoverLot(null)}
-                  onFocus={() => onHoverLot(lot.id)}
-                  onBlur={() => onHoverLot(null)}
-                  onKeyDown={(e) => handleKeyDown(e, lot)}
-                  role="option"
-                  aria-selected={isSelected}
-                  aria-label={`${lot.label}, ${statusStyle.label}${lot.acreage ? `, ${lot.acreage} acres` : ''}`}
-                  className={cn(
-                    'w-full text-left p-3 rounded-xl border transition-all duration-200',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-                    isSelected
-                      ? 'bg-accent/10 border-accent shadow-sm'
-                      : isHovered
-                      ? 'bg-muted/80 border-border'
-                      : 'bg-background border-transparent hover:border-border hover:bg-muted/50',
-                    lot.status === 'sold' && 'opacity-60'
-                  )}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.1 }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className={cn(
-                        'w-2.5 h-2.5 rounded-full transition-transform duration-200',
-                        statusStyle.dot,
-                        (isSelected || isHovered) && 'scale-125'
-                      )} />
-                      <span className="font-medium text-foreground">{lot.label}</span>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn('text-xs font-medium', statusStyle.badge)}
-                    >
-                      {statusStyle.label}
-                    </Badge>
-                  </div>
-                  {lot.acreage && (
-                    <p className="text-xs text-muted-foreground mt-1 ml-5">
-                      {lot.acreage} acres
-                    </p>
-                  )}
-                </motion.button>
+                  estimatedAllIn={estimatedAllIn}
+                />
               );
             })
           )}
         </div>
       </ScrollArea>
 
-      {/* Legend */}
+      {/* Footer */}
       <div className="p-4 border-t border-border bg-muted/30 shrink-0">
-        <p className="text-xs text-muted-foreground mb-2 font-medium">Legend</p>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-            <span className="text-xs text-muted-foreground">Available</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span className="text-xs text-muted-foreground">Reserved</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
-            <span className="text-xs text-muted-foreground">Sold</span>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{sortedLots.length} lot{sortedLots.length !== 1 ? 's' : ''} shown</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <span>Available</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              <span>Reserved</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+              <span>Sold</span>
+            </div>
           </div>
         </div>
       </div>
