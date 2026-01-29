@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { memo, forwardRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Trees, Sparkles, Clock, Check, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AnimatedPriceCompact } from '@/components/ui/animated-price';
@@ -145,33 +145,37 @@ export const PremiumLotCard = memo(forwardRef<HTMLButtonElement, PremiumLotCardP
         onMouseLeave={onMouseLeave}
         disabled={status === 'sold'}
         className={cn(
-          'w-full text-left p-4 rounded-xl border transition-all duration-300',
+          'w-full text-left p-4 rounded-xl border transition-all duration-200',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-          'group relative overflow-hidden',
+          'group relative overflow-hidden active:scale-[0.98]',
           isSelected
-            ? 'bg-gradient-to-br from-accent/15 to-accent/5 border-accent shadow-lg ring-2 ring-accent/30 ' + statusConfig.glow
+            ? 'bg-gradient-to-br from-accent/20 to-accent/5 border-accent shadow-lg ring-2 ring-accent/40 ' + statusConfig.glow
             : isHovered
             ? 'bg-muted/80 border-accent/50 shadow-md'
-            : 'bg-card border-border/50 hover:border-border hover:shadow-sm',
+            : 'bg-card border-border hover:border-accent/30 hover:shadow-md',
           status === 'sold' && 'opacity-50 cursor-not-allowed',
           className
         )}
-        whileHover={{ scale: status !== 'sold' ? 1.01 : 1 }}
-        whileTap={{ scale: status !== 'sold' ? 0.99 : 1 }}
-        transition={{ duration: 0.15 }}
+        whileHover={{ scale: status !== 'sold' ? 1.005 : 1 }}
+        whileTap={{ scale: status !== 'sold' ? 0.98 : 1 }}
+        transition={{ duration: 0.1 }}
         aria-selected={isSelected}
         aria-label={`${label}, ${statusConfig.label}${acreage ? `, ${acreage} acres` : ''}${premium ? `, $${premium.toLocaleString()}` : ''}`}
       >
-        {/* Selection indicator - Enhanced */}
-        {isSelected && (
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg"
-          >
-            <Check className="h-4 w-4 text-accent-foreground" strokeWidth={3} />
-          </motion.div>
-        )}
+        {/* Selection indicator - Enhanced with spring animation */}
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 180 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg z-10"
+            >
+              <Check className="h-4 w-4 text-accent-foreground" strokeWidth={3} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Phase 1 / Available Now highlight */}
         {isPhase1 && isAvailable && (

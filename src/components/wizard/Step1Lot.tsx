@@ -3,14 +3,14 @@
 // World-class lot selection with real-time all-in pricing
 // ============================================================================
 
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FixedSitePlanViewer } from '@/components/siteplan/FixedSitePlanViewer';
 import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { LotPricingPreview, LotPricingBadge } from '@/components/wizard/LotPricingPreview';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, AlertCircle, X, TrendingUp, Sparkles } from 'lucide-react';
+import { MapPin, AlertCircle, X, TrendingUp, Sparkles, Check, ChevronUp } from 'lucide-react';
 import { Lot } from '@/data/lots/grand-haven';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { AnimatedPriceCompact } from '@/components/ui/animated-price';
@@ -47,6 +47,7 @@ export function Step1Lot({
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const [showPricingPreview, setShowPricingPreview] = useState(false);
+  const [justSelected, setJustSelected] = useState(false);
 
   // Calculate all-in price for selected lot
   const allInPrice = useMemo(() => {
@@ -58,6 +59,15 @@ export function Step1Lot({
   const phase1Count = useMemo(() => {
     return lots.filter(l => l.phase === 1 && l.status === 'available').length;
   }, [lots]);
+
+  // Trigger celebration animation on selection
+  useEffect(() => {
+    if (selectedLotId) {
+      setJustSelected(true);
+      const timer = setTimeout(() => setJustSelected(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedLotId]);
 
   const handleLotClick = useCallback((lot: Lot | null) => {
     if (lot) {
@@ -181,8 +191,8 @@ export function Step1Lot({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 bg-black/40 z-40"
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0 bg-black/50 z-40 backdrop-blur-[2px]"
                 onClick={() => setMobileListOpen(false)}
               />
               
@@ -191,32 +201,35 @@ export function Step1Lot({
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="absolute inset-x-0 bottom-0 z-50 bg-background rounded-t-2xl shadow-xl max-h-[80vh] flex flex-col"
+                transition={{ type: 'spring', damping: 32, stiffness: 400 }}
+                className="absolute inset-x-0 bottom-0 z-50 bg-background rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col"
                 style={{ touchAction: 'pan-y' }}
               >
-                {/* Drag handle */}
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
+                {/* Drag handle - larger touch target */}
+                <div className="flex justify-center pt-3 pb-2" onClick={() => setMobileListOpen(false)}>
+                  <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30" />
                 </div>
                 
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 pb-3 border-b border-border">
+                {/* Header - Premium styling */}
+                <div className="flex items-center justify-between px-5 pb-4 border-b border-border/50">
                   <div>
-                    <h3 className="font-semibold text-foreground">Select a Lot</h3>
+                    <h3 className="font-bold text-foreground text-lg tracking-tight">Select a Lot</h3>
                     {phase1Count > 0 && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {phase1Count} lots available now
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-[10px] px-2 py-0.5">
+                          <Sparkles className="h-2.5 w-2.5 mr-1" />
+                          {phase1Count} Available Now
+                        </Badge>
+                      </div>
                     )}
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setMobileListOpen(false)}
-                    className="h-8 w-8"
+                    className="h-10 w-10 rounded-full hover:bg-muted"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-5 w-5" />
                     <span className="sr-only">Close</span>
                   </Button>
                 </div>
@@ -239,6 +252,42 @@ export function Step1Lot({
             </>
           )}
         </AnimatePresence>
+
+        {/* Mobile Selection Confirmation Overlay */}
+        <AnimatePresence>
+          {isMobile && justSelected && selectedLot && allInPrice && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="absolute bottom-24 left-4 right-4 z-30"
+            >
+              <div className="bg-card/95 backdrop-blur-lg border border-accent/30 rounded-2xl p-4 shadow-2xl">
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.1, type: 'spring', stiffness: 500, damping: 25 }}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg"
+                  >
+                    <Check className="h-6 w-6 text-accent-foreground" strokeWidth={3} />
+                  </motion.div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-foreground text-lg">{selectedLot.label}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedLot.acreage} acres • ${selectedLot.premium?.toLocaleString()} premium
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">All-In</p>
+                    <p className="text-lg font-bold text-accent">${allInPrice.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Sticky Footer - Enhanced with clear lot details */}
@@ -249,27 +298,24 @@ export function Step1Lot({
         hideBack={true}
       >
         {selectedLot ? (
-          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+          <div className="flex items-center gap-3 sm:gap-4 w-full">
             {/* Lot Icon & Details - Mobile optimized */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shrink-0 shadow-lg">
+              <motion.div
+                key={selectedLot.id}
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shrink-0 shadow-lg"
+              >
                 <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-accent-foreground" />
-              </div>
+              </motion.div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-bold text-foreground text-base sm:text-lg">{selectedLot.label}</p>
-                  {selectedLot.phase === 1 && selectedLot.status === 'available' && (
-                    <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shrink-0 hidden sm:flex">
-                      <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                      Available Now
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 mt-0.5 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-foreground text-base sm:text-lg truncate">{selectedLot.label}</p>
                   <Badge
                     variant="secondary"
                     className={cn(
-                      'text-[10px] sm:text-xs font-semibold',
+                      'text-[10px] sm:text-xs font-semibold shrink-0',
                       selectedLot.status === 'available' && 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200',
                       selectedLot.status === 'reserved' && 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200',
                       selectedLot.status === 'sold' && 'bg-gray-500/15 text-gray-600 border-gray-200'
@@ -277,6 +323,8 @@ export function Step1Lot({
                   >
                     {selectedLot.status.charAt(0).toUpperCase() + selectedLot.status.slice(1)}
                   </Badge>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-3 mt-0.5">
                   {selectedLot.acreage && (
                     <span className="text-xs sm:text-sm text-muted-foreground font-medium">{selectedLot.acreage} ac</span>
                   )}
@@ -285,19 +333,25 @@ export function Step1Lot({
                       ${selectedLot.premium.toLocaleString()}
                     </span>
                   )}
+                  {/* Mobile all-in price inline */}
+                  {allInPrice && canProceed && isMobile && (
+                    <span className="text-xs font-bold text-accent ml-auto">
+                      ${allInPrice.toLocaleString()} all-in
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* All-in price badge - Show on larger mobile and up */}
-            {allInPrice && canProceed && (
-              <div className="hidden sm:flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-gradient-to-r from-accent/15 to-accent/5 border border-accent/30">
-                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+            {/* All-in price badge - Desktop only */}
+            {allInPrice && canProceed && !isMobile && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent/15 to-accent/5 border border-accent/30">
+                <TrendingUp className="h-5 w-5 text-accent" />
                 <div>
-                  <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-medium">All-In</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">All-In</p>
                   <AnimatedPriceCompact 
                     value={allInPrice} 
-                    className="text-sm sm:text-lg font-bold text-foreground"
+                    className="text-lg font-bold text-foreground"
                   />
                 </div>
               </div>
@@ -305,21 +359,34 @@ export function Step1Lot({
 
             {/* Not available warning */}
             {!canProceed && selectedLot && (
-              <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 shrink-0">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
                 <span className="text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-medium">Not available</span>
               </div>
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-2 sm:gap-3 text-muted-foreground">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-muted flex items-center justify-center">
-              <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2 sm:gap-3 text-muted-foreground">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-muted/80 flex items-center justify-center border border-border/50">
+                <MapPin className="h-5 w-5 sm:h-5 sm:w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Select a lot</p>
+                <p className="text-xs text-muted-foreground">{lots.filter(l => l.status === 'available').length} available</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs sm:text-sm font-medium">Select a lot to continue</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{lots.filter(l => l.status === 'available').length} lots available</p>
-            </div>
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMobileListOpen(true)}
+                className="shrink-0"
+              >
+                <ChevronUp className="h-4 w-4 mr-1.5" />
+                Browse
+              </Button>
+            )}
           </div>
         )}
       </WizardStickyFooter>
