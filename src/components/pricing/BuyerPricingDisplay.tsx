@@ -16,6 +16,7 @@ import {
   Wrench,
   Package,
   FileText,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -415,6 +416,27 @@ export function BuyerPricingDisplay({
           
           <CollapsibleContent>
             <div className="px-5 pb-5 space-y-4">
+              {/* Lot Premium (community builds - show first) */}
+              {breakdown.lotPremium > 0 && (
+                <div className="pb-2 border-b border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Your Lot
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-medium text-foreground">
+                    <span className="text-sm">
+                      {breakdown.lotNumber ? `Lot ${breakdown.lotNumber}` : 'Lot Premium'}
+                      {breakdown.developmentName && (
+                        <span className="text-muted-foreground font-normal"> at {breakdown.developmentName}</span>
+                      )}
+                    </span>
+                    <span className="text-sm">{formatPrice(breakdown.lotPremium)}</span>
+                  </div>
+                </div>
+              )}
+              
               {/* Home Package */}
               <div>
                 <PriceLineItem 
@@ -435,7 +457,7 @@ export function BuyerPricingDisplay({
                 </div>
               )}
               
-              {/* Community & Land (only for community_all_in) */}
+              {/* Community & Land (legacy - only for community_all_in) */}
               {breakdown.communityAdder > 0 && (
                 <div>
                   <PriceLineItem 
@@ -473,7 +495,9 @@ export function BuyerPricingDisplay({
               {/* Total */}
               <div className="pt-4 border-t border-border">
                 <div className="flex justify-between text-base font-semibold">
-                  <span className="text-foreground">Estimated Total</span>
+                  <span className="text-foreground">
+                    {breakdown.lotPremium > 0 ? 'All-In Estimate' : 'Estimated Total'}
+                  </span>
                   <AnimatePresence mode="wait">
                     <motion.span
                       key={breakdown.startingFromPrice}
@@ -487,6 +511,11 @@ export function BuyerPricingDisplay({
                     </motion.span>
                   </AnimatePresence>
                 </div>
+                {breakdown.lotPremium > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Includes lot, home package, and typical sitework
+                  </p>
+                )}
               </div>
             </div>
           </CollapsibleContent>
@@ -501,7 +530,9 @@ export function BuyerPricingDisplay({
       {/* Disclaimers */}
       <div className="px-5 py-4 bg-muted/30 border-t border-border space-y-1">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Estimates exclude land unless selected.
+          {breakdown.lotPremium > 0 
+            ? 'All-in price includes your selected lot.'
+            : 'Estimates exclude land unless selected.'}
         </p>
         <p className="text-xs text-muted-foreground leading-relaxed">
           Final pricing confirmed via formal written quote and site review.

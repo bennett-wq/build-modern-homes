@@ -22,6 +22,10 @@ export interface ConfiguratorPricingInput {
   includePermitsCosts?: boolean;
   zipCode?: string;
   locationKnown?: boolean | null;
+  // Lot integration for community builds
+  lotPremium?: number;
+  lotNumber?: string;
+  developmentName?: string;
 }
 
 export interface ConfiguratorPricingOutput {
@@ -59,6 +63,7 @@ const buyerPackageLabels = {
   homePackage: 'BaseMod Home Package',
   installPackage: 'Typical Sitework Allowance',
   communityPackage: 'Community & Land',
+  lotPremium: 'Lot Premium',
   feesPermits: 'Typical Fees (allowance)',
   optionsUpgrades: 'Selected Add-ons',
 };
@@ -91,6 +96,7 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
         buildType: 'xmod',
         servicePackage: unifiedServicePackage,
         selectedOptionIds: [],
+        lotPremium: 0,
       });
     }
     
@@ -103,6 +109,9 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
       includeFeesAllowance: input.includeUtilityFees || input.includePermitsCosts,
       includeSitework: unifiedServicePackage === 'installed',
       includeSiteworkContingency: true,
+      lotPremium: input.lotPremium || 0,
+      lotNumber: input.lotNumber,
+      developmentName: input.developmentName,
     });
   }, [
     engine, 
@@ -112,6 +121,9 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
     input.selectedOptionIds,
     input.includeUtilityFees,
     input.includePermitsCosts,
+    input.lotPremium,
+    input.lotNumber,
+    input.developmentName,
   ]);
   
   // Convert to legacy BuyerFacingBreakdown interface
@@ -119,7 +131,10 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
     return {
       homePackagePrice: unifiedPricing.home.retailHomeTotal,
       installPackagePrice: unifiedPricing.sitework.retailTotal,
-      communityAdder: 0, // Community adder handled separately
+      communityAdder: 0, // Legacy field, lot premium is now separate
+      lotPremium: unifiedPricing.lot.premium,
+      lotNumber: unifiedPricing.lot.lotNumber,
+      developmentName: unifiedPricing.lot.developmentName,
       optionsUpgradesTotal: unifiedPricing.options.retailTotal,
       feesPermitsTotal: unifiedPricing.fees.allowanceTotal,
       optionDetails: unifiedPricing.options.items.map(item => ({
@@ -127,6 +142,7 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
         price: item.retailAmount,
       })),
       startingFromPrice: unifiedPricing.totals.displayedTotal,
+      allInTotal: unifiedPricing.totals.allInTotal,
       labels: buyerPackageLabels,
     };
   }, [unifiedPricing]);
