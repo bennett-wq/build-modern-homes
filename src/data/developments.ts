@@ -52,11 +52,11 @@ export const developments: Development[] = [
   {
     slug: 'st-james-bay',
     name: 'St. James Bay',
-    city: 'St. James Bay',
+    city: 'Carrabelle',
     state: 'Florida',
-    sitePlanImagePath: '/images/developments/st-james-bay/st-james-bay-site-plan.jpg',
+    sitePlanImagePath: '/images/developments/st-james-bay/hero-carrabelle-site-plan.png',
     arbGuidelinesUrl: '/docs/developments/st-james-bay/arb-guidelines.pdf',
-    description: 'St. James Bay is a design-reviewed community where homes are selected to fit the neighborhood\'s architectural standards and site constraints. Choose a lot, select a conforming plan, and move through BaseMod\'s guided build experience with curated exterior packages designed for a clean, coastal-modern look.',
+    description: 'Beautiful Golf Course & Scenic View Lots Available with all-in BaseMod Pricing. Located at 151 Laughing Gull Ln, Carrabelle, FL 32322.',
     status: 'active',
     locationHighlights: [
       { icon: 'Waves', title: 'Coastal Living', description: 'Located in Florida\'s beautiful Gulf Coast region with access to pristine waterways.' },
