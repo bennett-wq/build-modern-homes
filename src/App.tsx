@@ -16,6 +16,7 @@ import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import DesignStudio from "./pages/DesignStudio";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import GrandHavenSitePlan from "./pages/GrandHavenSitePlan";
 import BuildWizard from "./pages/BuildWizard";
 import Configurator from "./pages/Configurator";
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/design-studio" element={<DesignStudio />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/quote/:quoteId" element={<QuoteSummary />} />
           {/* Admin routes (not in public nav) */}
           <Route path="/admin/login" element={<AdminLogin />} />
