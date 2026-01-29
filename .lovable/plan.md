@@ -1,377 +1,101 @@
 
-# Phase 3: BaseMod Financial - World-Class Financing Experience
-## Tier-1 Proptech-Grade Loan Brokerage Platform
+# Fix Pre-Qualification Submission Error
+
+## Problem Identified
+
+The pre-qualification form fails to submit due to a **Row-Level Security (RLS) policy gap**. The issue is in the combination of INSERT + SELECT operations:
+
+1. **INSERT works**: The `public_insert_financing_applications` policy correctly allows `anon` and `authenticated` users to insert when `user_id IS NULL`.
+
+2. **SELECT fails**: When the code calls `.insert(...).select('id').single()`, the database needs to return the newly created row. However, there is **no SELECT policy for the `anon` role**, causing the RLS violation.
+
+3. **Anonymous records are orphaned**: Even for authenticated users, the SELECT policies require `user_id = auth.uid()`. But anonymous submissions have `user_id = NULL`, so nobody (except admins/builders) can read them back.
+
+## Solution
+
+Add a SELECT policy that allows users to read back rows they just inserted. Since anonymous submissions set `user_id = null` and we need to return the ID immediately after insert, we have two options:
+
+**Option A (Recommended)**: Remove `.select()` from the insert and use the returned data differently
+- The INSERT operation alone will succeed
+- We don't need to read back the ID for the success flow
+
+**Option B**: Add a SELECT policy for `anon` role that allows reading rows where `user_id IS NULL`
+- This would expose all anonymous financing applications to anonymous users (security risk)
+
+**We'll go with Option A** - modify the insert to not require a SELECT, which is more secure.
 
 ---
 
-## Vision
+## Implementation Steps
 
-Create **BaseMod Financial** - an integrated lending platform that:
-1. Captures leads with rich financial qualification data
-2. Provides instant monthly payment estimates with PITI breakdown
-3. Generates pre-qualification decisions in real-time
-4. Integrates seamlessly into the lot selection and purchase flow
-5. Stores all documents, data, and communications for loan processing
+### Step 1: Update PreQualificationFlow.tsx
 
-This positions BaseMod as a vertically-integrated homebuilder with in-house financing capabilities.
+Modify the `handleSubmit` function to:
+1. Remove `.select('id').single()` from the insert call
+2. Handle the response without needing the returned ID
+3. Generate a local ID or skip the ID entirely for the success state
 
----
-
-## Architecture Overview
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      BASEMOD FINANCIAL PLATFORM                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   ┌──────────────────────────────────────────────────────────────────────┐  │
-│   │                    FINANCING CALCULATOR                               │  │
-│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │  │
-│   │  │ Down Payment│  │Interest Rate│  │   Loan      │  │   PITI      │  │  │
-│   │  │   Slider    │  │  Display    │  │   Term      │  │  Breakdown  │  │  │
-│   │  │ 3-20%       │  │  6.5%       │  │  30yr       │  │  P+I+T+I    │  │  │
-│   │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  │  │
-│   │                                                                       │  │
-│   │  ┌────────────────────────────────────────────────────────────────┐  │  │
-│   │  │              MONTHLY PAYMENT DISPLAY                           │  │  │
-│   │  │         $2,147/mo   vs   $2,200 avg rent                       │  │  │
-│   │  │      "Build equity instead of paying rent"                     │  │  │
-│   │  └────────────────────────────────────────────────────────────────┘  │  │
-│   └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│   ┌──────────────────────────────────────────────────────────────────────┐  │
-│   │                PRE-QUALIFICATION FLOW (3-Step Wizard)                 │  │
-│   │                                                                       │  │
-│   │  Step 1: Basic Info    Step 2: Financial    Step 3: Result           │  │
-│   │  ┌────────────────┐   ┌────────────────┐   ┌────────────────┐        │  │
-│   │  │ Name, Email    │──▶│ Income Range   │──▶│ Pre-Qualified! │        │  │
-│   │  │ Phone          │   │ Credit Score   │   │ Up to $XXX,XXX │        │  │
-│   │  │ Employment     │   │ Down Payment   │   │ Download Quote │        │  │
-│   │  └────────────────┘   └────────────────┘   └────────────────┘        │  │
-│   └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│   ┌──────────────────────────────────────────────────────────────────────┐  │
-│   │                   DATABASE: financing_applications                    │  │
-│   │  • Lead capture with financial data                                  │  │
-│   │  • Pre-qualification status tracking                                 │  │
-│   │  • Document upload references (future)                               │  │
-│   │  • Quote linkage via quote_id                                        │  │
-│   └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Database Schema
-
-### New Table: `financing_applications`
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | uuid | Primary key |
-| `quote_id` | uuid (FK) | Link to quotes table |
-| `contact_name` | text | Applicant name |
-| `contact_email` | text | Applicant email |
-| `contact_phone` | text | Applicant phone |
-| `intended_use` | enum | primary, second_home, investment |
-| `employment_status` | enum | employed, self_employed, retired, other |
-| `annual_income_range` | enum | under_50k, 50k_75k, 75k_100k, 100k_150k, 150k_plus |
-| `credit_score_range` | enum | excellent_750, good_700, fair_650, below_650, unsure |
-| `down_payment_percent` | numeric | Intended down payment % |
-| `down_payment_amount` | numeric | Calculated down payment $ |
-| `loan_amount_requested` | numeric | All-in price minus down payment |
-| `purchase_timeframe` | enum | 0_3_months, 3_6_months, 6_12_months, 12_plus |
-| `pre_qualification_status` | enum | pending, pre_qualified, needs_review, declined |
-| `pre_qualified_amount` | numeric | Maximum loan amount |
-| `monthly_payment_estimate` | numeric | Calculated monthly PITI |
-| `notes` | text | Additional applicant notes |
-| `created_at` | timestamptz | Submission timestamp |
-| `updated_at` | timestamptz | Last update |
-
-### RLS Policies
-- Anonymous users can INSERT (for lead capture)
-- Authenticated users can read/update their own applications
-- Admin/builder roles can read/update all applications
-
----
-
-## Component Architecture
-
-### 1. FinancingCalculator (`src/components/financing/FinancingCalculator.tsx`)
-
-Interactive PITI calculator with:
-- **Down Payment Slider**: 3%, 5%, 10%, 15%, 20% presets with custom input
-- **Loan Term Toggle**: 30-year (default) vs 15-year comparison
-- **Interest Rate Display**: Current market rate (configurable, default 6.5%)
-- **PITI Breakdown Card**:
-  - Principal & Interest
-  - Property Taxes (estimated 1.5% annually)
-  - Homeowner's Insurance (estimated $1,800/year)
-  - PMI (if down payment < 20%)
-- **Rent Comparison**: "vs $2,200 avg rent in [area]"
-- **Affordability Check**: Quick income-to-payment ratio indicator
-
-### 2. MonthlyPaymentBadge (`src/components/financing/MonthlyPaymentBadge.tsx`)
-
-Compact inline badge showing:
-- Est. $X,XXX/mo
-- Tooltip with PITI breakdown
-- Link to full calculator
-
-### 3. PreQualificationFlow (`src/components/financing/PreQualificationFlow.tsx`)
-
-3-step wizard inside InfoDrawer:
-- **Step 1**: Contact info + intended use + employment
-- **Step 2**: Income range + credit score + down payment intent
-- **Step 3**: Result screen with pre-qualification status + next steps
-
-### 4. FinancingHero (`src/components/financing/FinancingHero.tsx`)
-
-Premium branded header for financing sections:
-- BaseMod Financial logo/wordmark
-- Trust badges (NMLS, Equal Housing)
-- "Pre-qualify in 2 minutes" headline
-
-### 5. AffordabilityChart (`src/components/financing/AffordabilityChart.tsx`)
-
-Visual chart showing:
-- Monthly payment breakdown (donut/pie)
-- Income-to-debt ratio indicator
-- Comparison to local rent prices
-
----
-
-## Hook Architecture
-
-### `useFinancingCalculator.ts`
-
+**Current code (lines 162-186):**
 ```typescript
-interface FinancingInput {
-  purchasePrice: number;
-  downPaymentPercent: number;
-  interestRate: number;
-  loanTermYears: number;
-  propertyTaxRate?: number;
-  insuranceAnnual?: number;
-  zipCode?: string;
-}
+const { data, error } = await supabase
+  .from('financing_applications')
+  .insert({...})
+  .select('id')
+  .single();
 
-interface FinancingBreakdown {
-  downPaymentAmount: number;
-  loanAmount: number;
-  monthlyPrincipalInterest: number;
-  monthlyPropertyTax: number;
-  monthlyInsurance: number;
-  monthlyPMI: number;
-  totalMonthlyPayment: number;
-  totalLoanCost: number;
-  recommendedIncome: number;
-}
+if (error) throw error;
+setApplicationId(data.id);
 ```
 
-### `usePreQualification.ts`
+**New code:**
+```typescript
+const { error } = await supabase
+  .from('financing_applications')
+  .insert({...});
 
-Manages pre-qualification state:
-- Form step navigation
-- Validation logic
-- Database submission
-- Status polling (for async decisioning)
+if (error) throw error;
 
----
-
-## Integration Points
-
-### Step 4 Review Enhancement
-- Add `FinancingCalculator` component below pricing breakdown
-- Show `MonthlyPaymentBadge` in the pricing rail
-- Add "Get Pre-Qualified" CTA leading to `PreQualificationFlow`
-
-### BuyerPricingDisplay Enhancement
-- Add monthly payment estimate below total
-- "Est. $X,XXX/mo with 5% down" helper text
-- Link to full financing calculator
-
-### LotPricingPreview Enhancement
-- Show monthly payment estimate for each lot
-- Help buyers understand affordability at lot selection stage
-
----
-
-## UX Flow
-
-```text
-User selects Lot → Pricing updates → Sees "Est. $2,147/mo"
-                                          │
-                                          ▼
-                          ┌─────────────────────────────┐
-                          │  "Explore Financing"        │
-                          │  Opens FinancingCalculator  │
-                          └─────────────────────────────┘
-                                          │
-                                          ▼
-                          ┌─────────────────────────────┐
-                          │  Adjust down payment slider │
-                          │  See PITI update in real-time│
-                          └─────────────────────────────┘
-                                          │
-                                          ▼
-                          ┌─────────────────────────────┐
-                          │  "Get Pre-Qualified"         │
-                          │  Opens PreQualificationFlow │
-                          └─────────────────────────────┘
-                                          │
-                                          ▼
-                          ┌─────────────────────────────┐
-                          │  3-Step Form                │
-                          │  Basic → Financial → Result │
-                          └─────────────────────────────┘
-                                          │
-                                          ▼
-                          ┌─────────────────────────────┐
-                          │  "You're Pre-Qualified!"    │
-                          │  Up to $350,000             │
-                          │  Download Quote PDF         │
-                          │  Schedule Consultation      │
-                          └─────────────────────────────┘
+// Generate a placeholder ID for UI purposes
+const tempId = crypto.randomUUID();
+setApplicationId(tempId);
 ```
 
----
+### Step 2: Add SELECT Policy for Newly Inserted Anonymous Rows (Optional Enhancement)
 
-## Implementation Files
+For better UX if we later need to show application status, we could add a policy:
 
-### New Components
-| File | Purpose |
-|------|---------|
-| `src/components/financing/FinancingCalculator.tsx` | Interactive PITI calculator |
-| `src/components/financing/MonthlyPaymentBadge.tsx` | Compact payment estimate |
-| `src/components/financing/PreQualificationFlow.tsx` | 3-step pre-qual wizard |
-| `src/components/financing/FinancingHero.tsx` | Branded header section |
-| `src/components/financing/AffordabilityChart.tsx` | Visual payment breakdown |
-| `src/components/financing/PTIBreakdown.tsx` | Detailed PITI card |
+```sql
+-- Allow reading back newly inserted anonymous rows (within session)
+CREATE POLICY "anon_read_own_insert_financing_applications"
+ON public.financing_applications
+FOR SELECT
+TO anon
+USING (user_id IS NULL AND created_at > now() - interval '5 minutes');
+```
 
-### New Hooks
-| File | Purpose |
-|------|---------|
-| `src/hooks/useFinancingCalculator.ts` | PITI calculation logic |
-| `src/hooks/usePreQualification.ts` | Pre-qual flow state |
-
-### Database Migration
-- Create `financing_applications` table
-- Add RLS policies for secure lead capture
-- Create indexes for efficient querying
-
-### Modified Components
-| File | Changes |
-|------|---------|
-| `src/components/wizard/Step4Review.tsx` | Add financing calculator section |
-| `src/components/pricing/BuyerPricingDisplay.tsx` | Add monthly payment estimate |
-| `src/components/wizard/LotPricingPreview.tsx` | Add monthly payment for lot selection |
-
----
-
-## Micro-Animations & Polish
-
-### Slider Interactions
-- Smooth thumb drag with haptic-style snapping at preset values
-- Live counter animation as payment updates
-- Gradient fill showing "paid" portion of slider
-
-### Pre-Qualification Flow
-- Step progress indicator with checkmark animations
-- Confetti/celebration animation on approval
-- Smooth content transitions between steps
-
-### Payment Display
-- Odometer-style number transitions (using AnimatedPrice)
-- Pulse animation on significant changes
-- Subtle glow effect on "Pre-Qualified" badge
-
----
-
-## Brand Identity: BaseMod Financial
-
-### Visual Elements
-- Logo: "BaseMod Financial" wordmark or "BMF" monogram
-- Color accent: Deep blue (#1e40af) for trust/stability
-- Trust badges: NMLS placeholder, Equal Housing Lender
-- Tagline: "Financing made simple for modern homes"
-
-### Copy Tone
-- Reassuring and professional
-- Emphasis on speed and convenience
-- Clear disclaimers (not a commitment to lend)
+However, this is a security tradeoff - for now, simply removing the `.select()` is cleaner.
 
 ---
 
 ## Technical Details
 
-### PITI Calculation Logic
+### Why the Error Says "INSERT violation"
 
-```typescript
-// Monthly Principal & Interest (standard amortization)
-const monthlyPI = (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, n))) 
-                  / (Math.pow(1 + monthlyRate, n) - 1);
+The error message `new row violates row-level security policy for table "financing_applications"` is misleading. In PostgreSQL, when using `INSERT ... RETURNING` (which is what `.select()` does under the hood), the RLS check for SELECT is applied to the RETURNING clause. If SELECT fails, the entire operation is rolled back and reported as an INSERT violation.
 
-// Monthly Property Tax (estimated)
-const monthlyTax = (purchasePrice * propertyTaxRate) / 12;
+### Files to Modify
 
-// Monthly Insurance
-const monthlyInsurance = insuranceAnnual / 12;
-
-// Monthly PMI (if down payment < 20%)
-const monthlyPMI = downPaymentPercent < 0.2 
-  ? loanAmount * 0.005 / 12  // ~0.5% annual PMI rate
-  : 0;
-
-// Total PITI
-const totalMonthly = monthlyPI + monthlyTax + monthlyInsurance + monthlyPMI;
-```
-
-### Pre-Qualification Logic (Soft Check)
-
-Initial implementation uses rule-based qualification:
-- Credit 700+ AND income 3x monthly payment = Pre-Qualified
-- Credit 650-699 OR income 2.5-3x = Needs Review
-- Below thresholds = Contact for Options
-
-Future: Integrate with lending partner API for real decisioning.
+1. **`src/components/financing/PreQualificationFlow.tsx`** (lines 162-190)
+   - Remove `.select('id').single()` from the insert
+   - Update success handling to not rely on returned data
+   - Keep all form validation and UI flow intact
 
 ---
 
-## Compliance & Legal
+## Expected Outcome
 
-### Required Disclaimers
-- "This is not a commitment to lend"
-- "Rates and terms subject to change"
-- "Pre-qualification is not pre-approval"
-- "Equal Housing Lender" badge
-
-### Data Handling
-- All financial data stored securely in Supabase with RLS
-- No SSN collection at this stage (soft pre-qual only)
-- Clear privacy policy link in forms
-
----
-
-## Success Metrics
-
-| Metric | Target |
-|--------|--------|
-| Calculator engagement rate | 50%+ of Step 4 visitors |
-| Pre-qualification completion rate | 30%+ of calculator users |
-| Pre-qualified to reservation conversion | 25%+ |
-| Average time in calculator | 45+ seconds |
-
----
-
-## Delivery Sequence
-
-1. **Database migration**: Create `financing_applications` table with RLS
-2. **Core hook**: `useFinancingCalculator` with PITI logic
-3. **FinancingCalculator component**: Full interactive calculator
-4. **MonthlyPaymentBadge**: Compact inline display
-5. **PreQualificationFlow**: 3-step wizard with database submission
-6. **Integration**: Wire into Step4Review and BuyerPricingDisplay
-7. **Polish**: Animations, branding, accessibility
-
+After this fix:
+- Anonymous users can submit pre-qualification forms successfully
+- The success toast and Step 3 confirmation will display correctly  
+- Lead data will be saved to the `financing_applications` table
+- Admin/builder team members can still view all applications via their SELECT policies
