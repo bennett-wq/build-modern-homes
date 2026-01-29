@@ -1,18 +1,19 @@
 
-# Epic Lot Selection & Purchase Experience
-## Tier-1 VC-Backed Proptech-Grade Implementation
+# Phase 3: BaseMod Financial - World-Class Financing Experience
+## Tier-1 Proptech-Grade Loan Brokerage Platform
 
 ---
 
 ## Vision
 
-Transform the lot selection flow into a world-class, "butter-smooth" experience where buyers can:
-1. **Explore lots visually** with instant pricing updates
-2. **See their complete all-in price** the moment they select a lot
-3. **Get pre-approved and download a detailed PDF quote**
-4. **Seamlessly access financing options** integrated into the flow
+Create **BaseMod Financial** - an integrated lending platform that:
+1. Captures leads with rich financial qualification data
+2. Provides instant monthly payment estimates with PITI breakdown
+3. Generates pre-qualification decisions in real-time
+4. Integrates seamlessly into the lot selection and purchase flow
+5. Stores all documents, data, and communications for loan processing
 
-This will position BaseMod as the gold standard in modern homebuilding UX.
+This positions BaseMod as a vertically-integrated homebuilder with in-house financing capabilities.
 
 ---
 
@@ -20,184 +21,220 @@ This will position BaseMod as the gold standard in modern homebuilding UX.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         EPIC LOT SELECTION FLOW                              │
+│                      BASEMOD FINANCIAL PLATFORM                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐ │
-│   │   Step 1    │───▶│   Step 2    │───▶│   Step 3    │───▶│   Step 4    │ │
-│   │  Pick Lot   │    │ Pick Model  │    │   Design    │    │   Review    │ │
-│   │             │    │             │    │             │    │ + CHECKOUT  │ │
-│   └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘ │
-│         │                   │                 │                   │         │
-│         ▼                   ▼                 ▼                   ▼         │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │              LIVE PRICING RAIL (Always Visible)                     │   │
-│   │  • Lot Premium: $61,750                                             │   │
-│   │  • Home Package: $129,485                                           │   │
-│   │  • Sitework: $114,533                                               │   │
-│   │  ─────────────────────────────                                      │   │
-│   │  ALL-IN PRICE: $305,768                                             │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
+│   ┌──────────────────────────────────────────────────────────────────────┐  │
+│   │                    FINANCING CALCULATOR                               │  │
+│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │  │
+│   │  │ Down Payment│  │Interest Rate│  │   Loan      │  │   PITI      │  │  │
+│   │  │   Slider    │  │  Display    │  │   Term      │  │  Breakdown  │  │  │
+│   │  │ 3-20%       │  │  6.5%       │  │  30yr       │  │  P+I+T+I    │  │  │
+│   │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  │  │
+│   │                                                                       │  │
+│   │  ┌────────────────────────────────────────────────────────────────┐  │  │
+│   │  │              MONTHLY PAYMENT DISPLAY                           │  │  │
+│   │  │         $2,147/mo   vs   $2,200 avg rent                       │  │  │
+│   │  │      "Build equity instead of paying rent"                     │  │  │
+│   │  └────────────────────────────────────────────────────────────────┘  │  │
+│   └──────────────────────────────────────────────────────────────────────┘  │
 │                                                                             │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │           NEW: PRE-APPROVAL & DOWNLOADABLE QUOTE                     │   │
-│   │  • Integrated financing pre-qualification                           │   │
-│   │  • Professional PDF quote generation                                │   │
-│   │  • One-click reserve with pre-approval                              │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
+│   ┌──────────────────────────────────────────────────────────────────────┐  │
+│   │                PRE-QUALIFICATION FLOW (3-Step Wizard)                 │  │
+│   │                                                                       │  │
+│   │  Step 1: Basic Info    Step 2: Financial    Step 3: Result           │  │
+│   │  ┌────────────────┐   ┌────────────────┐   ┌────────────────┐        │  │
+│   │  │ Name, Email    │──▶│ Income Range   │──▶│ Pre-Qualified! │        │  │
+│   │  │ Phone          │   │ Credit Score   │   │ Up to $XXX,XXX │        │  │
+│   │  │ Employment     │   │ Down Payment   │   │ Download Quote │        │  │
+│   │  └────────────────┘   └────────────────┘   └────────────────┘        │  │
+│   └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│   ┌──────────────────────────────────────────────────────────────────────┐  │
+│   │                   DATABASE: financing_applications                    │  │
+│   │  • Lead capture with financial data                                  │  │
+│   │  • Pre-qualification status tracking                                 │  │
+│   │  • Document upload references (future)                               │  │
+│   │  • Quote linkage via quote_id                                        │  │
+│   └──────────────────────────────────────────────────────────────────────┘  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Phase 1: Enhanced Lot Selection UI
+## Database Schema
 
-### 1.1 Immersive Lot Card Design
-Create a new `PremiumLotCard` component featuring:
-- **Lot premium price** displayed prominently
-- **Phase and availability badges** (Available Now / Fall 2026 / Spring 2027)
-- **Acreage and utilities info** at a glance
-- **Hover animations** with subtle scale and shadow
-- **Quick-view tooltip** on hover showing key details
+### New Table: `financing_applications`
 
-### 1.2 Real-Time All-In Price Preview
-- When user hovers or selects a lot, immediately show:
-  - Lot Premium (e.g., $61,750)
-  - Estimated Home + Install (calculated from model selection or placeholder)
-  - **All-In Total** with clear breakdown
-- Animate price updates with smooth number transitions
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `quote_id` | uuid (FK) | Link to quotes table |
+| `contact_name` | text | Applicant name |
+| `contact_email` | text | Applicant email |
+| `contact_phone` | text | Applicant phone |
+| `intended_use` | enum | primary, second_home, investment |
+| `employment_status` | enum | employed, self_employed, retired, other |
+| `annual_income_range` | enum | under_50k, 50k_75k, 75k_100k, 100k_150k, 150k_plus |
+| `credit_score_range` | enum | excellent_750, good_700, fair_650, below_650, unsure |
+| `down_payment_percent` | numeric | Intended down payment % |
+| `down_payment_amount` | numeric | Calculated down payment $ |
+| `loan_amount_requested` | numeric | All-in price minus down payment |
+| `purchase_timeframe` | enum | 0_3_months, 3_6_months, 6_12_months, 12_plus |
+| `pre_qualification_status` | enum | pending, pre_qualified, needs_review, declined |
+| `pre_qualified_amount` | numeric | Maximum loan amount |
+| `monthly_payment_estimate` | numeric | Calculated monthly PITI |
+| `notes` | text | Additional applicant notes |
+| `created_at` | timestamptz | Submission timestamp |
+| `updated_at` | timestamptz | Last update |
 
-### 1.3 Visual Lot Status Enhancement
-- **Available Now**: Pulsing green glow, "Reserve Today" badge
-- **Coming Soon**: Countdown or phase indicator (Fall 2026)
-- **Reserved**: Amber with "Join Waitlist" option
-- **Sold**: Muted with "Similar lots available" prompt
-
----
-
-## Phase 2: Integrated Pricing Rail with Lot Context
-
-### 2.1 Lot-Aware Pricing Engine Updates
-Extend `useUnifiedPricingEngine` to include:
-- **lotPremium** as a dedicated line item
-- **allInTotal** calculation: `retailHomeTotal + siteworkRetailTotal + feesAllowance + lotPremium`
-- New pricing mode: `community_all_in` fully implemented with lot integration
-
-### 2.2 Enhanced BuyerPricingDisplay
-Add lot-specific sections to the pricing breakdown:
-- "Your Lot: Lot 15 at Grand Haven" - $61,750
-- Clear visual hierarchy showing Home + Land = All-In
-
-### 2.3 Sticky Price Summary
-On Step 1 (Lot Selection), show a floating price summary:
-- Selected lot premium
-- "Starting from $XXX,XXX all-in" (with model TBD placeholder)
-- Incentive copy: "Lock in today's pricing"
+### RLS Policies
+- Anonymous users can INSERT (for lead capture)
+- Authenticated users can read/update their own applications
+- Admin/builder roles can read/update all applications
 
 ---
 
-## Phase 3: Pre-Approval & Financing Integration
+## Component Architecture
 
-### 3.1 New Pre-Approval Flow Component
-Create `PreApprovalFlow.tsx`:
-- **Soft credit check integration** (partnership with lending API)
-- **Estimated monthly payment calculator**
-- **Pre-qualification in under 2 minutes**
-- Display: "Pre-approved up to $XXX,XXX"
+### 1. FinancingCalculator (`src/components/financing/FinancingCalculator.tsx`)
 
-### 3.2 Pre-Approval Status Badge
-Once pre-approved, show throughout wizard:
-- Green checkmark with "Pre-Approved" status
-- Monthly payment estimate based on actual all-in price
-- "Locked rate" indicator
+Interactive PITI calculator with:
+- **Down Payment Slider**: 3%, 5%, 10%, 15%, 20% presets with custom input
+- **Loan Term Toggle**: 30-year (default) vs 15-year comparison
+- **Interest Rate Display**: Current market rate (configurable, default 6.5%)
+- **PITI Breakdown Card**:
+  - Principal & Interest
+  - Property Taxes (estimated 1.5% annually)
+  - Homeowner's Insurance (estimated $1,800/year)
+  - PMI (if down payment < 20%)
+- **Rent Comparison**: "vs $2,200 avg rent in [area]"
+- **Affordability Check**: Quick income-to-payment ratio indicator
 
-### 3.3 Financing Calculator Component
-Create `FinancingCalculator.tsx` for Step 4:
-- Down payment slider (3%, 5%, 10%, 20%)
-- Interest rate display
-- Monthly payment breakdown (Principal, Interest, Taxes, Insurance)
-- Side-by-side comparison with typical rent
+### 2. MonthlyPaymentBadge (`src/components/financing/MonthlyPaymentBadge.tsx`)
+
+Compact inline badge showing:
+- Est. $X,XXX/mo
+- Tooltip with PITI breakdown
+- Link to full calculator
+
+### 3. PreQualificationFlow (`src/components/financing/PreQualificationFlow.tsx`)
+
+3-step wizard inside InfoDrawer:
+- **Step 1**: Contact info + intended use + employment
+- **Step 2**: Income range + credit score + down payment intent
+- **Step 3**: Result screen with pre-qualification status + next steps
+
+### 4. FinancingHero (`src/components/financing/FinancingHero.tsx`)
+
+Premium branded header for financing sections:
+- BaseMod Financial logo/wordmark
+- Trust badges (NMLS, Equal Housing)
+- "Pre-qualify in 2 minutes" headline
+
+### 5. AffordabilityChart (`src/components/financing/AffordabilityChart.tsx`)
+
+Visual chart showing:
+- Monthly payment breakdown (donut/pie)
+- Income-to-debt ratio indicator
+- Comparison to local rent prices
 
 ---
 
-## Phase 4: Professional Downloadable Quote System
+## Hook Architecture
 
-### 4.1 PDF Quote Generator Edge Function
-Create `supabase/functions/generate-quote-pdf/index.ts`:
-- Use a PDF generation library to create professional documents
-- Include BaseMod branding, lot details, model specs, pricing breakdown
-- Add QR code linking back to the live quote page
-- Include pre-approval status if available
+### `useFinancingCalculator.ts`
 
-### 4.2 Quote Document Contents
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                     BASEMOD HOMES                           │
-│              Preliminary Quote Document                     │
-├─────────────────────────────────────────────────────────────┤
-│ Quote #: Q-2026-XXXX          Date: January 29, 2026        │
-│ Valid for: 30 days                                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│ PROPERTY DETAILS                                            │
-│ Development: Grand Haven                                    │
-│ Lot: Lot 15 (2.47 acres)                                   │
-│ Status: Available Now                                       │
-│                                                             │
-│ HOME CONFIGURATION                                          │
-│ Model: The Hawthorne                                        │
-│ Build Type: Factory-Built (XMOD)                            │
-│ Exterior: Modern Charcoal                                   │
-│ Sq Ft: 1,568 | Beds: 3 | Baths: 2                          │
-│                                                             │
-│ PRICING SUMMARY                                             │
-│ ─────────────────────────────────────────────────          │
-│ Lot Premium                          $61,750                │
-│ BaseMod Home Package                $129,485                │
-│ Typical Sitework Allowance          $114,533                │
-│ Utility & Permit Allowance           $9,631                │
-│ ─────────────────────────────────────────────────          │
-│ ALL-IN ESTIMATE                     $315,399                │
-│                                                             │
-│ FINANCING ESTIMATE                                          │
-│ Pre-Approved: Yes                                           │
-│ Down Payment (5%): $15,770                                  │
-│ Est. Monthly: $2,147/mo (30yr @ 6.5%)                      │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│ [QR CODE]  Scan to view your live quote online              │
-│            build-modern-homes.lovable.app/quote/XXXX        │
-├─────────────────────────────────────────────────────────────┤
-│ NEXT STEPS                                                  │
-│ 1. Schedule a call with our team                           │
-│ 2. Complete financing application                          │
-│ 3. Reserve your lot with $1,000 deposit                    │
-└─────────────────────────────────────────────────────────────┘
+```typescript
+interface FinancingInput {
+  purchasePrice: number;
+  downPaymentPercent: number;
+  interestRate: number;
+  loanTermYears: number;
+  propertyTaxRate?: number;
+  insuranceAnnual?: number;
+  zipCode?: string;
+}
+
+interface FinancingBreakdown {
+  downPaymentAmount: number;
+  loanAmount: number;
+  monthlyPrincipalInterest: number;
+  monthlyPropertyTax: number;
+  monthlyInsurance: number;
+  monthlyPMI: number;
+  totalMonthlyPayment: number;
+  totalLoanCost: number;
+  recommendedIncome: number;
+}
 ```
 
-### 4.3 Download Quote Button
-Add to Step 4 Review:
-- Primary CTA: "Download Your Quote (PDF)"
-- Email quote option: "Send to my inbox"
-- Share quote option: "Share with co-buyer"
+### `usePreQualification.ts`
+
+Manages pre-qualification state:
+- Form step navigation
+- Validation logic
+- Database submission
+- Status polling (for async decisioning)
 
 ---
 
-## Phase 5: One-Click Reserve Flow
+## Integration Points
 
-### 5.1 Reserve Lot Modal
-For pre-approved buyers, enable instant reservation:
-- $1,000 refundable deposit via Stripe
-- Reserve lot for 7-14 days
-- Automated email with next steps
-- Lot status updates to "Reserved"
+### Step 4 Review Enhancement
+- Add `FinancingCalculator` component below pricing breakdown
+- Show `MonthlyPaymentBadge` in the pricing rail
+- Add "Get Pre-Qualified" CTA leading to `PreQualificationFlow`
 
-### 5.2 Reserve CTA
-Replace "Request Quote" with conditional CTAs:
-- Pre-approved: "Reserve This Lot - $1,000 deposit"
-- Not pre-approved: "Get Pre-Approved to Reserve"
-- Already reserved by user: "Your Lot is Reserved"
+### BuyerPricingDisplay Enhancement
+- Add monthly payment estimate below total
+- "Est. $X,XXX/mo with 5% down" helper text
+- Link to full financing calculator
+
+### LotPricingPreview Enhancement
+- Show monthly payment estimate for each lot
+- Help buyers understand affordability at lot selection stage
+
+---
+
+## UX Flow
+
+```text
+User selects Lot → Pricing updates → Sees "Est. $2,147/mo"
+                                          │
+                                          ▼
+                          ┌─────────────────────────────┐
+                          │  "Explore Financing"        │
+                          │  Opens FinancingCalculator  │
+                          └─────────────────────────────┘
+                                          │
+                                          ▼
+                          ┌─────────────────────────────┐
+                          │  Adjust down payment slider │
+                          │  See PITI update in real-time│
+                          └─────────────────────────────┘
+                                          │
+                                          ▼
+                          ┌─────────────────────────────┐
+                          │  "Get Pre-Qualified"         │
+                          │  Opens PreQualificationFlow │
+                          └─────────────────────────────┘
+                                          │
+                                          ▼
+                          ┌─────────────────────────────┐
+                          │  3-Step Form                │
+                          │  Basic → Financial → Result │
+                          └─────────────────────────────┘
+                                          │
+                                          ▼
+                          ┌─────────────────────────────┐
+                          │  "You're Pre-Qualified!"    │
+                          │  Up to $350,000             │
+                          │  Download Quote PDF         │
+                          │  Schedule Consultation      │
+                          └─────────────────────────────┘
+```
 
 ---
 
@@ -206,97 +243,135 @@ Replace "Request Quote" with conditional CTAs:
 ### New Components
 | File | Purpose |
 |------|---------|
-| `src/components/wizard/PremiumLotCard.tsx` | Enhanced lot card with pricing preview |
-| `src/components/wizard/LotPricingPreview.tsx` | Floating all-in price preview |
-| `src/components/financing/PreApprovalFlow.tsx` | Pre-qualification wizard |
-| `src/components/financing/FinancingCalculator.tsx` | Monthly payment calculator |
-| `src/components/financing/MonthlyPaymentBadge.tsx` | Inline payment estimate |
-| `src/components/quote/QuotePDFPreview.tsx` | PDF preview component |
-| `src/components/wizard/ReserveLotModal.tsx` | Stripe-powered reservation |
+| `src/components/financing/FinancingCalculator.tsx` | Interactive PITI calculator |
+| `src/components/financing/MonthlyPaymentBadge.tsx` | Compact payment estimate |
+| `src/components/financing/PreQualificationFlow.tsx` | 3-step pre-qual wizard |
+| `src/components/financing/FinancingHero.tsx` | Branded header section |
+| `src/components/financing/AffordabilityChart.tsx` | Visual payment breakdown |
+| `src/components/financing/PTIBreakdown.tsx` | Detailed PITI card |
+
+### New Hooks
+| File | Purpose |
+|------|---------|
+| `src/hooks/useFinancingCalculator.ts` | PITI calculation logic |
+| `src/hooks/usePreQualification.ts` | Pre-qual flow state |
+
+### Database Migration
+- Create `financing_applications` table
+- Add RLS policies for secure lead capture
+- Create indexes for efficient querying
 
 ### Modified Components
 | File | Changes |
 |------|---------|
-| `src/components/wizard/Step1Lot.tsx` | Integrate PremiumLotCard, add pricing preview |
-| `src/components/wizard/Step4Review.tsx` | Add PDF download, financing calc, reserve CTA |
-| `src/components/siteplan/LotListPanel.tsx` | Add lot premium prices, availability badges |
-| `src/components/siteplan/LotDetailsPanel.tsx` | Add all-in price preview, reserve option |
-| `src/components/pricing/BuyerPricingDisplay.tsx` | Add lot premium line, financing estimate |
-
-### Backend / Edge Functions
-| File | Purpose |
-|------|---------|
-| `supabase/functions/generate-quote-pdf/index.ts` | PDF generation using template |
-| `supabase/functions/send-quote-email/index.ts` | Email quote to buyer |
-
-### Hooks
-| File | Purpose |
-|------|---------|
-| `src/hooks/useQuotePDF.ts` | Trigger PDF generation and download |
-| `src/hooks/usePreApproval.ts` | Manage pre-approval state |
-
-### Database Migrations
-| Migration | Purpose |
-|-----------|---------|
-| Add `pre_approval_status` column to `quotes` table | Track pre-approval |
-| Add `reservation_deposit_id` column | Link Stripe payment |
-| Add `reserved_until` timestamp | Manage reservation window |
+| `src/components/wizard/Step4Review.tsx` | Add financing calculator section |
+| `src/components/pricing/BuyerPricingDisplay.tsx` | Add monthly payment estimate |
+| `src/components/wizard/LotPricingPreview.tsx` | Add monthly payment for lot selection |
 
 ---
 
-## UX Polish Details
+## Micro-Animations & Polish
 
-### Micro-interactions
-- **Lot selection**: Gentle pulse animation on selected lot polygon
-- **Price updates**: Counter animation (like a odometer) for price changes
-- **CTA buttons**: Subtle gradient shift on hover with icon animation
-- **Step transitions**: Crossfade with slight vertical movement
+### Slider Interactions
+- Smooth thumb drag with haptic-style snapping at preset values
+- Live counter animation as payment updates
+- Gradient fill showing "paid" portion of slider
 
-### Loading States
-- Skeleton placeholders for lot cards during data fetch
-- Optimistic UI updates for selections
-- Progress indicator for PDF generation
+### Pre-Qualification Flow
+- Step progress indicator with checkmark animations
+- Confetti/celebration animation on approval
+- Smooth content transitions between steps
 
-### Accessibility
-- Full keyboard navigation for lot selection
-- Screen reader announcements for price updates
-- High contrast mode support for all badges
+### Payment Display
+- Odometer-style number transitions (using AnimatedPrice)
+- Pulse animation on significant changes
+- Subtle glow effect on "Pre-Qualified" badge
 
 ---
 
-## Success Metrics
-| Metric | Target |
-|--------|--------|
-| Time to all-in price display | Under 100ms |
-| Pre-approval completion rate | 40%+ of serious buyers |
-| PDF quote download rate | 60%+ of Step 4 visitors |
-| Lot reservation conversion | 15%+ of pre-approved buyers |
+## Brand Identity: BaseMod Financial
+
+### Visual Elements
+- Logo: "BaseMod Financial" wordmark or "BMF" monogram
+- Color accent: Deep blue (#1e40af) for trust/stability
+- Trust badges: NMLS placeholder, Equal Housing Lender
+- Tagline: "Financing made simple for modern homes"
+
+### Copy Tone
+- Reassuring and professional
+- Emphasis on speed and convenience
+- Clear disclaimers (not a commitment to lend)
 
 ---
 
 ## Technical Details
 
-### Pricing Engine Enhancement
-The `useUnifiedPricingEngine` hook will be extended to accept a `lotPremium` parameter and include it in the all-in calculation. The `community_all_in` pricing mode will be fully activated to reflect Lot + Home + Sitework + Fees.
+### PITI Calculation Logic
 
-### PDF Generation Approach
-Use a headless PDF generation library compatible with Deno (like `pdf-lib` or render HTML to PDF via a service). The edge function will:
-1. Accept quote ID and selections
-2. Fetch model, lot, and pricing data
-3. Render a branded template
-4. Return the PDF as a downloadable binary
+```typescript
+// Monthly Principal & Interest (standard amortization)
+const monthlyPI = (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, n))) 
+                  / (Math.pow(1 + monthlyRate, n) - 1);
 
-### Pre-Approval Integration
-Initially implement as a "soft" pre-qualification form that captures buyer intent and financial readiness. Future integration with lending partners (like Zillow Lending or Cross Country Mortgage) can be added via webhook.
+// Monthly Property Tax (estimated)
+const monthlyTax = (purchasePrice * propertyTaxRate) / 12;
+
+// Monthly Insurance
+const monthlyInsurance = insuranceAnnual / 12;
+
+// Monthly PMI (if down payment < 20%)
+const monthlyPMI = downPaymentPercent < 0.2 
+  ? loanAmount * 0.005 / 12  // ~0.5% annual PMI rate
+  : 0;
+
+// Total PITI
+const totalMonthly = monthlyPI + monthlyTax + monthlyInsurance + monthlyPMI;
+```
+
+### Pre-Qualification Logic (Soft Check)
+
+Initial implementation uses rule-based qualification:
+- Credit 700+ AND income 3x monthly payment = Pre-Qualified
+- Credit 650-699 OR income 2.5-3x = Needs Review
+- Below thresholds = Contact for Options
+
+Future: Integrate with lending partner API for real decisioning.
+
+---
+
+## Compliance & Legal
+
+### Required Disclaimers
+- "This is not a commitment to lend"
+- "Rates and terms subject to change"
+- "Pre-qualification is not pre-approval"
+- "Equal Housing Lender" badge
+
+### Data Handling
+- All financial data stored securely in Supabase with RLS
+- No SSN collection at this stage (soft pre-qual only)
+- Clear privacy policy link in forms
+
+---
+
+## Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Calculator engagement rate | 50%+ of Step 4 visitors |
+| Pre-qualification completion rate | 30%+ of calculator users |
+| Pre-qualified to reservation conversion | 25%+ |
+| Average time in calculator | 45+ seconds |
 
 ---
 
 ## Delivery Sequence
-1. **Phase 1**: Enhanced Lot UI components (2-3 sessions)
-2. **Phase 2**: Pricing rail lot integration (1 session)
-3. **Phase 3**: Financing calculator components (2 sessions)
-4. **Phase 4**: PDF quote generation (2-3 sessions)
-5. **Phase 5**: Reserve flow with Stripe (2-3 sessions)
 
-Total estimated: 9-12 focused implementation sessions
+1. **Database migration**: Create `financing_applications` table with RLS
+2. **Core hook**: `useFinancingCalculator` with PITI logic
+3. **FinancingCalculator component**: Full interactive calculator
+4. **MonthlyPaymentBadge**: Compact inline display
+5. **PreQualificationFlow**: 3-step wizard with database submission
+6. **Integration**: Wire into Step4Review and BuyerPricingDisplay
+7. **Polish**: Animations, branding, accessibility
 
