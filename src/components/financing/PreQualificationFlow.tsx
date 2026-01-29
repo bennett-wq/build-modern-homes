@@ -338,86 +338,109 @@ export function PreQualificationFlow({
 
        // If Plaid was selected, save the public_token server-side and run prequal engine
        if (verificationMethod === 'plaid_verified' && plaidPublicToken && inserted?.id) {
-         const { error: exchangeError } = await supabase.functions.invoke('plaid-exchange-token', {
-           body: {
-             application_id: inserted.id,
-             public_token: plaidPublicToken,
-             institution_name: plaidInstitutionName,
-           },
-         });
+         // Move to step 3 immediately to show verification progress
+         const appId = inserted.id;
+         setApplicationId(appId);
+         setPreQualStatus('pending');
+         setCurrentStep(3);
+         setIsVerifyingFinancials(true);
+         setVerificationTimedOut(false);
+         
+         try {
+           // Exchange the Plaid token first
+           const { error: exchangeError } = await supabase.functions.invoke('plaid-exchange-token', {
+             body: {
+               application_id: appId,
+               public_token: plaidPublicToken,
+               institution_name: plaidInstitutionName,
+             },
+           });
 
-         if (exchangeError) {
-            console.error('Plaid exchange error:', exchangeError);
-            toast({
-              title: 'Bank connection issue',
-              description: "We saved your application, but couldn't finalize the bank connection. We'll follow up to complete verification.",
-            });
-          } else {
-            // Run prequal engine to get verified results with timeout handling
-            setIsVerifyingFinancials(true);
-            setVerificationTimedOut(false);
-            
-            // Create AbortController for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => {
-              controller.abort();
-              console.log('[PreQualificationFlow] Prequal engine timed out after 25s');
-            }, 25000);
-            
-            try {
-              const { data: prequalData, error: prequalError } = await supabase.functions.invoke('prequal-engine', {
-                body: { application_id: inserted.id },
-              });
+           if (exchangeError) {
+             console.error('Plaid exchange error:', exchangeError);
+             // Continue anyway - we'll use self-reported data
+           }
 
-              clearTimeout(timeoutId);
+           // Run prequal engine with timeout using Promise.race
+           const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => {
+             setTimeout(() => resolve({ timedOut: true }), 30000); // 30s timeout
+           });
 
-              if (!prequalError && prequalData) {
-                // Map program results to UI-friendly format
-                const programDescriptions: Record<string, string> = {
-                  mh_advantage: 'Fannie Mae program with conventional terms for manufactured homes',
-                  choicehome: 'Freddie Mac program offering competitive rates for factory-built homes',
-                  construction_to_perm: 'Single-close loan covering construction and permanent financing',
-                  fha_title_1: 'FHA-insured loan for manufactured homes with flexible requirements',
-                  conventional: 'Standard conventional mortgage with competitive rates',
-                };
+           const prequalPromise = supabase.functions.invoke('prequal-engine', {
+             body: { application_id: appId },
+           }).then(res => ({ ...res, timedOut: false }));
 
-                const eligiblePrograms = (prequalData.eligible_programs || prequalData.result?.eligible_programs || []).map((p: any) => ({
-                  name: (p.program || p.key || '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-                  matchQuality: p.match_quality || p.match_strength || 'good',
-                  description: programDescriptions[p.program || p.key] || p.description || 'Qualified lending program',
-                }));
+           const raceResult = await Promise.race([prequalPromise, timeoutPromise]);
 
-                const result = prequalData.result || prequalData;
-                
-                setPrequalResults({
-                  eligiblePrograms,
-                  dtiRatio: result.dti?.back_end ?? result.dti_ratio ?? null,
-                  frontEndDti: result.dti?.front_end ?? result.front_end_dti ?? null,
-                  verifiedIncome: result.verification?.annual_income_used ?? result.verified_annual_income ?? null,
-                  monthlyPayment: result.monthly_payment_estimate ?? result.monthly_payment ?? null,
-                });
+           if ('timedOut' in raceResult && raceResult.timedOut) {
+             console.log('[PreQualificationFlow] Prequal engine timed out after 30s');
+             setVerificationTimedOut(true);
+             setIsVerifyingFinancials(false);
+             setPreQualStatus('needs_review');
+             toast({
+               title: 'Verification taking longer than expected',
+               description: "We're still processing your application. We'll email your results shortly.",
+             });
+             onComplete?.(appId);
+             return;
+           }
 
-                // Update status based on engine results
-                const resultStatus = result.status || prequalData.status;
-                if (resultStatus === 'pre_qualified') {
-                  setPreQualStatus('pre_qualified');
-                } else if (resultStatus === 'needs_review') {
-                  setPreQualStatus('needs_review');
-                }
-              }
-            } catch (prequalErr: any) {
-              clearTimeout(timeoutId);
-              if (prequalErr?.name === 'AbortError') {
-                console.log('[PreQualificationFlow] Verification aborted due to timeout');
-                setVerificationTimedOut(true);
-              } else {
-                console.error('Prequal engine error:', prequalErr);
-              }
-            } finally {
-              setIsVerifyingFinancials(false);
-            }
-          }
-        }
+           const { data: prequalData, error: prequalError } = raceResult as any;
+
+           if (prequalError) {
+             console.error('Prequal engine error:', prequalError);
+             setPreQualStatus('needs_review');
+           } else if (prequalData) {
+             // Map program results to UI-friendly format
+             const programDescriptions: Record<string, string> = {
+               mh_advantage: 'MH Advantage (Fannie Mae) — Best rates for factory-built homes',
+               choicehome: 'CHOICEHome (Freddie Mac) — Competitive conventional rates',
+               construction_to_perm: 'Construction-to-Perm — Single-close construction loan',
+               fha_title_1: 'FHA Title I — Government-backed flexible qualification',
+               conventional: 'Conventional — Standard financing with 20% down',
+             };
+
+             const eligiblePrograms = (prequalData.result?.eligible_programs || prequalData.eligible_programs || []).map((p: any) => ({
+               name: p.name || (p.key || p.program || '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+               matchQuality: p.match_quality || p.match_strength || 'good',
+               description: p.description || programDescriptions[p.key || p.program] || 'Qualified lending program',
+             }));
+
+             const result = prequalData.result || prequalData;
+             
+             setPrequalResults({
+               eligiblePrograms,
+               dtiRatio: result.dti?.back_end ?? result.dti_ratio ?? null,
+               frontEndDti: result.dti?.front_end ?? result.front_end_dti ?? null,
+               verifiedIncome: result.verification?.annual_income_used ?? result.verified_annual_income ?? null,
+               monthlyPayment: result.monthly_payment_estimate ?? result.monthly_payment ?? null,
+             });
+
+             // Update status based on engine results
+             const resultStatus = result.status || prequalData.status;
+             setPreQualStatus(resultStatus === 'pre_qualified' ? 'pre_qualified' : 'needs_review');
+             
+             // Show success toast
+             toast({
+               title: resultStatus === 'pre_qualified' ? '🎉 You\'re Pre-Qualified!' : '✓ Analysis Complete',
+               description: resultStatus === 'pre_qualified' 
+                 ? 'Great news! You qualify for multiple financing programs.'
+                 : 'We\'ve analyzed your financials and will follow up with options.',
+             });
+           }
+           
+           setIsVerifyingFinancials(false);
+           onComplete?.(appId);
+           return;
+           
+         } catch (err) {
+           console.error('Verification flow error:', err);
+           setIsVerifyingFinancials(false);
+           setPreQualStatus('needs_review');
+           onComplete?.(inserted.id);
+           return;
+         }
+       }
 
       const newApplicationId = inserted?.id ?? crypto.randomUUID();
       setApplicationId(newApplicationId);
@@ -916,7 +939,10 @@ export function PreQualificationFlow({
     const isPreQualified = preQualStatus === 'pre_qualified';
     const isPending = preQualStatus === 'pending' || isVerifyingFinancials;
     const loanAmount = purchasePrice * (1 - formData.downPaymentPercent / 100);
-    const hasVerifiedResults = prequalResults && prequalResults.eligiblePrograms.length > 0;
+    const hasVerifiedResults = prequalResults !== null;
+    const hasEligiblePrograms = prequalResults && prequalResults.eligiblePrograms.length > 0;
+    const hasDTIData = prequalResults && prequalResults.dtiRatio !== null;
+    const isDTITooHigh = prequalResults && (prequalResults.dtiRatio ?? 0) > 50;
 
     // Show staged verification progress while loading
     if (isPending) {
@@ -928,7 +954,7 @@ export function PreQualificationFlow({
         >
           <VerificationProgress
             isVerifying={true}
-            timeoutSeconds={30}
+            timeoutSeconds={35}
             onTimeout={() => setVerificationTimedOut(true)}
             onFallbackToManual={() => {
               setIsVerifyingFinancials(false);
@@ -957,12 +983,16 @@ export function PreQualificationFlow({
           className={cn(
             'inline-flex items-center justify-center p-4 rounded-full mb-4',
             isPreQualified
-              ? 'bg-green-100 dark:bg-green-900'
+              ? 'bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900'
+              : hasVerifiedResults
+              ? 'bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900'
               : 'bg-amber-100 dark:bg-amber-900'
           )}
         >
           {isPreQualified ? (
             <Sparkles className="h-8 w-8 text-green-600 dark:text-green-400" />
+          ) : hasVerifiedResults ? (
+            <TrendingUp className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           ) : (
             <CheckCircle2 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           )}
@@ -971,68 +1001,115 @@ export function PreQualificationFlow({
         <div>
           <h3 className="text-xl font-bold text-foreground mb-2">
             {isPreQualified
-              ? "You're Pre-Qualified!"
+              ? "🎉 You're Pre-Qualified!"
+              : hasVerifiedResults
+              ? '✓ Analysis Complete'
               : 'Application Received'}
           </h3>
           <p className="text-muted-foreground">
             {isPreQualified
-              ? 'Great news! Based on your verified financials, you qualify for multiple programs.'
+              ? 'Great news! You qualify for multiple financing programs.'
+              : hasVerifiedResults && isDTITooHigh
+              ? "We've analyzed your financials. Let's explore options that fit your budget."
+              : hasVerifiedResults && !hasEligiblePrograms
+              ? "We've verified your income. A specialist will help find the right program."
+              : hasVerifiedResults
+              ? "Your financials are verified. Here's your personalized analysis."
               : "We've received your application and will review it shortly."}
           </p>
         </div>
 
-        {/* Verified Financial Summary - shown after prequal engine */}
-        {hasVerifiedResults && prequalResults.verifiedIncome && (
+        {/* Verified Financial Summary - Always show if we have verified data */}
+        {hasVerifiedResults && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="grid grid-cols-2 gap-3"
+            className="space-y-3"
           >
-            <div className="p-3 rounded-xl bg-muted/50 border border-border">
-              <p className="text-xs text-muted-foreground">Verified Income</p>
-              <p className="text-lg font-semibold text-foreground">
-                {formatCurrency(prequalResults.verifiedIncome)}/yr
-              </p>
+            {/* Verification Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-sm">
+              <Shield className="h-3.5 w-3.5 text-blue-600" />
+              <span className="text-blue-700 dark:text-blue-300 font-medium">Bank Verified</span>
             </div>
-            <div className="p-3 rounded-xl bg-muted/50 border border-border">
-              <p className="text-xs text-muted-foreground">DTI Ratio</p>
-              <p className={cn(
-                'text-lg font-semibold',
-                (prequalResults.dtiRatio ?? 0) <= 43 ? 'text-green-600' : 'text-amber-600'
-              )}>
-                {prequalResults.dtiRatio?.toFixed(1)}%
-              </p>
+            
+            {/* Financial Metrics Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {prequalResults.verifiedIncome && (
+                <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
+                  <p className="text-xs text-green-700 dark:text-green-400 font-medium mb-1">Verified Income</p>
+                  <p className="text-xl font-bold text-green-800 dark:text-green-300">
+                    {formatCurrency(prequalResults.verifiedIncome)}
+                  </p>
+                  <p className="text-[10px] text-green-600 dark:text-green-400">/year</p>
+                </div>
+              )}
+              {hasDTIData && (
+                <div className={cn(
+                  'p-4 rounded-xl border',
+                  (prequalResults.dtiRatio ?? 0) <= 43 
+                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800'
+                    : (prequalResults.dtiRatio ?? 0) <= 50
+                    ? 'bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 border-amber-200 dark:border-amber-800'
+                    : 'bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-red-200 dark:border-red-800'
+                )}>
+                  <p className={cn(
+                    'text-xs font-medium mb-1',
+                    (prequalResults.dtiRatio ?? 0) <= 43 ? 'text-green-700 dark:text-green-400' :
+                    (prequalResults.dtiRatio ?? 0) <= 50 ? 'text-amber-700 dark:text-amber-400' :
+                    'text-red-700 dark:text-red-400'
+                  )}>
+                    Debt-to-Income
+                  </p>
+                  <p className={cn(
+                    'text-xl font-bold',
+                    (prequalResults.dtiRatio ?? 0) <= 43 ? 'text-green-800 dark:text-green-300' :
+                    (prequalResults.dtiRatio ?? 0) <= 50 ? 'text-amber-800 dark:text-amber-300' :
+                    'text-red-800 dark:text-red-300'
+                  )}>
+                    {prequalResults.dtiRatio?.toFixed(1)}%
+                  </p>
+                  <p className={cn(
+                    'text-[10px]',
+                    (prequalResults.dtiRatio ?? 0) <= 43 ? 'text-green-600 dark:text-green-400' :
+                    (prequalResults.dtiRatio ?? 0) <= 50 ? 'text-amber-600 dark:text-amber-400' :
+                    'text-red-600 dark:text-red-400'
+                  )}>
+                    {(prequalResults.dtiRatio ?? 0) <= 43 ? 'Excellent' : (prequalResults.dtiRatio ?? 0) <= 50 ? 'Review needed' : 'High ratio'}
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
 
-        {/* Amount Card */}
-        <div className={cn(
-          'p-6 rounded-2xl',
-          isPreQualified
-            ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800'
-            : 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800'
-        )}>
-          <p className="text-sm text-muted-foreground mb-1">
-            {isPreQualified ? 'Pre-Qualified Amount' : 'Requested Amount'}
-          </p>
-          <p className="text-3xl font-bold text-foreground">
-            {formatCurrency(isPreQualified ? loanAmount * 1.1 : loanAmount)}
-          </p>
-          {prequalResults?.monthlyPayment ? (
-            <p className="text-sm text-muted-foreground mt-2">
-              Est. <span className="font-medium text-foreground">{formatCurrency(prequalResults.monthlyPayment)}/mo</span> (PITI + PMI)
+        {/* Monthly Payment Estimate */}
+        {prequalResults?.monthlyPayment && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className={cn(
+              'p-5 rounded-2xl',
+              isPreQualified
+                ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800'
+                : 'bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-950/30 dark:to-gray-950/30 border border-slate-200 dark:border-slate-800'
+          )}>
+            <p className="text-sm text-muted-foreground mb-1">
+              {isPreQualified ? 'Your Monthly Payment' : 'Estimated Payment'}
             </p>
-          ) : (
-            <p className="text-xs text-muted-foreground mt-2">
-              {formData.downPaymentPercent}% down • 30-year fixed
+            <p className="text-3xl font-bold text-foreground">
+              {formatCurrency(prequalResults.monthlyPayment)}
+              <span className="text-base font-normal text-muted-foreground">/mo</span>
             </p>
-          )}
-        </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Principal, interest, taxes, insurance{formData.downPaymentPercent < 20 ? ' + PMI' : ''}
+            </p>
+          </motion.div>
+        )}
 
-        {/* Matched Programs */}
-        {hasVerifiedResults && (
+        {/* Matched Programs - Show if we have eligible programs */}
+        {hasEligiblePrograms && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1040,52 +1117,52 @@ export function PreQualificationFlow({
             className="text-left space-y-3"
           >
             <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-blue-600" />
-              <p className="font-medium text-sm">Matched Programs</p>
+              <Award className="h-4 w-4 text-blue-600" />
+              <p className="font-semibold text-sm">Matched Loan Programs</p>
             </div>
             <div className="space-y-2">
-              {prequalResults.eligiblePrograms.map((program, idx) => (
+              {prequalResults!.eligiblePrograms.map((program, idx) => (
                 <motion.div
                   key={program.name}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + idx * 0.1 }}
                   className={cn(
-                    'flex items-start gap-3 p-3 rounded-lg border',
+                    'flex items-start gap-3 p-3 rounded-xl border',
                     program.matchQuality === 'excellent'
-                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800'
                       : program.matchQuality === 'good'
-                      ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
+                      ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800'
                       : 'bg-muted/50 border-border'
                   )}
                 >
                   <div className={cn(
-                    'p-1.5 rounded',
+                    'p-2 rounded-lg',
                     program.matchQuality === 'excellent'
                       ? 'bg-green-100 dark:bg-green-900'
                       : program.matchQuality === 'good'
                       ? 'bg-blue-100 dark:bg-blue-900'
                       : 'bg-muted'
                   )}>
-                    <CheckCircle2 className={cn(
-                      'h-3 w-3',
-                      program.matchQuality === 'excellent'
-                        ? 'text-green-600'
-                        : program.matchQuality === 'good'
-                        ? 'text-blue-600'
-                        : 'text-muted-foreground'
-                    )} />
+                    {program.matchQuality === 'excellent' ? (
+                      <Award className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <CheckCircle2 className={cn(
+                        'h-4 w-4',
+                        program.matchQuality === 'good' ? 'text-blue-600' : 'text-muted-foreground'
+                      )} />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{program.name}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-sm">{program.name}</p>
                       {program.matchQuality === 'excellent' && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-medium">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-bold uppercase tracking-wide">
                           Best Match
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">{program.description}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{program.description}</p>
                   </div>
                 </motion.div>
               ))}
@@ -1093,24 +1170,63 @@ export function PreQualificationFlow({
           </motion.div>
         )}
 
+        {/* Alternative options when DTI is too high */}
+        {hasVerifiedResults && !hasEligiblePrograms && isDTITooHigh && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-left space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-blue-600" />
+              <p className="font-semibold text-sm">Personalized Options</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                Based on your verified income, here are some paths forward:
+              </p>
+              <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-2">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>Explore homes in a lower price range that fit your budget</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>Consider a larger down payment to reduce monthly costs</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>Speak with our specialist about alternative programs</span>
+                </li>
+              </ul>
+            </div>
+          </motion.div>
+        )}
+
         {/* Next Steps */}
-        <div className="text-left space-y-3">
-          <p className="font-medium text-sm">What's next?</p>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-left space-y-3"
+        >
+          <p className="font-semibold text-sm">What's next?</p>
           <div className="space-y-2">
-            <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-              <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded">
-                <Mail className="h-3 w-3 text-blue-600" />
+            <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl border border-blue-100 dark:border-blue-900">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <Mail className="h-4 w-4 text-blue-600" />
               </div>
               <div className="text-sm">
                 <p className="font-medium">Check your email</p>
                 <p className="text-muted-foreground text-xs">
-                  We've sent confirmation to {formData.contactEmail}
+                  Full details sent to {formData.contactEmail}
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-              <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded">
-                <Phone className="h-3 w-3 text-blue-600" />
+            <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl border border-green-100 dark:border-green-900">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                <Phone className="h-4 w-4 text-green-600" />
               </div>
               <div className="text-sm">
                 <p className="font-medium">Expect a call</p>
@@ -1120,20 +1236,21 @@ export function PreQualificationFlow({
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         <Button
           onClick={() => onOpenChange(false)}
-          className="w-full"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
           size="lg"
         >
+          <Sparkles className="h-4 w-4 mr-2" />
           Done
         </Button>
 
         <p className="text-xs text-muted-foreground">
           This pre-qualification is not a commitment to lend.
           <br />
-          Final approval subject to verification.
+          Final approval subject to full underwriting.
         </p>
       </motion.div>
     );
