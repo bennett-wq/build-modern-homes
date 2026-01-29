@@ -1,438 +1,644 @@
-# Unified Pricing Architecture & Admin Experience Plan
 
-> **Status**: Phase 1 Database Foundation ✅ COMPLETE
-> **Last Updated**: 2026-01-29
-
----
-
-## Progress Tracker
-
-| Phase | Status | Notes |
-|-------|--------|-------|
-| Phase 1: Database Foundation | ✅ Complete | 12 tables created with RLS, enums, triggers |
-| Phase 2: Unified State Store | 🔲 Not Started | |
-| Phase 3: Admin Models & Developments | 🔲 Not Started | |
-| Phase 4: Pricing Admin Enhancement | 🔲 Not Started | |
-| Phase 5: Flow Unification | 🔲 Not Started | |
+# Phase 2: Unified State Store & Data Loaders
+## Extreme Product-Led Detail Plan
 
 ---
 
 ## Executive Summary
 
-BaseMod currently has two separate user flows with divergent data structures and pricing representations:
-1. **Communities Flow** (`/developments/:slug/build`) - Uses `BuildWizard` with community-specific data
-2. **Get a Quote Flow** (`/build`) - Uses `Configurator` with general lead-gen data
+Phase 2 establishes the **single source of truth** for all configurator flows by creating:
+1. A unified Zustand store (`useConfiguratorStore`) that replaces both `useConfiguratorState` and `useBuildSelection`
+2. Database-backed data loader hooks that fetch from the new normalized Supabase tables
+3. A migration path that ensures zero downtime and backward compatibility
 
-This plan consolidates these into a unified architecture with a world-class admin experience worthy of a $1B VC-backed proptech company.
-
----
-
-## Current State Assessment
-
-### Database Structure (Current)
-```text
-+-------------------+     +------------------+     +--------------+
-| pricing_configs   |     | admin_users      |     | user_roles   |
-+-------------------+     +------------------+     +--------------+
-| id (uuid)         |     | user_id (uuid)   |     | id (uuid)    |
-| created_at        |     | created_at       |     | user_id      |
-| created_by        |     +------------------+     | role         |
-| status            |                              | created_at   |
-| label             |                              +--------------+
-| effective_at      |
-| config (JSONB)    |<-- All pricing in one blob
-+-------------------+
-```
-
-### Data Architecture Issues Identified
-
-| Issue | Impact | Severity |
-|-------|--------|----------|
-| **Dual state systems** | `useConfiguratorState` + `useBuildSelection` store overlapping data differently | High |
-| **Pricing in TypeScript files** | Models/pricing in `src/data/*.ts` duplicates what could be in DB | High |
-| **JSONB blob architecture** | Single `config` column stores models, options, fees, markups - no relational integrity | Medium |
-| **No development-specific pricing** | Communities cannot have custom lot premiums, ARB packages, or site conditions | High |
-| **Hardcoded lots** | `grand-haven.ts` and `st-james-bay.ts` are static files | Medium |
-| **No exterior package pricing** | Exterior packages in `packages.ts` lack pricing data | Medium |
-
-### Flow Divergence
-
-| Aspect | Communities Flow | Quote Flow |
-|--------|-----------------|------------|
-| Entry point | `/developments/:slug/build` | `/build` |
-| State hook | `useBuildSelection` | `useConfiguratorState` |
-| Steps | 4 (Lot → Model → Exterior → Review) | 8 (Intent → Location → Model → BuildType → Service → FloorPlan → Exterior → Summary) |
-| Pricing mode | Always `community_all_in` | Dynamic (supply_only, delivered_installed, community_all_in) |
-| Lot selection | Required (from development) | Not available |
-| ARB restrictions | Enforced via `conformingModels` | Not enforced |
+This phase is the foundation for flow unification - without it, the "Communities" and "Get a Quote" flows will continue to diverge.
 
 ---
 
-## Proposed Database Schema
+## Current State Analysis
 
-### Core Entities
+### State Management Fragmentation
 
-```text
-developments
-├── id (uuid, PK)
-├── slug (text, unique)
-├── name, city, state
-├── status (active/coming-soon/sold-out)
-├── site_plan_image_url
-├── arb_guidelines_url
-├── pricing_zone_id (FK → pricing_zones)
-└── created_at, updated_at
+| Hook | Used By | Storage | Fields |
+|------|---------|---------|--------|
+| `useConfiguratorState` | `/build` (Configurator) | localStorage (`basemod-configurator-state`) | intent, modelSlug, buildType, zoneId, servicePackage, packageId, garageDoorId, floorPlanSelections, exteriorSelection, zipCode, address, locationKnown, includeUtilityFees, includePermitsCosts |
+| `useBuildSelection` | `/developments/:slug/build` (BuildWizard) | localStorage (`basemod-build-selection`) + URL params | developmentSlug, lotId, modelSlug, packageId, garageDoorId |
+| `usePricingConfig` | Both flows | localStorage cache + Supabase | pricingConfig (JSONB blob) |
 
-lots
-├── id (uuid, PK)
-├── development_id (FK → developments)
-├── lot_number (text)
-├── status (available/reserved/sold/pending)
-├── acreage, net_acreage
-├── premium (money)
-├── polygon_coordinates (jsonb)
-├── restrictions (jsonb)
-└── created_at, updated_at
+### Critical Issues Identified
 
-models
-├── id (uuid, PK)
-├── slug (text, unique)
-├── name
-├── beds, baths, sqft, length
-├── hero_image_url
-├── floorplan_pdf_url
-├── is_active (boolean)
-└── created_at, updated_at
-
-model_pricing
-├── id (uuid, PK)
-├── model_id (FK → models)
-├── build_type (xmod/mod)
-├── foundation_type (slab/basement)
-├── base_home_price (money)
-├── freight_allowance (money)
-├── freight_pending (boolean)
-├── effective_from (timestamp)
-└── created_at, created_by
-
-development_conforming_models (junction)
-├── development_id (FK)
-├── model_id (FK)
-└── PRIMARY KEY (development_id, model_id)
-
-upgrade_options
-├── id (uuid, PK)
-├── slug (text, unique)
-├── category (floor_plan/exterior/garage)
-├── label (text)
-├── base_price (money)
-├── applies_to_models (uuid[] or all)
-├── applies_to_build_types (text[])
-├── is_active (boolean)
-└── created_at, updated_at
-
-exterior_packages
-├── id (uuid, PK)
-├── slug (text, unique)
-├── name, description
-├── siding_color_hex, trim_color_hex
-├── accent_color_hex, roof_color_hex
-├── upgrade_price (money)
-├── is_active (boolean)
-└── created_at, updated_at
-
-development_arb_packages (junction)
-├── development_id (FK)
-├── exterior_package_id (FK)
-└── PRIMARY KEY (development_id, exterior_package_id)
-
-garage_door_options
-├── id (uuid, PK)
-├── slug (text, unique)
-├── name, description
-├── style (traditional/carriage/modern/craftsman)
-├── color_hex
-├── price (money)
-└── is_active (boolean)
-
-pricing_zones
-├── id (uuid, PK)
-├── slug (text, unique)
-├── name
-├── crane_cost, home_set_cost
-├── on_site_portion, baseline_total
-├── contingency_buffer
-├── utility_authority_fees
-├── permits_soft_costs
-└── created_at, updated_at
-
-pricing_markups
-├── id (uuid, PK)
-├── name
-├── dealer_markup_pct
-├── installer_markup_pct  
-├── developer_markup_pct
-├── is_default (boolean)
-├── effective_from (timestamp)
-└── created_at, updated_at
-
-quotes (lead capture)
-├── id (uuid, PK)
-├── development_id (FK, nullable)
-├── lot_id (FK, nullable)
-├── model_id (FK)
-├── build_type
-├── pricing_mode
-├── service_package
-├── exterior_package_id (FK)
-├── garage_door_id (FK)
-├── selected_options (uuid[])
-├── total_estimate (money)
-├── contact_name, email, phone
-├── status (draft/submitted/contacted/converted)
-└── created_at, updated_at
-```
+1. **Overlapping fields stored differently** - Both hooks store `modelSlug`, `packageId`, `garageDoorId` but in incompatible formats
+2. **No shared persistence** - User cannot switch between flows and retain selections
+3. **Hardcoded data sources** - `homeModels`, `developments`, `exteriorPackages` come from TypeScript files, not the new DB tables
+4. **Step tracking divergence** - `/build` tracks 8 steps, BuildWizard tracks 4 steps with different semantics
+5. **Pricing mode derivation scattered** - Logic spread across `derivePricingMode()` utility and individual components
 
 ---
 
-## Unified State Architecture
+## Phase 2 Architecture
 
-### Single Zustand Store
+### 2.1 Unified Zustand Store Schema
 
 ```typescript
 // src/state/useConfiguratorStore.ts
+
 interface ConfiguratorState {
-  // Flow context
-  flowType: 'communities' | 'quote';
-  developmentSlug: string | null;
+  // ═══════════════════════════════════════════════════════════════
+  // FLOW CONTEXT (determines which UI path and pricing mode)
+  // ═══════════════════════════════════════════════════════════════
+  flowType: 'communities' | 'direct';  // 'direct' = /build, 'communities' = /developments/:slug/build
+  developmentSlug: string | null;      // Set when flowType === 'communities'
   
-  // Progress
+  // ═══════════════════════════════════════════════════════════════
+  // PROGRESS TRACKING (NOT persisted - always starts fresh)
+  // ═══════════════════════════════════════════════════════════════
   currentStep: number;
-  completedSteps: Set<number>;
+  completedSteps: number[];
   
-  // Selections (unified for both flows)
-  intent: BuildIntent | null;
-  location: { zipCode: string; address: string; known: boolean | null };
-  lotId: string | null;
-  modelSlug: string | null;
-  buildType: BuildType | null;
-  servicePackage: ServicePackage;
-  floorPlanOptionIds: string[];
-  exteriorPackageId: string | null;
-  garageDoorId: string | null;
+  // ═══════════════════════════════════════════════════════════════
+  // USER SELECTIONS (persisted to localStorage)
+  // ═══════════════════════════════════════════════════════════════
   
-  // Fee toggles
+  // Step: Intent (direct flow only)
+  intent: 'own-land' | 'find-land' | 'basemod-community' | null;
+  
+  // Step: Location (direct flow) / Lot (communities flow)
+  location: {
+    zipCode: string;
+    address: string;
+    known: boolean | null;  // null = not answered, true/false = explicit choice
+  };
+  lotId: string | null;  // UUID from lots table (communities flow)
+  
+  // Step: Model Selection
+  modelId: string | null;  // UUID from models table (new)
+  modelSlug: string | null;  // Slug for backward compatibility during migration
+  
+  // Step: Build Type
+  buildType: 'xmod' | 'mod' | null;
+  foundationType: 'slab' | 'basement';
+  
+  // Step: Service Package (determines pricing mode)
+  servicePackage: 'delivered_installed' | 'supply_only' | 'community_all_in';
+  
+  // Step: Floor Plan Options
+  selectedOptionIds: string[];  // UUIDs from upgrade_options table
+  
+  // Step: Exterior Design
+  exteriorPackageId: string | null;  // UUID from exterior_packages table
+  garageDoorId: string | null;        // UUID from garage_door_options table
+  
+  // Step: Summary Toggles
   includeUtilityFees: boolean;
   includePermitsCosts: boolean;
   
-  // Derived (computed, not stored)
-  pricingMode: PricingMode; // Computed from flowType + servicePackage
+  // ═══════════════════════════════════════════════════════════════
+  // COMPUTED PROPERTIES (derived, not stored)
+  // ═══════════════════════════════════════════════════════════════
+  
+  // Derived from flowType + lotId + servicePackage
+  get pricingMode(): 'delivered_installed' | 'supply_only' | 'community_all_in';
+  
+  // ═══════════════════════════════════════════════════════════════
+  // ACTIONS
+  // ═══════════════════════════════════════════════════════════════
+  
+  // Flow initialization
+  initDirectFlow: () => void;
+  initCommunityFlow: (developmentSlug: string) => void;
+  
+  // Navigation
+  goToStep: (step: number) => void;
+  nextStep: () => void;
+  prevStep: () => void;
+  markStepComplete: (step: number) => void;
+  
+  // Selection setters (individual)
+  setIntent: (intent: ConfiguratorState['intent']) => void;
+  setLocation: (location: Partial<ConfiguratorState['location']>) => void;
+  setLotId: (lotId: string | null) => void;
+  setModel: (modelId: string, modelSlug: string) => void;
+  setBuildType: (buildType: ConfiguratorState['buildType']) => void;
+  setFoundationType: (type: ConfiguratorState['foundationType']) => void;
+  setServicePackage: (pkg: ConfiguratorState['servicePackage']) => void;
+  toggleOption: (optionId: string) => void;
+  setExteriorPackage: (id: string | null) => void;
+  setGarageDoor: (id: string | null) => void;
+  setFeeToggles: (fees: { utility?: boolean; permits?: boolean }) => void;
+  
+  // Bulk operations
+  resetSelections: () => void;
+  hydrateFromLegacy: () => boolean;  // Returns true if legacy data was found
+  
+  // Persistence helpers
+  getShareableUrl: () => string;
+  getQuotePayload: () => QuoteInsertPayload;
 }
 ```
 
-### Pricing Derivation Logic
+### 2.2 Persistence Strategy
+
 ```text
-if (flowType === 'communities' && lotId) → 'community_all_in'
-else if (servicePackage === 'supply_only') → 'supply_only'  
-else → 'delivered_installed'
+┌─────────────────────────────────────────────────────────────────┐
+│                    PERSISTENCE STRATEGY                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  PERSISTED (zustand persist middleware)                        │
+│  ───────────────────────────────────────                        │
+│  • flowType, developmentSlug                                    │
+│  • intent, location, lotId                                      │
+│  • modelId, modelSlug, buildType, foundationType                │
+│  • servicePackage                                               │
+│  • selectedOptionIds                                            │
+│  • exteriorPackageId, garageDoorId                              │
+│  • includeUtilityFees, includePermitsCosts                      │
+│                                                                 │
+│  NOT PERSISTED (fresh on every page load)                       │
+│  ─────────────────────────────────────────                      │
+│  • currentStep (always starts at 1)                             │
+│  • completedSteps (always empty)                                │
+│                                                                 │
+│  This ensures users see their SELECTIONS but must               │
+│  re-walk the wizard for validation.                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2.3 Step Unification Matrix
+
+```text
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        UNIFIED STEP STRUCTURE                            │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Step    │ Direct Flow (/build)     │ Communities Flow                   │
+│  ─────────────────────────────────────────────────────────────────────── │
+│    1     │ Intent                   │ Lot Selection                      │
+│    2     │ Location                 │ Model Selection                    │
+│    3     │ Model Selection          │ Exterior Design                    │
+│    4     │ Build Type               │ Review & Contact                   │
+│    5     │ Service Package          │ (flow complete)                    │
+│    6     │ Floor Plan Options       │                                    │
+│    7     │ Exterior Design          │                                    │
+│    8     │ Summary & Contact        │                                    │
+│                                                                          │
+│  The store tracks steps 1-8, but UI conditionally renders                │
+│  based on flowType.                                                      │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Admin Experience Vision
+## 2.4 Data Loader Hooks
 
-### Design Principles
-1. **Zero technical jargon** - No "JSONB", "slug", or "FK" visible to users
-2. **Visual hierarchy** - Dashboard → Drill-down → Edit pattern
-3. **Real-time preview** - See pricing changes before publishing
-4. **Audit trail** - Who changed what, when
-5. **Role-appropriate views** - Admins see everything, Builders see pricing only
+### Database-First Architecture
 
-### Admin Dashboard Structure
+All data will flow from Supabase → React Query cache → Components:
 
 ```text
-/admin
-├── /pricing (existing, enhanced)
-│   ├── Model Pricing
-│   ├── Site Costs
-│   ├── Markups & Fees
-│   └── Version History
-├── /models (NEW)
-│   ├── Model Library
-│   ├── Model Details + Floor Plan Options
-│   └── Model Pricing Matrix
-├── /developments (NEW)
-│   ├── Community List
-│   ├── Community Details
-│   ├── Lot Management
-│   └── ARB Configuration
-├── /exteriors (NEW)
-│   ├── Exterior Packages
-│   └── Garage Door Options
-├── /upgrades (NEW)
-│   ├── Floor Plan Add-ons
-│   └── Exterior Add-ons
-└── /team (existing)
+┌─────────────────────────────────────────────────────────────────┐
+│                     DATA FLOW ARCHITECTURE                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────┐     ┌─────────────┐     ┌─────────────┐          │
+│  │ Supabase │────▶│ React Query │────▶│ Components  │          │
+│  │  Tables  │     │   Cache     │     │             │          │
+│  └──────────┘     └─────────────┘     └─────────────┘          │
+│       │                 │                    │                  │
+│       │                 │                    │                  │
+│       ▼                 ▼                    ▼                  │
+│  models            5 min stale         useModels()              │
+│  model_pricing     time with           useDevelopments()        │
+│  developments      background          useLots(devId)           │
+│  lots              revalidate          useExteriorPackages()    │
+│  exterior_packages                     useGarageDoors()         │
+│  garage_door_options                   useUpgradeOptions()      │
+│  pricing_zones                         usePricingZone(id)       │
+│  pricing_markups                       usePricingMarkups()      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Admin UI Mockup: Data Relationship Visualizer
+### Hook Specifications
 
-The crown jewel - a visual tool that shows non-technical users how pricing flows:
-
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│  HOW PRICING WORKS                                           [?]   │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐          │
-│  │   MODEL      │───▶│  BUILD TYPE  │───▶│   PRICING    │          │
-│  │  Hawthorne   │    │    XMOD      │    │   $97,087    │          │
-│  │  3 bed/2 ba  │    │  (Factory)   │    │  (base cost) │          │
-│  └──────────────┘    └──────────────┘    └──────────────┘          │
-│         │                                       │                   │
-│         ▼                                       ▼                   │
-│  ┌──────────────┐                        ┌──────────────┐          │
-│  │  ADD-ONS     │                        │   MARKUP     │          │
-│  │  • 9' walls  │────────────────────────│    +20%      │          │
-│  │  • Half bath │                        │   $116,504   │          │
-│  └──────────────┘                        └──────────────┘          │
-│         │                                       │                   │
-│         ▼                                       ▼                   │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐          │
-│  │  SITEWORK    │───▶│   FEES       │───▶│  TOTAL       │          │
-│  │   $86,767    │    │   $9,631     │    │  $230,000+   │          │
-│  │  (zone 3)    │    │  (optional)  │    │  estimate    │          │
-│  └──────────────┘    └──────────────┘    └──────────────┘          │
-│                                                                     │
-│  ─────────────────────────────────────────────────────────────────  │
-│  For COMMUNITY builds, add:                                         │
-│  ┌──────────────┐    ┌──────────────┐                              │
-│  │  LOT PREMIUM │ +  │  DEV MARKUP  │ = All-in Community Price     │
-│  │   $15,000    │    │     +5%      │                              │
-│  └──────────────┘    └──────────────┘                              │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Implementation Phases
-
-### Phase 1: Database Foundation (Week 1)
-1. Create new normalized tables with migrations
-2. Seed data from existing TypeScript files
-3. Create RLS policies for admin/builder access
-4. Build data loader hooks (`useModels`, `useDevelopments`, `useLots`)
-
-### Phase 2: Unified State Store (Week 1-2)
-1. Create `useConfiguratorStore` Zustand store
-2. Migrate `BuildWizard` to use new store
-3. Migrate `Configurator` to use new store
-4. Remove legacy hooks (`useBuildSelection`, `useConfiguratorState`)
-
-### Phase 3: Admin Models & Developments (Week 2)
-1. `/admin/models` - CRUD for models with pricing matrix
-2. `/admin/developments` - CRUD for communities with lot management
-3. `/admin/exteriors` - Package and garage door management
-
-### Phase 4: Pricing Admin Enhancement (Week 3)
-1. Refactor `/admin/pricing` to use relational data
-2. Add visual pricing flow diagram
-3. Add real-time preview calculator
-4. Add comparison view (current vs. draft pricing)
-
-### Phase 5: Flow Unification (Week 3-4)
-1. Merge `BuildWizard` and `Configurator` into unified component
-2. Conditional step rendering based on `flowType`
-3. Single pricing engine consuming DB data
-4. Unified quote submission flow
-
----
-
-## Technical Implementation Details
-
-### Migration Strategy
-```sql
--- Phase 1: Create tables alongside existing JSONB
--- Phase 2: Dual-write (JSONB + relational)
--- Phase 3: Read from relational, maintain JSONB for rollback
--- Phase 4: Remove JSONB dependency
-```
-
-### Data Loading Pattern
+#### `useModels()`
 ```typescript
-// Stale-while-revalidate with React Query
-const { data: models, isLoading } = useQuery({
-  queryKey: ['models'],
-  queryFn: () => supabase.from('models').select('*, model_pricing(*)'),
-  staleTime: 5 * 60 * 1000, // 5 minutes
+// src/hooks/useModels.ts
+interface UseModelsResult {
+  models: Model[];
+  isLoading: boolean;
+  error: Error | null;
+  getModelBySlug: (slug: string) => Model | undefined;
+  getModelById: (id: string) => Model | undefined;
+}
+
+// Fetches: models JOIN model_pricing WHERE is_active = true AND is_current = true
+// Caches: 5 minute stale time
+// Fallback: Static data during migration period
+```
+
+#### `useDevelopments()`
+```typescript
+// src/hooks/useDevelopments.ts
+interface UseDevelopmentsResult {
+  developments: Development[];
+  isLoading: boolean;
+  error: Error | null;
+  getDevelopmentBySlug: (slug: string) => Development | undefined;
+}
+
+// Fetches: developments WHERE is_active = true
+// Includes: pricing_zone relation
+// Caches: 5 minute stale time
+```
+
+#### `useLots(developmentId: string)`
+```typescript
+// src/hooks/useLots.ts
+interface UseLotsResult {
+  lots: Lot[];
+  isLoading: boolean;
+  error: Error | null;
+  getLotById: (id: string) => Lot | undefined;
+  availableLots: Lot[];  // Filtered to status = 'available'
+}
+
+// Fetches: lots WHERE development_id = ? ORDER BY lot_number
+// Caches: 1 minute stale time (lots can change more frequently)
+```
+
+#### `useExteriorPackages(developmentSlug?: string)`
+```typescript
+// src/hooks/useExteriorPackages.ts
+interface UseExteriorPackagesResult {
+  packages: ExteriorPackage[];
+  isLoading: boolean;
+  error: Error | null;
+  getPackageById: (id: string) => ExteriorPackage | undefined;
+  arbReadyPackages: ExteriorPackage[];  // Filtered for development if provided
+}
+
+// Fetches: exterior_packages WHERE is_active = true
+// If developmentSlug provided, filters via development_arb_packages junction
+// Caches: 5 minute stale time
+```
+
+#### `useGarageDoors()`
+```typescript
+// src/hooks/useGarageDoors.ts
+interface UseGarageDoorsResult {
+  doors: GarageDoorOption[];
+  isLoading: boolean;
+  error: Error | null;
+  getDoorById: (id: string) => GarageDoorOption | undefined;
+}
+
+// Fetches: garage_door_options WHERE is_active = true ORDER BY display_order
+// Caches: 5 minute stale time
+```
+
+#### `useUpgradeOptions(modelId?: string, buildType?: string)`
+```typescript
+// src/hooks/useUpgradeOptions.ts
+interface UseUpgradeOptionsResult {
+  options: UpgradeOption[];
+  isLoading: boolean;
+  error: Error | null;
+  floorPlanOptions: UpgradeOption[];  // category = 'floor_plan'
+  exteriorOptions: UpgradeOption[];   // category = 'exterior'
+  garageOptions: UpgradeOption[];     // category = 'garage'
+}
+
+// Fetches: upgrade_options WHERE is_active = true
+// Filters by model and build type if provided (using applies_to_* arrays)
+// Caches: 5 minute stale time
+```
+
+---
+
+## 2.5 Migration Path
+
+### Dual-Mode Operation Period
+
+During migration, both systems will coexist:
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    MIGRATION TIMELINE                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Week 1: PARALLEL OPERATION                                     │
+│  ──────────────────────────                                     │
+│  • useConfiguratorStore created with full schema                │
+│  • Data loader hooks implemented with DB fallback               │
+│  • Legacy hooks remain active                                   │
+│  • hydrateFromLegacy() pulls from old localStorage keys         │
+│                                                                 │
+│  Week 2: COMPONENT MIGRATION                                    │
+│  ────────────────────────────                                   │
+│  • BuildWizard migrated to useConfiguratorStore                 │
+│  • Configurator migrated to useConfiguratorStore                │
+│  • Step components updated to use new selectors                 │
+│  • Legacy hooks marked @deprecated                              │
+│                                                                 │
+│  Week 3: CLEANUP                                                │
+│  ────────────────                                               │
+│  • Legacy hooks removed                                         │
+│  • Old localStorage keys cleaned on first load                  │
+│  • TypeScript files marked for deprecation                      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Legacy Data Hydration
+
+```typescript
+// Called on store initialization
+hydrateFromLegacy(): boolean {
+  // Check for old localStorage keys
+  const oldBuildSelection = localStorage.getItem('basemod-build-selection');
+  const oldConfiguratorState = localStorage.getItem('basemod-configurator-state');
+  
+  if (oldBuildSelection) {
+    const parsed = JSON.parse(oldBuildSelection);
+    // Map old format to new store shape
+    this.setModel(null, parsed.modelSlug);  // ID will be null, slug for lookup
+    this.setExteriorPackage(parsed.packageId);
+    this.setGarageDoor(parsed.garageDoorId);
+    if (parsed.lotId) this.setLotId(parsed.lotId.toString());
+    if (parsed.developmentSlug) this.initCommunityFlow(parsed.developmentSlug);
+    
+    // Clear old key
+    localStorage.removeItem('basemod-build-selection');
+    return true;
+  }
+  
+  if (oldConfiguratorState) {
+    // Similar migration logic for Configurator state
+    // ...
+    localStorage.removeItem('basemod-configurator-state');
+    localStorage.removeItem('basemod-configurator-step');
+    return true;
+  }
+  
+  return false;
+}
+```
+
+---
+
+## 2.6 Implementation Checklist
+
+### Files to Create
+
+| File | Purpose | Priority |
+|------|---------|----------|
+| `src/state/useConfiguratorStore.ts` | Unified Zustand store | P0 |
+| `src/hooks/useModels.ts` | Models + pricing loader | P0 |
+| `src/hooks/useDevelopments.ts` | Developments loader | P0 |
+| `src/hooks/useLots.ts` | Lots loader (per development) | P0 |
+| `src/hooks/useExteriorPackages.ts` | Exterior packages loader | P1 |
+| `src/hooks/useGarageDoors.ts` | Garage doors loader | P1 |
+| `src/hooks/useUpgradeOptions.ts` | Upgrade options loader | P1 |
+| `src/hooks/usePricingZones.ts` | Pricing zones loader | P1 |
+| `src/types/database.ts` | Type mappings from Supabase types | P0 |
+
+### Files to Modify
+
+| File | Changes | Priority |
+|------|---------|----------|
+| `src/pages/BuildWizard.tsx` | Replace `useBuildSelection` with store | P0 |
+| `src/pages/Configurator.tsx` | Replace `useConfiguratorState` with store | P0 |
+| `src/components/wizard/Step1Lot.tsx` | Use `useLots()` hook | P1 |
+| `src/components/wizard/Step2Model.tsx` | Use `useModels()` hook | P1 |
+| `src/components/wizard/Step3Design.tsx` | Use exterior hooks | P1 |
+| `src/components/configurator/steps/*.tsx` | Use store selectors | P1 |
+| `src/hooks/usePricingEngine.ts` | Accept DB-sourced model data | P2 |
+
+### Files to Deprecate (Week 3)
+
+| File | Replacement |
+|------|-------------|
+| `src/hooks/useConfiguratorState.ts` | `useConfiguratorStore` |
+| `src/hooks/useBuildSelection.ts` | `useConfiguratorStore` |
+| `src/data/models.ts` | `useModels()` hook |
+| `src/data/developments.ts` | `useDevelopments()` hook |
+| `src/data/packages.ts` | `useExteriorPackages()` + `useGarageDoors()` |
+| `src/data/lots/*.ts` | `useLots()` hook |
+
+---
+
+## 2.7 Data Seeding Requirements
+
+Before Phase 2 code can function, the new tables need data:
+
+### Seed Priority Order
+
+1. **pricing_zones** - Required for any pricing calculation
+2. **pricing_markups** - Required for buyer-facing prices  
+3. **models** - Core entity, all flows depend on this
+4. **model_pricing** - Prices for each model/buildType/foundation combo
+5. **developments** - Required for communities flow
+6. **lots** - Required for communities flow lot selection
+7. **exterior_packages** - Required for Step 3 Design
+8. **garage_door_options** - Required for Step 3 Design
+9. **development_conforming_models** - Junction for ARB model restrictions
+10. **development_arb_packages** - Junction for ARB package restrictions
+11. **upgrade_options** - Floor plan and exterior add-ons
+
+### Data Sources for Seeding
+
+| Table | Source File |
+|-------|-------------|
+| models | `src/data/models.ts` + `src/data/pricing-config.ts` |
+| model_pricing | `src/data/pricing-config.ts` (pricing object per model) |
+| developments | `src/data/developments.ts` |
+| lots | `src/data/lots/grand-haven.ts` + `src/data/lots/st-james-bay.ts` |
+| exterior_packages | `src/data/packages.ts` |
+| garage_door_options | `src/data/packages.ts` |
+| pricing_zones | `src/data/pricing-config.ts` (zones array) |
+| pricing_markups | `src/data/pricing-layers.ts` (defaults) |
+| upgrade_options | `src/data/pricing-config.ts` (floorPlanOptions per model) |
+
+---
+
+## 2.8 Testing Strategy
+
+### Unit Tests
+
+```typescript
+// src/state/__tests__/useConfiguratorStore.test.ts
+
+describe('useConfiguratorStore', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useConfiguratorStore.getState().resetSelections();
+  });
+
+  describe('flow initialization', () => {
+    it('initializes direct flow with correct defaults', () => {
+      const { initDirectFlow, flowType, currentStep } = useConfiguratorStore.getState();
+      initDirectFlow();
+      expect(flowType).toBe('direct');
+      expect(currentStep).toBe(1);
+    });
+
+    it('initializes community flow with development slug', () => {
+      const { initCommunityFlow, flowType, developmentSlug } = useConfiguratorStore.getState();
+      initCommunityFlow('grand-haven');
+      expect(flowType).toBe('communities');
+      expect(developmentSlug).toBe('grand-haven');
+    });
+  });
+
+  describe('pricing mode derivation', () => {
+    it('returns community_all_in when lot selected in community flow', () => {
+      const store = useConfiguratorStore.getState();
+      store.initCommunityFlow('grand-haven');
+      store.setLotId('lot-uuid-123');
+      expect(store.pricingMode).toBe('community_all_in');
+    });
+
+    it('returns supply_only when service package is supply_only', () => {
+      const store = useConfiguratorStore.getState();
+      store.initDirectFlow();
+      store.setServicePackage('supply_only');
+      expect(store.pricingMode).toBe('supply_only');
+    });
+
+    it('returns delivered_installed by default', () => {
+      const store = useConfiguratorStore.getState();
+      store.initDirectFlow();
+      expect(store.pricingMode).toBe('delivered_installed');
+    });
+  });
+
+  describe('persistence', () => {
+    it('persists selections but not step progress', () => {
+      const store = useConfiguratorStore.getState();
+      store.setModel('uuid-123', 'hawthorne');
+      store.goToStep(5);
+      
+      // Simulate page reload
+      const newStore = useConfiguratorStore.getState();
+      expect(newStore.modelSlug).toBe('hawthorne');
+      expect(newStore.currentStep).toBe(1);  // Reset to 1
+    });
+
+    it('migrates from legacy localStorage keys', () => {
+      localStorage.setItem('basemod-build-selection', JSON.stringify({
+        modelSlug: 'hawthorne',
+        packageId: 'coastal-white',
+        garageDoorId: 'modern-black',
+      }));
+      
+      const store = useConfiguratorStore.getState();
+      const migrated = store.hydrateFromLegacy();
+      
+      expect(migrated).toBe(true);
+      expect(store.modelSlug).toBe('hawthorne');
+      expect(localStorage.getItem('basemod-build-selection')).toBeNull();
+    });
+  });
 });
 ```
 
-### Admin RBAC Matrix
+### Integration Tests
 
-| Action | Admin | Builder |
-|--------|-------|---------|
-| View models/pricing | Yes | Yes |
-| Edit model pricing | Yes | Yes |
-| Publish pricing | Yes | No |
-| Manage developments | Yes | No |
-| Manage lots | Yes | No |
-| Manage team | Yes | No |
+```typescript
+// e2e/configurator-flow.spec.ts
 
----
-
-## Success Metrics
-
-1. **Single source of truth** - All pricing flows from DB, zero TypeScript hardcoding
-2. **Sub-100ms pricing calculations** - Cached data with instant updates
-3. **Admin usability** - Non-technical users can update pricing without developer help
-4. **Flow consistency** - Same model/pricing shown in Communities and Quote flows
-5. **Audit completeness** - Every price change tracked with user and timestamp
-
----
-
-## Files to Create/Modify
-
-### New Files
-- `supabase/migrations/XXXX_unified_pricing_schema.sql`
-- `src/state/useConfiguratorStore.ts`
-- `src/hooks/useModels.ts`
-- `src/hooks/useDevelopments.ts`
-- `src/hooks/useLots.ts`
-- `src/hooks/useExteriorPackages.ts`
-- `src/pages/admin/AdminModels.tsx`
-- `src/pages/admin/AdminDevelopments.tsx`
-- `src/pages/admin/AdminExteriors.tsx`
-- `src/components/admin/PricingFlowVisualizer.tsx`
-- `src/components/admin/ModelPricingMatrix.tsx`
-- `src/components/admin/DevelopmentLotManager.tsx`
-
-### Files to Refactor
-- `src/pages/BuildWizard.tsx` → Use unified store
-- `src/pages/Configurator.tsx` → Use unified store
-- `src/pages/admin/AdminPricing.tsx` → Use relational data
-- `src/hooks/usePricingEngine.ts` → Load from DB
-- `src/lib/pricing/calculatePriceBreakdown.ts` → Accept DB-sourced data
-
-### Files to Deprecate (eventually remove)
-- `src/data/pricing-config.ts` → Moved to DB
-- `src/data/models.ts` → Moved to DB
-- `src/data/packages.ts` → Moved to DB
-- `src/data/lots/*.ts` → Moved to DB
-- `src/data/developments.ts` → Moved to DB
-- `src/hooks/useConfiguratorState.ts` → Replaced by store
-- `src/hooks/useBuildSelection.ts` → Replaced by store
+test('direct flow persists selections across page reload', async ({ page }) => {
+  await page.goto('/build');
+  
+  // Complete step 1 (Intent)
+  await page.click('[data-testid="intent-own-land"]');
+  await page.click('[data-testid="next-step"]');
+  
+  // Complete step 2 (Location)
+  await page.fill('[data-testid="zip-input"]', '48103');
+  await page.click('[data-testid="next-step"]');
+  
+  // Select model
+  await page.click('[data-testid="model-card-hawthorne"]');
+  
+  // Reload page
+  await page.reload();
+  
+  // Verify selections persist but step resets
+  expect(await page.locator('[data-testid="step-indicator"]').textContent()).toContain('Step 1');
+  
+  // Model should still be selected in store
+  const modelSlug = await page.evaluate(() => {
+    return JSON.parse(localStorage.getItem('basemod-configurator-store') || '{}').state?.modelSlug;
+  });
+  expect(modelSlug).toBe('hawthorne');
+});
+```
 
 ---
 
-## Risk Mitigation
+## 2.9 Success Criteria
 
-| Risk | Mitigation |
-|------|------------|
-| Data migration errors | Run parallel systems, validate totals match |
-| Admin breaks pricing | Draft/Publish workflow with preview |
-| Performance regression | React Query caching, denormalized views |
-| Rollback needed | Keep JSONB `pricing_configs` as backup for 60 days |
+| Metric | Target | Validation |
+|--------|--------|------------|
+| Single store | 1 Zustand store replaces 2 hooks | Code review |
+| Data from DB | 100% of model/development data from Supabase | Network tab inspection |
+| Zero data loss | Legacy selections migrate successfully | Manual QA |
+| Step reset on reload | currentStep always 1 on fresh load | Automated test |
+| Pricing mode accuracy | Matches expected for all flow/selection combos | Unit tests |
+| Build passes | No TypeScript errors, no console warnings | CI pipeline |
 
-This plan establishes BaseMod as the technical leader in modular home configuration - with a data architecture and admin experience that can scale to hundreds of developments and thousands of customers.
+---
+
+## 2.10 Risk Mitigation
+
+| Risk | Mitigation | Owner |
+|------|------------|-------|
+| Data not seeded before code deploys | Implement fallback to static files | Phase 2 |
+| Legacy localStorage corrupted | Wrap hydration in try/catch, clear on error | Phase 2 |
+| React Query cache stale | 5 min stale time + background revalidate | Phase 2 |
+| Step component breaks during migration | Migrate one step at a time, keep old props as fallback | Phase 2 |
+
+---
+
+## Next Steps After Phase 2
+
+1. **Phase 3**: Admin CRUD for models, developments, lots
+2. **Phase 4**: Enhanced pricing admin with visual flow diagram
+3. **Phase 5**: Merge BuildWizard and Configurator into single unified component
+
+---
+
+## Technical Implementation Order
+
+```text
+Day 1:
+├── Create src/types/database.ts (map Supabase types)
+├── Create src/state/useConfiguratorStore.ts (full schema)
+└── Create src/hooks/useModels.ts (with static fallback)
+
+Day 2:
+├── Create src/hooks/useDevelopments.ts
+├── Create src/hooks/useLots.ts
+└── Create src/hooks/useExteriorPackages.ts + useGarageDoors.ts
+
+Day 3:
+├── Migrate BuildWizard.tsx to use store
+├── Update Step1Lot to use useLots()
+└── Update Step2Model to use useModels()
+
+Day 4:
+├── Migrate Configurator.tsx to use store
+├── Update all StepXxx components to use store selectors
+└── Update usePricingEngine to accept DB data
+
+Day 5:
+├── Add legacy hydration logic
+├── Write unit tests for store
+├── Write integration tests for flows
+└── Mark legacy hooks @deprecated
+```
+
+This plan ensures a methodical, test-driven migration that maintains backward compatibility while establishing the unified architecture needed for a $1B proptech platform.
