@@ -181,10 +181,7 @@ export function PreQualificationFlow({
         setPlaidPublicToken(data.publicToken);
         setPlaidInstitutionName(data.institutionName || null);
         setBankConnectError(null);
-        toast({
-          title: 'Bank connected',
-          description: `Successfully connected to ${data.institutionName || 'your bank'}.`,
-        });
+        // No toast needed - inline UI shows "Connected" status
       } else {
         setBankConnectError(data.error || 'Connection failed');
         if (data.error && data.error !== 'User cancelled') {
