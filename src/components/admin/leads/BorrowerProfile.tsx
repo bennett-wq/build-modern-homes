@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
 import {
   ArrowLeft,
   Download,
@@ -175,80 +176,315 @@ export function BorrowerProfile({ lead, verifiedFinancials, onBack, onUpdate }: 
     }
   };
 
-  const generateReport = () => {
-    const report = `
-BORROWER PRE-QUALIFICATION REPORT
-Generated: ${new Date().toLocaleDateString()}
-================================
+  const generatePDFReport = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 20;
 
-BORROWER INFORMATION
---------------------
+    // Helper functions
+    const addLine = (height: number = 5) => { y += height; };
+    const checkNewPage = (requiredSpace: number = 30) => {
+      if (y > 270 - requiredSpace) {
+        doc.addPage();
+        y = 20;
+      }
+    };
+
+    // Colors
+    const primaryColor: [number, number, number] = [34, 87, 122]; // Deep teal
+    const accentColor: [number, number, number] = [16, 185, 129]; // Emerald
+    const textColor: [number, number, number] = [31, 41, 55]; // Dark gray
+    const mutedColor: [number, number, number] = [107, 114, 128]; // Muted gray
+
+    // Header with gradient-like effect
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.rect(0, 0, pageWidth, 45, "F");
+    
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Pre-Qualification Report", margin, 25);
+    
+    // Subtitle with verification badge
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const verificationText = isVerified ? "PLAID VERIFIED" : "Self-Reported";
+    doc.text(`${lead.contact_name} • ${verificationText}`, margin, 35);
+    
+    // Date on right
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - margin - 50, 35);
+
+    y = 60;
+
+    // Section: Borrower Information
+    const addSectionHeader = (title: string) => {
+      checkNewPage(40);
+      doc.setFillColor(245, 247, 250);
+      doc.rect(margin - 5, y - 5, contentWidth + 10, 10, "F");
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, margin, y + 2);
+      addLine(15);
+    };
+
+    const addField = (label: string, value: string, highlight: boolean = false) => {
+      checkNewPage();
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(label, margin, y);
+      
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      if (highlight) {
+        doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+        doc.setFont("helvetica", "bold");
+      }
+      doc.setFontSize(11);
+      doc.text(value, margin + 55, y);
+      doc.setFont("helvetica", "normal");
+      addLine(7);
+    };
+
+    const addFieldRow = (fields: { label: string; value: string; highlight?: boolean }[]) => {
+      checkNewPage();
+      const colWidth = contentWidth / fields.length;
+      fields.forEach((field, idx) => {
+        const x = margin + idx * colWidth;
+        doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(field.label, x, y);
+        
+        doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+        if (field.highlight) {
+          doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+          doc.setFont("helvetica", "bold");
+        }
+        doc.setFontSize(11);
+        doc.text(field.value, x, y + 5);
+        doc.setFont("helvetica", "normal");
+      });
+      addLine(15);
+    };
+
+    // Borrower Info Section
+    addSectionHeader("BORROWER INFORMATION");
+    addField("Full Name", lead.contact_name);
+    addField("Email", lead.contact_email);
+    addField("Phone", lead.contact_phone || "Not provided");
+    addField("Intended Use", lead.intended_use.replace("_", " ").replace(/\b\w/g, l => l.toUpperCase()));
+    addField("Purchase Timeline", TIMEFRAME_LABELS[lead.purchase_timeframe] || lead.purchase_timeframe);
+    addLine(5);
+
+    // Loan Details Section
+    addSectionHeader("LOAN DETAILS");
+    addFieldRow([
+      { label: "Purchase Price", value: formatCurrency(lead.purchase_price), highlight: true },
+      { label: "Down Payment", value: `${formatCurrency(lead.down_payment_amount)} (${lead.down_payment_percent}%)` },
+    ]);
+    addFieldRow([
+      { label: "Loan Amount", value: formatCurrency(lead.loan_amount_requested), highlight: true },
+      { label: "Est. Monthly Payment", value: formatCurrency(lead.monthly_payment_estimate), highlight: true },
+    ]);
+    addFieldRow([
+      { label: "Loan Term", value: `${lead.loan_term_years} years` },
+      { label: "Interest Rate", value: `${lead.interest_rate}%` },
+    ]);
+    addLine(5);
+
+    // Financial Profile Section
+    addSectionHeader("FINANCIAL PROFILE");
+    if (isVerified && verifiedFinancials) {
+      // Verified badge
+      doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
+      doc.roundedRect(margin, y - 3, 85, 8, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("✓ PLAID VERIFIED DATA", margin + 3, y + 2);
+      addLine(12);
+      
+      addFieldRow([
+        { label: "Verified Annual Income", value: formatCurrency(verifiedFinancials.verified_annual_income), highlight: true },
+        { label: "Verified Monthly Income", value: formatCurrency(verifiedFinancials.verified_monthly_income), highlight: true },
+      ]);
+      if (verifiedFinancials.employer_name) {
+        addField("Employer", verifiedFinancials.employer_name);
+      }
+      addFieldRow([
+        { label: "Total Assets", value: formatCurrency(verifiedFinancials.verified_assets_total), highlight: true },
+        { label: "Total Liabilities", value: formatCurrency(verifiedFinancials.verified_liabilities_total) },
+      ]);
+      const netWorth = (verifiedFinancials.verified_assets_total || 0) - (verifiedFinancials.verified_liabilities_total || 0);
+      addField("Net Worth", formatCurrency(netWorth), netWorth > 0);
+    } else {
+      doc.setFillColor(251, 191, 36);
+      doc.roundedRect(margin, y - 3, 70, 8, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("SELF-REPORTED", margin + 3, y + 2);
+      addLine(12);
+      
+      addField("Annual Income Range", INCOME_LABELS[lead.annual_income_range] || lead.annual_income_range);
+    }
+    addField("Credit Score Range", CREDIT_LABELS[lead.credit_score_range] || lead.credit_score_range);
+    addField("Employment Status", lead.employment_status.replace("_", " ").replace(/\b\w/g, l => l.toUpperCase()));
+    addLine(5);
+
+    // DTI Analysis Section
+    addSectionHeader("DTI ANALYSIS");
+    const frontDTI = lead.front_end_dti;
+    const backDTI = lead.dti_ratio;
+    
+    // DTI boxes
+    checkNewPage(30);
+    const boxWidth = (contentWidth - 10) / 2;
+    
+    // Front-End DTI Box
+    const frontColor: [number, number, number] = frontDTI && frontDTI <= 31 ? [16, 185, 129] : frontDTI && frontDTI <= 36 ? [251, 191, 36] : [239, 68, 68];
+    doc.setFillColor(frontColor[0], frontColor[1], frontColor[2]);
+    doc.roundedRect(margin, y, boxWidth, 25, 3, 3, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text("FRONT-END DTI", margin + 5, y + 7);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(frontDTI ? `${frontDTI.toFixed(1)}%` : "N/A", margin + 5, y + 18);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text("Target: <31%", margin + boxWidth - 25, y + 18);
+
+    // Back-End DTI Box
+    const backColor: [number, number, number] = backDTI && backDTI <= 43 ? [16, 185, 129] : backDTI && backDTI <= 48 ? [251, 191, 36] : [239, 68, 68];
+    doc.setFillColor(backColor[0], backColor[1], backColor[2]);
+    doc.roundedRect(margin + boxWidth + 10, y, boxWidth, 25, 3, 3, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text("BACK-END DTI", margin + boxWidth + 15, y + 7);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(backDTI ? `${backDTI.toFixed(1)}%` : "N/A", margin + boxWidth + 15, y + 18);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text("Target: <43%", margin + contentWidth - 20, y + 18);
+    
+    addLine(35);
+
+    // Eligible Programs Section
+    addSectionHeader("ELIGIBLE FINANCING PROGRAMS");
+    if (lead.eligible_programs && lead.eligible_programs.length > 0) {
+      lead.eligible_programs.forEach((program, idx) => {
+        checkNewPage();
+        if (idx === 0) {
+          // Best match badge
+          doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
+          doc.roundedRect(margin, y - 3, 55, 7, 2, 2, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(7);
+          doc.setFont("helvetica", "bold");
+          doc.text("★ BEST MATCH", margin + 3, y + 1);
+          doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+          doc.setFontSize(11);
+          doc.text(program, margin + 60, y);
+        } else {
+          doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(`• ${program}`, margin, y);
+        }
+        addLine(8);
+      });
+    } else {
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.setFontSize(10);
+      doc.text("No programs matched yet", margin, y);
+      addLine(8);
+    }
+    addLine(5);
+
+    // Status Section
+    addSectionHeader("APPLICATION STATUS");
+    addField("Pre-Qualification Status", statusConfig.label);
+    if (lead.pre_qualified_amount) {
+      addField("Pre-Qualified Amount", formatCurrency(lead.pre_qualified_amount), true);
+    }
+    addField("Application Date", new Date(lead.created_at).toLocaleDateString());
+    addField("Last Updated", new Date(lead.updated_at).toLocaleDateString());
+    addLine(5);
+
+    // Notes Section (if any)
+    if (notes) {
+      addSectionHeader("INTERNAL NOTES");
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      const splitNotes = doc.splitTextToSize(notes, contentWidth);
+      splitNotes.forEach((line: string) => {
+        checkNewPage();
+        doc.text(line, margin, y);
+        addLine(5);
+      });
+    }
+
+    // Footer on each page
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFillColor(245, 247, 250);
+      doc.rect(0, 280, pageWidth, 20, "F");
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.setFontSize(8);
+      doc.text(`Application #${lead.id.slice(0, 8)} • Confidential`, margin, 288);
+      doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin - 20, 288);
+    }
+
+    return doc;
+  };
+
+  const handleDownloadReport = () => {
+    try {
+      const doc = generatePDFReport();
+      const filename = `borrower-report-${lead.contact_name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(filename);
+      toast.success("PDF report downloaded");
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+      toast.error("Failed to generate PDF report");
+    }
+  };
+
+  // Generate simple text summary for clipboard/email
+  const generateTextSummary = () => {
+    return `
+BORROWER PRE-QUALIFICATION SUMMARY
+==================================
 Name: ${lead.contact_name}
 Email: ${lead.contact_email}
 Phone: ${lead.contact_phone || "Not provided"}
 
-LOAN DETAILS
-------------
-Purchase Price: ${formatCurrency(lead.purchase_price)}
-Down Payment: ${formatCurrency(lead.down_payment_amount)} (${lead.down_payment_percent}%)
-Loan Amount: ${formatCurrency(lead.loan_amount_requested)}
-Term: ${lead.loan_term_years} years
-Interest Rate: ${lead.interest_rate}%
-Est. Monthly Payment: ${formatCurrency(lead.monthly_payment_estimate)}
+Loan Details:
+- Purchase Price: ${formatCurrency(lead.purchase_price)}
+- Down Payment: ${formatCurrency(lead.down_payment_amount)} (${lead.down_payment_percent}%)
+- Loan Amount: ${formatCurrency(lead.loan_amount_requested)}
+- Est. Monthly Payment: ${formatCurrency(lead.monthly_payment_estimate)}
 
-FINANCIAL PROFILE
------------------
-${isVerified ? "✓ PLAID VERIFIED" : "Self-Reported"}
-Annual Income: ${verifiedFinancials?.verified_annual_income ? formatCurrency(verifiedFinancials.verified_annual_income) : INCOME_LABELS[lead.annual_income_range] || lead.annual_income_range}
-Credit Score Range: ${CREDIT_LABELS[lead.credit_score_range] || lead.credit_score_range}
-Employment: ${lead.employment_status.replace("_", " ")}
-${verifiedFinancials?.employer_name ? `Employer: ${verifiedFinancials.employer_name}` : ""}
+Financial Profile (${isVerified ? "Plaid Verified" : "Self-Reported"}):
+- Annual Income: ${verifiedFinancials?.verified_annual_income ? formatCurrency(verifiedFinancials.verified_annual_income) : INCOME_LABELS[lead.annual_income_range]}
+- Credit Score: ${CREDIT_LABELS[lead.credit_score_range]}
+- Front-End DTI: ${lead.front_end_dti ? `${lead.front_end_dti.toFixed(1)}%` : "N/A"}
+- Back-End DTI: ${lead.dti_ratio ? `${lead.dti_ratio.toFixed(1)}%` : "N/A"}
 
-DTI RATIOS
-----------
-Front-End DTI: ${lead.front_end_dti ? `${lead.front_end_dti.toFixed(1)}%` : "N/A"}
-Back-End DTI: ${lead.dti_ratio ? `${lead.dti_ratio.toFixed(1)}%` : "N/A"}
-
-${verifiedFinancials ? `
-VERIFIED FINANCIALS
--------------------
-Total Assets: ${formatCurrency(verifiedFinancials.verified_assets_total)}
-Total Liabilities: ${formatCurrency(verifiedFinancials.verified_liabilities_total)}
-Net Worth: ${formatCurrency((verifiedFinancials.verified_assets_total || 0) - (verifiedFinancials.verified_liabilities_total || 0))}
-` : ""}
-
-ELIGIBLE PROGRAMS
------------------
-${lead.eligible_programs?.length ? lead.eligible_programs.join("\n") : "No programs matched"}
-
-STATUS
-------
-Pre-Qualification Status: ${statusConfig.label}
+Eligible Programs: ${lead.eligible_programs?.join(", ") || "None matched"}
+Status: ${statusConfig.label}
 ${lead.pre_qualified_amount ? `Pre-Qualified Amount: ${formatCurrency(lead.pre_qualified_amount)}` : ""}
 
-INTERNAL NOTES
---------------
-${notes || "No notes"}
-
-Application Date: ${new Date(lead.created_at).toLocaleDateString()}
-Last Updated: ${new Date(lead.updated_at).toLocaleDateString()}
+Application #${lead.id.slice(0, 8)}
     `.trim();
-
-    return report;
-  };
-
-  const handleDownloadReport = () => {
-    const report = generateReport();
-    const blob = new Blob([report], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `borrower-report-${lead.contact_name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Report downloaded");
   };
 
   const handleSendToLender = async () => {
@@ -258,16 +494,33 @@ Last Updated: ${new Date(lead.updated_at).toLocaleDateString()}
     }
     
     setIsSendingToLender(true);
-    // In production, this would send via email API
-    // For now, we'll copy to clipboard and show success
-    const report = generateReport();
-    await navigator.clipboard.writeText(report);
-    
-    setTimeout(() => {
+    // Generate PDF and copy summary to clipboard
+    try {
+      const doc = generatePDFReport();
+      const pdfBlob = doc.output('blob');
+      const summary = generateTextSummary();
+      await navigator.clipboard.writeText(summary);
+      
+      // Save PDF for manual attachment
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `borrower-report-${lead.contact_name.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setTimeout(() => {
+        setIsSendingToLender(false);
+        setSendDialogOpen(false);
+        toast.success(`PDF downloaded & summary copied. Send to ${lenderEmail}`);
+      }, 500);
+    } catch (error) {
+      console.error("Failed to prepare report:", error);
+      toast.error("Failed to prepare report");
       setIsSendingToLender(false);
-      setSendDialogOpen(false);
-      toast.success(`Report copied to clipboard. Send to ${lenderEmail}`);
-    }, 1000);
+    }
   };
 
   const copyEmail = () => {
