@@ -46,6 +46,7 @@ const statusLabels = {
 
 export function PricingLotsTab() {
   const [selectedDevelopment, setSelectedDevelopment] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const queryClient = useQueryClient();
 
   // Fetch developments
@@ -120,10 +121,17 @@ export function PricingLotsTab() {
 
   const selectedDev = developments?.find(d => d.id === selectedDevelopment);
   
-  // Summary stats
+  // Filter lots by status
+  const filteredLots = lots?.filter(lot => 
+    statusFilter === 'all' || lot.status === statusFilter
+  );
+  
+  // Summary stats (based on all lots, not filtered)
   const lotStats = lots ? {
     total: lots.length,
     available: lots.filter(l => l.status === 'available').length,
+    reserved: lots.filter(l => l.status === 'reserved').length,
+    sold: lots.filter(l => l.status === 'sold').length,
     minPremium: Math.min(...lots.filter(l => l.premium > 0).map(l => l.premium)) || 0,
     maxPremium: Math.max(...lots.map(l => l.premium)) || 0,
   } : null;
@@ -162,16 +170,19 @@ export function PricingLotsTab() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <div className="w-72">
                   <Select
                     value={selectedDevelopment || ''}
-                    onValueChange={setSelectedDevelopment}
+                    onValueChange={(value) => {
+                      setSelectedDevelopment(value);
+                      setStatusFilter('all'); // Reset filter when changing development
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a community..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border shadow-lg z-50">
                       {developments.map((dev) => (
                         <SelectItem key={dev.id} value={dev.id}>
                           {dev.name} ({dev.city}, {dev.state})
@@ -181,10 +192,36 @@ export function PricingLotsTab() {
                   </Select>
                 </div>
                 
+                {selectedDevelopment && (
+                  <div className="w-44">
+                    <Select
+                      value={statusFilter}
+                      onValueChange={setStatusFilter}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="available">{statusLabels.available}</SelectItem>
+                        <SelectItem value="reserved">{statusLabels.reserved}</SelectItem>
+                        <SelectItem value="pending">{statusLabels.pending}</SelectItem>
+                        <SelectItem value="sold">{statusLabels.sold}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
                 {selectedDev && (
                   <Badge variant={selectedDev.status === 'active' ? 'default' : 'secondary'}>
                     {selectedDev.status}
                   </Badge>
+                )}
+                
+                {statusFilter !== 'all' && filteredLots && (
+                  <span className="text-sm text-muted-foreground">
+                    Showing {filteredLots.length} of {lots?.length} lots
+                  </span>
                 )}
               </div>
             </CardContent>
@@ -236,9 +273,11 @@ export function PricingLotsTab() {
                   <div className="text-center py-12 text-destructive">
                     Failed to load lots
                   </div>
-                ) : lots && lots.length === 0 ? (
+                ) : filteredLots && filteredLots.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    No lots found for this development
+                    {statusFilter !== 'all' 
+                      ? `No ${statusFilter} lots found` 
+                      : 'No lots found for this development'}
                   </div>
                 ) : (
                   <Table>
@@ -252,7 +291,7 @@ export function PricingLotsTab() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {lots?.map((lot) => (
+                      {filteredLots?.map((lot) => (
                         <TableRow key={lot.id}>
                           <TableCell className="font-medium">{lot.lot_number}</TableCell>
                           <TableCell className="text-center">
@@ -276,7 +315,7 @@ export function PricingLotsTab() {
                               <SelectTrigger className={`w-36 ${statusColors[lot.status]}`}>
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-background border shadow-lg z-50">
                                 <SelectItem value="available">{statusLabels.available}</SelectItem>
                                 <SelectItem value="reserved">{statusLabels.reserved}</SelectItem>
                                 <SelectItem value="pending">{statusLabels.pending}</SelectItem>
