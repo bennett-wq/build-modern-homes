@@ -159,7 +159,7 @@ export function PreQualificationFlow({
       const monthlyPMI = formData.downPaymentPercent < 20 ? (loanAmount * 0.005) / 12 : 0;
       const monthlyPayment = Math.round(monthlyPI + monthlyTax + monthlyInsurance + monthlyPMI);
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('financing_applications')
         .insert({
           quote_id: quoteId || null,
@@ -181,16 +181,16 @@ export function PreQualificationFlow({
           purchase_timeframe: formData.purchaseTimeframe as '0_3_months' | '3_6_months' | '6_12_months' | '12_plus',
           pre_qualification_status: status,
           pre_qualified_amount: status === 'pre_qualified' ? loanAmount * 1.1 : null,
-        })
-        .select('id')
-        .single();
+        });
 
       if (error) throw error;
 
-      setApplicationId(data.id);
+      // Generate a local reference ID for UI purposes (the actual DB ID isn't needed for the success flow)
+      const localRefId = crypto.randomUUID();
+      setApplicationId(localRefId);
       setPreQualStatus(status);
       setCurrentStep(3);
-      onComplete?.(data.id);
+      onComplete?.(localRefId);
 
       toast({
         title: status === 'pre_qualified' ? '🎉 Congratulations!' : '✓ Application Received',
