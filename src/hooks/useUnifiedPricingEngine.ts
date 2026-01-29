@@ -29,6 +29,10 @@ export interface UnifiedPriceInput {
   includeFeesAllowance?: boolean;
   includeSiteworkContingency?: boolean;
   zoneSlug?: string; // Optional zone override
+  // Lot integration for community_all_in mode
+  lotPremium?: number; // Lot premium from lots table
+  lotNumber?: string; // Lot label for display
+  developmentName?: string; // Development name for display
 }
 
 export interface LineItemDetail {
@@ -36,7 +40,7 @@ export interface LineItemDetail {
   label: string;
   baseAmount: number;
   retailAmount: number;
-  category: 'home' | 'options' | 'sitework' | 'fees' | 'contingency';
+  category: 'home' | 'options' | 'sitework' | 'fees' | 'contingency' | 'lot';
 }
 
 export interface UnifiedPriceBreakdown {
@@ -81,10 +85,19 @@ export interface UnifiedPriceBreakdown {
     label: string;
   };
   
+  // Lot premium (community builds only)
+  lot: {
+    premium: number;
+    lotNumber: string | null;
+    developmentName: string | null;
+    isIncluded: boolean;
+  };
+  
   // Totals
   totals: {
     homeOnlyTotal: number;
     installedTypicalTotal: number;
+    allInTotal: number; // Includes lot premium for community builds
     displayedTotal: number;
     lineItems: LineItemDetail[];
   };
@@ -157,6 +170,9 @@ export function useUnifiedPricingEngine(): UseUnifiedPricingEngineResult {
         includeFeesAllowance = false,
         includeSiteworkContingency = true,
         zoneSlug,
+        lotPremium = 0,
+        lotNumber = null,
+        developmentName = null,
       } = input;
       
       // Get model and pricing from database
@@ -222,17 +238,37 @@ export function useUnifiedPricingEngine(): UseUnifiedPricingEngineResult {
         ? sitework.feesTotal
         : 0;
       
+      // Determine if lot is included (community_all_in mode)
+      const hasLotPremium = lotPremium > 0;
+      
       // Calculate totals
       const homeOnlyTotal = retailHomeTotal + optionsRetailTotal + (includeFeesAllowance ? feesAllowanceTotal : 0);
       const installedTypicalTotal = retailHomeTotal + optionsRetailTotal + siteworkRetailTotal + (includeFeesAllowance ? feesAllowanceTotal : 0);
+      const allInTotal = installedTypicalTotal + lotPremium;
       
-      // Displayed total depends on service package
-      const displayedTotal = servicePackage === 'home_only' 
-        ? homeOnlyTotal 
-        : installedTypicalTotal;
+      // Displayed total depends on service package and lot selection
+      let displayedTotal: number;
+      if (servicePackage === 'home_only') {
+        displayedTotal = homeOnlyTotal;
+      } else if (hasLotPremium) {
+        displayedTotal = allInTotal;
+      } else {
+        displayedTotal = installedTypicalTotal;
+      }
       
       // Build line items for display
       const lineItems: LineItemDetail[] = [];
+      
+      // Lot premium line (first if included for community builds)
+      if (hasLotPremium) {
+        lineItems.push({
+          id: 'lot-premium',
+          label: lotNumber ? `Lot ${lotNumber}` : 'Lot Premium',
+          baseAmount: lotPremium,
+          retailAmount: lotPremium, // Lot premium passes through without markup
+          category: 'lot',
+        });
+      }
       
       // Home package line
       lineItems.push({
@@ -276,10 +312,15 @@ export function useUnifiedPricingEngine(): UseUnifiedPricingEngineResult {
         });
       }
       
-      // Derive pricing mode from service package
-      const pricingMode: PricingMode = servicePackage === 'home_only' 
-        ? 'supply_only' 
-        : 'delivered_installed';
+      // Derive pricing mode from service package and lot selection
+      let pricingMode: PricingMode;
+      if (servicePackage === 'home_only') {
+        pricingMode = 'supply_only';
+      } else if (hasLotPremium) {
+        pricingMode = 'community_all_in';
+      } else {
+        pricingMode = 'delivered_installed';
+      }
       
       // DEV ASSERTION: Verify line items sum to total
       if (import.meta.env.DEV) {
@@ -332,9 +373,17 @@ export function useUnifiedPricingEngine(): UseUnifiedPricingEngineResult {
           label: 'Utility & Permit Allowance',
         },
         
+        lot: {
+          premium: lotPremium,
+          lotNumber: lotNumber,
+          developmentName: developmentName,
+          isIncluded: hasLotPremium,
+        },
+        
         totals: {
           homeOnlyTotal,
           installedTypicalTotal,
+          allInTotal,
           displayedTotal,
           lineItems,
         },

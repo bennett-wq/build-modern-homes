@@ -118,6 +118,10 @@ export default function BuildWizard() {
     servicePackage: 'community_all_in', // Community builds include lot
     includeUtilityFees: true,
     includePermitsCosts: true,
+    // Pass lot premium for all-in pricing
+    lotPremium: selectedLot?.premium || 0,
+    lotNumber: selectedLot?.label,
+    developmentName: development?.name,
   });
 
   // Build selection summary for quote forms

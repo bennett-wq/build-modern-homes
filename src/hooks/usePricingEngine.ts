@@ -99,7 +99,10 @@ export interface BuyerFacingBreakdown {
   // Packaged prices (what buyers see)
   homePackagePrice: number;        // BaseMod Home Package
   installPackagePrice: number;     // Professional Installation
-  communityAdder: number;          // Community & Land (only for community_all_in)
+  communityAdder: number;          // Community & Land (legacy, kept for compatibility)
+  lotPremium: number;              // Lot premium for community builds
+  lotNumber: string | null;        // Lot label for display
+  developmentName: string | null;  // Development name for display
   optionsUpgradesTotal: number;    // Floor plan + exterior adders
   feesPermitsTotal: number;        // Utility fees + permits
 
@@ -108,6 +111,7 @@ export interface BuyerFacingBreakdown {
 
   // Grand total
   startingFromPrice: number;
+  allInTotal: number;              // Total including lot premium
 
   // Labels for display
   labels: typeof buyerPackageLabels;
@@ -394,15 +398,20 @@ function calculateBuyerFacingPrices(
 
   // Grand total
   const startingFromPrice = homePackagePrice + installPackagePrice + communityAdder + feesPermitsTotal;
+  const allInTotal = startingFromPrice; // Legacy pricing engine doesn't have separate lot premium
 
   return {
     homePackagePrice,
     installPackagePrice,
     communityAdder,
+    lotPremium: 0, // Legacy engine doesn't support lot premium
+    lotNumber: null,
+    developmentName: null,
     optionsUpgradesTotal,
     feesPermitsTotal,
     optionDetails,
     startingFromPrice,
+    allInTotal,
     labels: buyerPackageLabels,
   };
 }
