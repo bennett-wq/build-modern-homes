@@ -118,6 +118,9 @@ export function PreQualificationFlow({
   // Ref is used to synchronously guard against Radix/overlay dismiss events firing
   // before React state has a chance to commit.
   const isPlaidModalOpenRef = useRef(false);
+  // When Plaid exits, the same user click can be interpreted as an outside click on our drawer.
+  // This can close the entire flow right after Plaid closes, which feels like a total shutdown.
+  const lastPlaidCloseAtRef = useRef(0);
   const [prequalResults, setPrequalResults] = useState<{
     eligiblePrograms: Array<{ name: string; matchQuality: string; description: string }>;
     dtiRatio: number | null;
@@ -169,6 +172,9 @@ export function PreQualificationFlow({
   // Track when Plaid modal is open to prevent interference
   const handlePlaidOpenChange = useCallback((isOpen: boolean) => {
     isPlaidModalOpenRef.current = isOpen;
+    if (!isOpen) {
+      lastPlaidCloseAtRef.current = Date.now();
+    }
     setIsPlaidModalOpen(isOpen);
   }, []);
 
@@ -180,7 +186,12 @@ export function PreQualificationFlow({
   // We hard-block drawer dismissal while Plaid is open.
   const handleDrawerOpenChange = useCallback(
     (nextOpen: boolean) => {
-      if (!nextOpen && isPlaidModalOpenRef.current) return;
+      if (!nextOpen) {
+        // Block dismissal while Plaid is open
+        if (isPlaidModalOpenRef.current) return;
+        // Also block the immediate "click-through" dismissal right after Plaid exits
+        if (Date.now() - lastPlaidCloseAtRef.current < 800) return;
+      }
       onOpenChange(nextOpen);
     },
     [onOpenChange]

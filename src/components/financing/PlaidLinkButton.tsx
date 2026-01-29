@@ -11,7 +11,7 @@
  * 4. The Plaid config is created once and never changes after initialization
  */
 
-import React, { useCallback, useEffect, useRef, useState, memo } from "react";
+import React, { useCallback, useEffect, useRef, useState, memo, forwardRef } from "react";
 import { usePlaidLink, PlaidLinkOptions } from "react-plaid-link";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -113,6 +113,9 @@ function PlaidLinkButtonInner({
   const handleExit = useCallback((err: any, metadata: any) => {
     // Notify parent that Plaid is closing
     onOpenChangeRef.current?.(false);
+
+    // Helpful diagnostics for tricky iframe/overlay lifecycle issues
+    console.info("PlaidLinkButton: onExit", { err, metadata });
     
     if (err) {
       const message = err?.display_message || err?.error_message || "Bank connection was cancelled";
@@ -200,13 +203,19 @@ function PlaidLinkButtonInner({
  * 2. The link token is fetched once and never changes
  * 3. The Plaid config is created once and stored in a ref
  */
-export const PlaidLinkButton = memo(
-  PlaidLinkButtonInner,
-  (prevProps, nextProps) => {
-    // Only re-render if disabled status changes
-    // All other props are handled via refs internally
-    return prevProps.disabled === nextProps.disabled;
-  }
-);
+const PlaidLinkButtonWithRef = forwardRef<HTMLSpanElement, PlaidLinkButtonProps>((props, ref) => {
+  // Framer Motion / Radix can attach refs when measuring/animating; we accept a ref
+  // to avoid React warnings without coupling Plaid Link to any external ref usage.
+  return (
+    <span ref={ref} className="inline-flex">
+      <PlaidLinkButtonInner {...props} />
+    </span>
+  );
+});
 
-PlaidLinkButton.displayName = "PlaidLinkButton";
+PlaidLinkButtonWithRef.displayName = "PlaidLinkButton";
+
+export const PlaidLinkButton = memo(
+  PlaidLinkButtonWithRef,
+  (prevProps, nextProps) => prevProps.disabled === nextProps.disabled
+);

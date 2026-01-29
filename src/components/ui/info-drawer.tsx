@@ -52,7 +52,7 @@ export function InfoDrawer({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange} modal={!allowOutsideInteraction}>
-        <DrawerContent className="max-h-[85vh]">
+        <DrawerContent hideOverlay={allowOutsideInteraction} className="max-h-[85vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle>{title}</DrawerTitle>
             {description && (
@@ -72,6 +72,7 @@ export function InfoDrawer({
     <Sheet open={open} onOpenChange={onOpenChange} modal={!allowOutsideInteraction}>
       <SheetContent
         side="right"
+        hideOverlay={allowOutsideInteraction}
         className={cn(
           'w-[420px] sm:w-[480px] sm:max-w-[520px] overflow-y-auto',
           'flex flex-col'
