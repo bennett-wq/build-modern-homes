@@ -199,6 +199,92 @@ export type Database = {
         }
         Relationships: []
       }
+      financing_applications: {
+        Row: {
+          annual_income_range: Database["public"]["Enums"]["income_range"]
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          credit_score_range: Database["public"]["Enums"]["credit_score_range"]
+          down_payment_amount: number
+          down_payment_percent: number
+          employment_status: Database["public"]["Enums"]["employment_status"]
+          id: string
+          intended_use: Database["public"]["Enums"]["intended_use"]
+          interest_rate: number
+          loan_amount_requested: number
+          loan_term_years: number
+          monthly_payment_estimate: number | null
+          notes: string | null
+          pre_qualification_status: Database["public"]["Enums"]["prequal_status"]
+          pre_qualified_amount: number | null
+          purchase_price: number
+          purchase_timeframe: Database["public"]["Enums"]["purchase_timeframe"]
+          quote_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          annual_income_range?: Database["public"]["Enums"]["income_range"]
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          created_at?: string
+          credit_score_range?: Database["public"]["Enums"]["credit_score_range"]
+          down_payment_amount?: number
+          down_payment_percent?: number
+          employment_status?: Database["public"]["Enums"]["employment_status"]
+          id?: string
+          intended_use?: Database["public"]["Enums"]["intended_use"]
+          interest_rate?: number
+          loan_amount_requested?: number
+          loan_term_years?: number
+          monthly_payment_estimate?: number | null
+          notes?: string | null
+          pre_qualification_status?: Database["public"]["Enums"]["prequal_status"]
+          pre_qualified_amount?: number | null
+          purchase_price: number
+          purchase_timeframe?: Database["public"]["Enums"]["purchase_timeframe"]
+          quote_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          annual_income_range?: Database["public"]["Enums"]["income_range"]
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          credit_score_range?: Database["public"]["Enums"]["credit_score_range"]
+          down_payment_amount?: number
+          down_payment_percent?: number
+          employment_status?: Database["public"]["Enums"]["employment_status"]
+          id?: string
+          intended_use?: Database["public"]["Enums"]["intended_use"]
+          interest_rate?: number
+          loan_amount_requested?: number
+          loan_term_years?: number
+          monthly_payment_estimate?: number | null
+          notes?: string | null
+          pre_qualification_status?: Database["public"]["Enums"]["prequal_status"]
+          pre_qualified_amount?: number | null
+          purchase_price?: number
+          purchase_timeframe?: Database["public"]["Enums"]["purchase_timeframe"]
+          quote_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financing_applications_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garage_door_options: {
         Row: {
           color_hex: string | null
@@ -741,10 +827,30 @@ export type Database = {
     Enums: {
       app_role: "admin" | "builder"
       build_type: "xmod" | "mod"
+      credit_score_range:
+        | "excellent_750"
+        | "good_700"
+        | "fair_650"
+        | "below_650"
+        | "unsure"
       development_status: "active" | "coming-soon" | "sold-out"
+      employment_status: "employed" | "self_employed" | "retired" | "other"
       foundation_type: "slab" | "basement" | "crawl"
       garage_style: "traditional" | "carriage" | "modern" | "craftsman"
+      income_range:
+        | "under_50k"
+        | "50k_75k"
+        | "75k_100k"
+        | "100k_150k"
+        | "150k_plus"
+      intended_use: "primary" | "second_home" | "investment"
       lot_status: "available" | "reserved" | "sold" | "pending"
+      prequal_status: "pending" | "pre_qualified" | "needs_review" | "declined"
+      purchase_timeframe:
+        | "0_3_months"
+        | "3_6_months"
+        | "6_12_months"
+        | "12_plus"
       quote_status: "draft" | "submitted" | "contacted" | "converted"
       service_package:
         | "delivered_installed"
@@ -880,10 +986,33 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "builder"],
       build_type: ["xmod", "mod"],
+      credit_score_range: [
+        "excellent_750",
+        "good_700",
+        "fair_650",
+        "below_650",
+        "unsure",
+      ],
       development_status: ["active", "coming-soon", "sold-out"],
+      employment_status: ["employed", "self_employed", "retired", "other"],
       foundation_type: ["slab", "basement", "crawl"],
       garage_style: ["traditional", "carriage", "modern", "craftsman"],
+      income_range: [
+        "under_50k",
+        "50k_75k",
+        "75k_100k",
+        "100k_150k",
+        "150k_plus",
+      ],
+      intended_use: ["primary", "second_home", "investment"],
       lot_status: ["available", "reserved", "sold", "pending"],
+      prequal_status: ["pending", "pre_qualified", "needs_review", "declined"],
+      purchase_timeframe: [
+        "0_3_months",
+        "3_6_months",
+        "6_12_months",
+        "12_plus",
+      ],
       quote_status: ["draft", "submitted", "contacted", "converted"],
       service_package: [
         "delivered_installed",
