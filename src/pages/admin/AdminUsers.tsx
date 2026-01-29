@@ -4,9 +4,10 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAdminAuth, type AppRole } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,15 +35,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   Loader2, 
-  LogOut, 
   Users, 
   UserPlus,
   Trash2,
-  ArrowLeft,
   AlertCircle,
   Check,
   Shield,
-  Hammer
+  Hammer,
+  Mail
 } from 'lucide-react';
 
 interface UserRole {
@@ -50,7 +50,7 @@ interface UserRole {
   user_id: string;
   role: AppRole;
   created_at: string;
-  email?: string;
+  email?: string | null;
 }
 
 export default function AdminUsers() {
@@ -79,29 +79,33 @@ export default function AdminUsers() {
     }
   }, [user, isAdmin, hasAccess, authLoading, navigate]);
 
-  // Load users
+  // Load users with emails via edge function
   const loadUsers = useCallback(async () => {
     setIsLoadingUsers(true);
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('id, user_id, role, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error: fnError } = await supabase.functions.invoke('list-team-members');
 
-      if (error) throw error;
-
-      // Type the data properly
-      const typedUsers: UserRole[] = (data || []).map((row) => ({
-        id: row.id,
-        user_id: row.user_id,
-        role: row.role as AppRole,
-        created_at: row.created_at,
-      }));
-
-      setUsers(typedUsers);
+      if (fnError) throw fnError;
+      
+      if (data?.members) {
+        const typedUsers: UserRole[] = data.members.map((row: {
+          id: string;
+          user_id: string;
+          role: string;
+          created_at: string;
+          email?: string | null;
+        }) => ({
+          id: row.id,
+          user_id: row.user_id,
+          role: row.role as AppRole,
+          created_at: row.created_at,
+          email: row.email,
+        }));
+        setUsers(typedUsers);
+      }
     } catch (err) {
       console.error('Failed to load users:', err);
-      setError('Failed to load users');
+      setError('Failed to load team members');
     } finally {
       setIsLoadingUsers(false);
     }
@@ -149,7 +153,8 @@ export default function AdminUsers() {
       }
 
       const action = data?.updated ? 'Updated' : 'Added';
-      setSuccessMessage(`${action} ${newUserEmail} as ${newUserRole}`);
+      const emailNote = data?.emailSent ? ' (welcome email sent)' : '';
+      setSuccessMessage(`${action} ${newUserEmail} as ${newUserRole}${emailNote}`);
       setNewUserEmail('');
       await loadUsers();
 
@@ -203,49 +208,31 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="bg-background border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/admin/pricing" className="p-2 rounded-lg hover:bg-muted">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">Team Management</h1>
-              <p className="text-sm text-muted-foreground">
-                Manage admin and builder access
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4 mr-1" />
-            Sign Out
-          </Button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 max-w-4xl">
+    <AdminShell
+      title="Team Management"
+      description="Manage admin and builder access"
+      icon={<Users className="h-5 w-5 text-primary" />}
+      user={user}
+      isAdmin={isAdmin}
+      onSignOut={handleSignOut}
+    >
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Alerts */}
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="whitespace-pre-wrap">{error}</AlertDescription>
           </Alert>
         )}
         {successMessage && (
-          <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
+          <Alert className="border-green-200 bg-green-50 text-green-800">
             <Check className="h-4 w-4" />
             <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
         )}
 
         {/* Add User Card */}
-        <Card className="mb-6">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
@@ -300,22 +287,25 @@ export default function AdminUsers() {
                 </Button>
               </div>
             </form>
-            <p className="text-sm text-muted-foreground mt-4">
-              <strong>How to add partners:</strong>
-              <br />
-              1. Have your partner sign up at <code className="bg-muted px-1 rounded">/admin/login</code>
-              <br />
-              2. Enter their email above and select their role
-              <br />
-              3. They can then sign in and access the admin console
-            </p>
-            <p className="text-sm text-muted-foreground mt-3">
-              <strong>Role Permissions:</strong>
-              <br />
-              • <strong>Builder</strong>: Can view and edit pricing drafts
-              <br />
-              • <strong>Admin</strong>: Can publish pricing and manage team members
-            </p>
+            <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>How to add partners:</strong>
+              </p>
+              <ol className="text-sm text-muted-foreground mt-2 list-decimal list-inside space-y-1">
+                <li>Have your partner sign up at <code className="bg-muted px-1 rounded">/admin/login</code></li>
+                <li>Enter their email above and select their role</li>
+                <li>They'll receive a welcome email with access details</li>
+              </ol>
+              <div className="mt-3 pt-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Role Permissions:</strong>
+                </p>
+                <ul className="text-sm text-muted-foreground mt-1 space-y-1">
+                  <li>• <strong>Builder</strong>: View and edit pricing drafts, view leads</li>
+                  <li>• <strong>Admin</strong>: Publish pricing, manage team members</li>
+                </ul>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -324,7 +314,7 @@ export default function AdminUsers() {
           <CardHeader>
             <CardTitle>Current Team</CardTitle>
             <CardDescription>
-              Users with access to the pricing admin console
+              Users with access to the admin console
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -352,9 +342,16 @@ export default function AdminUsers() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium font-mono text-sm">
-                          {teamUser.user_id.slice(0, 8)}...
-                        </p>
+                        {teamUser.email ? (
+                          <p className="font-medium flex items-center gap-2">
+                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            {teamUser.email}
+                          </p>
+                        ) : (
+                          <p className="font-medium font-mono text-sm text-muted-foreground">
+                            {teamUser.user_id.slice(0, 8)}...
+                          </p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           Added {new Date(teamUser.created_at).toLocaleDateString()}
                         </p>
@@ -378,7 +375,7 @@ export default function AdminUsers() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Remove Team Member?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will remove their access to the pricing admin console.
+                                This will remove {teamUser.email || 'this user'}'s access to the admin console.
                                 They can be re-added later if needed.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -405,7 +402,7 @@ export default function AdminUsers() {
             )}
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

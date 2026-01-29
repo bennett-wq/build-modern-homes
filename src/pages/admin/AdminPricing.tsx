@@ -4,12 +4,13 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { usePricingConfig } from '@/state/usePricingConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { getLocalPricingConfig } from '@/data/pricing/localConfig';
-import type { PricingConfigData, PricingConfigRecord } from '@/data/pricing/types';
+import type { PricingConfigData } from '@/data/pricing/types';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +33,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   Loader2, 
-  LogOut, 
   Save, 
   Upload, 
   History, 
@@ -43,10 +43,7 @@ import {
   FileText,
   Clock,
   Trash2,
-  RotateCcw,
-  Users,
-  Shield,
-  Hammer
+  RotateCcw
 } from 'lucide-react';
 
 interface ConfigVersion {
@@ -416,63 +413,21 @@ export default function AdminPricing() {
   const canPublish = isAdmin; // Only admins can publish
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="bg-background border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <DollarSign className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">Pricing Admin</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{user.email}</span>
-                <Badge variant={isAdmin ? 'default' : 'secondary'} className="text-xs">
-                  {isAdmin ? (
-                    <>
-                      <Shield className="h-3 w-3 mr-1" />
-                      Admin
-                    </>
-                  ) : (
-                    <>
-                      <Hammer className="h-3 w-3 mr-1" />
-                      Builder
-                    </>
-                  )}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin/leads">
-                <FileText className="h-4 w-4 mr-1" />
-                Leads
-              </Link>
-            </Button>
-            {isAdmin && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/admin/users">
-                  <Users className="h-4 w-4 mr-1" />
-                  Team
-                </Link>
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={() => refreshPricing()}>
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-1" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+    <AdminShell
+      title="Pricing Admin"
+      description="Manage pricing configurations"
+      icon={<DollarSign className="h-5 w-5 text-primary" />}
+      user={user}
+      isAdmin={isAdmin}
+      onSignOut={handleSignOut}
+      headerActions={
+        <Button variant="ghost" size="sm" onClick={() => refreshPricing()}>
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Refresh
+        </Button>
+      }
+    >
+      <div className="space-y-6">
         {/* Status Bar */}
         <Card className="mb-6">
           <CardContent className="py-4">
@@ -948,7 +903,7 @@ export default function AdminPricing() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }
