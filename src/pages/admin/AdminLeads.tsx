@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminShell } from '@/components/admin/AdminShell';
+import { BorrowerProfile } from '@/components/admin/leads';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +50,8 @@ import {
   AlertCircle,
   FileText,
   Eye,
-  Save
+  Save,
+  BadgeCheck
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -62,6 +64,8 @@ interface FinancingApplication {
   down_payment_percent: number;
   down_payment_amount: number;
   loan_amount_requested: number;
+  loan_term_years: number;
+  interest_rate: number;
   monthly_payment_estimate: number | null;
   credit_score_range: string;
   annual_income_range: string;
@@ -70,9 +74,24 @@ interface FinancingApplication {
   purchase_timeframe: string;
   pre_qualification_status: 'pending' | 'pre_qualified' | 'needs_review' | 'declined';
   pre_qualified_amount: number | null;
+  verification_method: string | null;
+  dti_ratio: number | null;
+  front_end_dti: number | null;
+  eligible_programs: string[] | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface VerifiedFinancials {
+  verified_annual_income: number | null;
+  verified_monthly_income: number | null;
+  verified_assets_total: number | null;
+  verified_liabilities_total: number | null;
+  employer_name: string | null;
+  employment_verified: boolean | null;
+  income_sources: { name: string; amount: number; type: string; }[] | null;
+  data_freshness: string;
 }
 
 const STATUS_CONFIG = {
@@ -132,6 +151,11 @@ export default function AdminLeads() {
   const [editNotes, setEditNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  
+  // Full profile view state
+  const [profileViewLead, setProfileViewLead] = useState<FinancingApplication | null>(null);
+  const [profileVerifiedFinancials, setProfileVerifiedFinancials] = useState<VerifiedFinancials | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   // Redirect if not authenticated or not authorized
   useEffect(() => {
@@ -253,6 +277,56 @@ export default function AdminLeads() {
     setEditNotes(app.notes || '');
   };
 
+  // Open full profile view with verified financials
+  const openProfileView = async (app: FinancingApplication) => {
+    setIsLoadingProfile(true);
+    setProfileViewLead(app);
+    setProfileVerifiedFinancials(null);
+    
+    try {
+      // Fetch verified financials for this application
+      const { data, error } = await supabase
+        .from('verified_financials')
+        .select('*')
+        .eq('application_id', app.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Parse income_sources JSON if it's a string
+        const incomeSources = typeof data.income_sources === 'string' 
+          ? JSON.parse(data.income_sources) 
+          : data.income_sources;
+          
+        setProfileVerifiedFinancials({
+          ...data,
+          income_sources: incomeSources as { name: string; amount: number; type: string; }[] | null,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load verified financials:', err);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const closeProfileView = () => {
+    setProfileViewLead(null);
+    setProfileVerifiedFinancials(null);
+  };
+
+  const handleProfileUpdate = () => {
+    loadApplications();
+    // Update the profile view lead with fresh data
+    if (profileViewLead) {
+      const updatedLead = applications.find(a => a.id === profileViewLead.id);
+      if (updatedLead) {
+        setProfileViewLead(updatedLead);
+      }
+    }
+  };
+
   // Filter applications
   const filteredApplications = applications.filter(app => {
     const matchesSearch = searchQuery === '' || 
@@ -282,6 +356,29 @@ export default function AdminLeads() {
 
   if (!user || !hasAccess) {
     return null;
+  }
+
+  // Show full profile view when a lead is selected
+  if (profileViewLead) {
+    if (isLoadingProfile) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-muted/30">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading borrower profile...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <BorrowerProfile
+        lead={profileViewLead}
+        verifiedFinancials={profileVerifiedFinancials}
+        onBack={closeProfileView}
+        onUpdate={handleProfileUpdate}
+      />
+    );
   }
 
   return (
@@ -428,12 +525,18 @@ export default function AdminLeads() {
                     {filteredApplications.map((app) => {
                       const statusConfig = STATUS_CONFIG[app.pre_qualification_status];
                       const StatusIcon = statusConfig.icon;
+                      const isVerified = app.verification_method === 'plaid_verified';
                       
                       return (
-                        <TableRow key={app.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDetail(app)}>
+                        <TableRow key={app.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openProfileView(app)}>
                           <TableCell>
                             <div className="space-y-1">
-                              <p className="font-medium">{app.contact_name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{app.contact_name}</p>
+                                {isVerified && (
+                                  <BadgeCheck className="h-4 w-4 text-emerald-500" />
+                                )}
+                              </div>
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Mail className="h-3 w-3" />
                                 <span className="truncate max-w-[150px]">{app.contact_email}</span>
@@ -490,7 +593,7 @@ export default function AdminLeads() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openDetail(app); }}>
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openProfileView(app); }}>
                               <Eye className="h-4 w-4" />
                             </Button>
                           </TableCell>
