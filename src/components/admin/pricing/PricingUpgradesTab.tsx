@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,8 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { PriceEditCell } from './PriceEditCell';
 import { toast } from 'sonner';
-import { Loader2, Sparkles, Palette } from 'lucide-react';
+import { Loader2, Sparkles, Palette, Grid3X3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface UpgradeOption {
   id: string;
@@ -36,9 +39,34 @@ const categoryLabels: Record<string, string> = {
   exterior: 'Exterior',
   garage: 'Garage',
   foundation: 'Foundation',
+  heating: 'Heating',
+  appliance: 'Appliance',
+  electrical: 'Electrical',
+  plumbing: 'Plumbing',
+  bath: 'Bath',
+  countertop: 'Countertop',
+  cabinet: 'Cabinet',
+  interior: 'Interior',
 };
 
+// Define category order for consistent display
+const categoryOrder = [
+  'floor_plan',
+  'exterior',
+  'garage',
+  'foundation',
+  'heating',
+  'appliance',
+  'electrical',
+  'plumbing',
+  'bath',
+  'countertop',
+  'cabinet',
+  'interior',
+];
+
 export function PricingUpgradesTab() {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const queryClient = useQueryClient();
 
   // Fetch upgrade options
@@ -126,6 +154,17 @@ export function PricingUpgradesTab() {
     return acc;
   }, {} as Record<string, UpgradeOption[]>) || {};
 
+  // Get available categories that have upgrades
+  const availableCategories = categoryOrder.filter(cat => upgradesByCategory[cat]?.length > 0);
+
+  // Filter categories based on selection
+  const filteredCategories = selectedCategory === 'all' 
+    ? availableCategories 
+    : availableCategories.filter(cat => cat === selectedCategory);
+
+  // Count total upgrades
+  const totalUpgrades = upgrades?.length || 0;
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="upgrades">
@@ -142,73 +181,114 @@ export function PricingUpgradesTab() {
 
         {/* Upgrade Options Tab */}
         <TabsContent value="upgrades" className="space-y-6 mt-6">
-          {Object.entries(upgradesByCategory).map(([category, categoryUpgrades]) => (
-            <Card key={category}>
-              <CardHeader>
-                <CardTitle className="text-base">{categoryLabels[category] || category}</CardTitle>
-                <CardDescription>
-                  {categoryUpgrades.length} option{categoryUpgrades.length !== 1 ? 's' : ''}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Option</TableHead>
-                      <TableHead>Applies To</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                      <TableHead className="text-center">Active</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categoryUpgrades.map((upgrade) => (
-                      <TableRow key={upgrade.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{upgrade.label}</div>
-                            {upgrade.description && (
-                              <div className="text-sm text-muted-foreground">{upgrade.description}</div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {upgrade.applies_to_build_types && upgrade.applies_to_build_types.length > 0 ? (
-                            <div className="flex gap-1">
-                              {upgrade.applies_to_build_types.map(type => (
-                                <Badge key={type} variant="outline" className="text-xs">
-                                  {type.toUpperCase()}
-                                </Badge>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">All</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <PriceEditCell
-                            value={upgrade.base_price}
-                            onSave={async (value) => {
-                              await updateUpgradeMutation.mutateAsync({ id: upgrade.id, field: 'base_price', value });
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Switch
-                            checked={upgrade.is_active}
-                            onCheckedChange={(checked) => {
-                              updateUpgradeMutation.mutate({ id: upgrade.id, field: 'is_active', value: checked });
-                            }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Category Filter */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Grid3X3 className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Filter by Category</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ScrollArea className="w-full whitespace-nowrap">
+                <ToggleGroup 
+                  type="single" 
+                  value={selectedCategory} 
+                  onValueChange={(value) => value && setSelectedCategory(value)}
+                  className="justify-start gap-2"
+                >
+                  <ToggleGroupItem 
+                    value="all" 
+                    className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-3"
+                  >
+                    All ({totalUpgrades})
+                  </ToggleGroupItem>
+                  {availableCategories.map((category) => (
+                    <ToggleGroupItem 
+                      key={category} 
+                      value={category}
+                      className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-3"
+                    >
+                      {categoryLabels[category]} ({upgradesByCategory[category]?.length || 0})
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </CardContent>
+          </Card>
 
-          {Object.keys(upgradesByCategory).length === 0 && (
+          {/* Filtered Upgrade Categories */}
+          {filteredCategories.map((category) => {
+            const categoryUpgrades = upgradesByCategory[category] || [];
+            return (
+              <Card key={category}>
+                <CardHeader>
+                  <CardTitle className="text-base">{categoryLabels[category] || category}</CardTitle>
+                  <CardDescription>
+                    {categoryUpgrades.length} option{categoryUpgrades.length !== 1 ? 's' : ''}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Option</TableHead>
+                        <TableHead>Applies To</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        <TableHead className="text-center">Active</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categoryUpgrades.map((upgrade) => (
+                        <TableRow key={upgrade.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{upgrade.label}</div>
+                              {upgrade.description && (
+                                <div className="text-sm text-muted-foreground">{upgrade.description}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {upgrade.applies_to_build_types && upgrade.applies_to_build_types.length > 0 ? (
+                              <div className="flex gap-1">
+                                {upgrade.applies_to_build_types.map(type => (
+                                  <Badge key={type} variant="outline" className="text-xs">
+                                    {type.toUpperCase()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">All</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <PriceEditCell
+                              value={upgrade.base_price}
+                              onSave={async (value) => {
+                                await updateUpgradeMutation.mutateAsync({ id: upgrade.id, field: 'base_price', value });
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={upgrade.is_active}
+                              onCheckedChange={(checked) => {
+                                updateUpgradeMutation.mutate({ id: upgrade.id, field: 'is_active', value: checked });
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {filteredCategories.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 No upgrade options found
