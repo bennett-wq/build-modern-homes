@@ -154,6 +154,9 @@ export function PreQualificationFlow({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Track if we should auto-submit after bank connection
+  const shouldAutoSubmitRef = useRef(false);
+  
   // Listen for messages from the bank connect popup
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -181,7 +184,8 @@ export function PreQualificationFlow({
         setPlaidPublicToken(data.publicToken);
         setPlaidInstitutionName(data.institutionName || null);
         setBankConnectError(null);
-        // No toast needed - inline UI shows "Connected" status
+        // Flag for auto-submit
+        shouldAutoSubmitRef.current = true;
       } else {
         setBankConnectError(data.error || 'Connection failed');
         if (data.error && data.error !== 'User cancelled') {
@@ -197,6 +201,28 @@ export function PreQualificationFlow({
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, [toast]);
+  
+  // Auto-submit when bank is connected and form is valid
+  useEffect(() => {
+    if (
+      shouldAutoSubmitRef.current &&
+      plaidPublicToken &&
+      verificationMethod === 'plaid_verified' &&
+      currentStep === 2 &&
+      !isSubmitting &&
+      formData.contactName.trim().length >= 2 &&
+      formData.contactEmail.includes('@') &&
+      formData.downPaymentPercent >= 3
+    ) {
+      shouldAutoSubmitRef.current = false;
+      console.log('[PreQualificationFlow] Auto-submitting after bank connection');
+      // Small delay for smooth UX transition
+      const timer = setTimeout(() => {
+        handleSubmit();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [plaidPublicToken, verificationMethod, currentStep, isSubmitting, formData]);
 
   // Open bank connect in a popup (handles embedded environment)
   const openBankConnect = useCallback(() => {
@@ -238,6 +264,8 @@ export function PreQualificationFlow({
               if (result.success) {
                 setPlaidPublicToken(result.publicToken);
                 setPlaidInstitutionName(result.institutionName || null);
+                // Flag for auto-submit
+                shouldAutoSubmitRef.current = true;
               }
               localStorage.removeItem(`plaid-connect-${sessionId}`);
             } catch (e) {
