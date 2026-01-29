@@ -102,10 +102,9 @@ export function StepServicePackage({
     }
   };
   
-  // Auto-advance handler for selection
+  // No auto-advance - let users click Continue to feel in control
   const handleSelect = (pkg: ServicePackageType) => {
     onSelectPackage(pkg);
-    setTimeout(() => onNext(), 700);
   };
 
   return (
