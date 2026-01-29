@@ -97,6 +97,11 @@ export default {
           from: { opacity: "0", transform: "translateX(20px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        // Subtle attention pulse for CTA buttons after selection
+        "pulse-attention": {
+          "0%, 100%": { transform: "scale(1)", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" },
+          "50%": { transform: "scale(1.03)", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.15)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

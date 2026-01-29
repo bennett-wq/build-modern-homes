@@ -383,6 +383,7 @@ export function Step3Design({
         onContinue={onNext}
         canContinue={!!canProceed}
         continueLabel="Review Your Build"
+        pulseOnReady={`${selectedPackageId}-${selectedGarageDoorId}`}
       >
         {/* Selection summary */}
         {(selectedPackage || selectedDoor) && (

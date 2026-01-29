@@ -3,6 +3,7 @@
 // Choose between Delivered & Installed, Home Package Only, or Community All-in
 // ============================================================================
 
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Truck, 
@@ -89,6 +90,21 @@ export function StepServicePackage({
   onBack,
   hasLotSelected = false,
 }: StepServicePackageProps) {
+  const [isPulsing, setIsPulsing] = useState(false);
+  const isFirstRender = useRef(true);
+  
+  // Trigger pulse when selection changes (skip initial render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (selectedPackage) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => setIsPulsing(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedPackage]);
   
   // Filter packages based on lot selection
   const availablePackages = SERVICE_PACKAGES.filter(pkg => {
@@ -269,6 +285,9 @@ export function StepServicePackage({
                 size="lg"
                 onClick={handleContinue}
                 disabled={!selectedPackage}
+                className={cn(
+                  isPulsing && selectedPackage && "animate-[pulse-attention_0.6s_ease-in-out_2]"
+                )}
               >
                 Continue
                 <ArrowRight className="ml-2 h-5 w-5" />

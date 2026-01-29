@@ -116,6 +116,7 @@ export function Step2Model({
         onContinue={onNext}
         canContinue={!!selectedModelSlug}
         continueLabel="Continue"
+        pulseOnReady={selectedModelSlug}
       >
         {selectedModel && (
           <div className="flex items-center gap-3">

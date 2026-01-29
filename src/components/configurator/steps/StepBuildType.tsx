@@ -2,6 +2,7 @@
 // Step 4: Choose Build Type (XMOD vs MOD)
 // ============================================================================
 
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Info, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,22 @@ export function StepBuildType({
   onNext,
   onBack,
 }: StepBuildTypeProps) {
+  const [isPulsing, setIsPulsing] = useState(false);
+  const isFirstRender = useRef(true);
+  
+  // Trigger pulse when selection changes (skip initial render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (selectedBuildType) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => setIsPulsing(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedBuildType]);
+  
   // If only one build type, auto-select and show message
   const hasOnlyOne = model.buildTypes.length === 1;
   
@@ -243,6 +260,9 @@ export function StepBuildType({
                 size="lg"
                 onClick={onNext}
                 disabled={!selectedBuildType}
+                className={cn(
+                  isPulsing && selectedBuildType && "animate-[pulse-attention_0.6s_ease-in-out_2]"
+                )}
               >
                 Continue
                 <ArrowRight className="ml-2 h-5 w-5" />
