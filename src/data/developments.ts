@@ -75,6 +75,26 @@ export const developments: Development[] = [
     arbReadyPackages: ['coastal-white', 'craftsman-sage', 'modern-charcoal'],
   },
   {
+    slug: 'ypsilanti',
+    name: 'Ypsilanti',
+    city: 'Ypsilanti',
+    state: 'Michigan',
+    sitePlanImagePath: '/images/developments/ypsilanti/hero-prospect-site-plan.png',
+    description: 'This BaseMod community is still in planning stages for launch in 2026. Located at 1230 N Prospect Road, Ypsilanti MI. No HOA Restrictions.',
+    status: 'coming-soon',
+    locationHighlights: [
+      { icon: 'MapPin', title: 'Prime Location', description: 'Located on N Prospect Road with easy access to Ypsilanti and Ann Arbor.' },
+      { icon: 'Car', title: 'Commuter Friendly', description: 'Convenient access to I-94 and US-23 for easy commuting.' },
+      { icon: 'TreePine', title: 'Natural Setting', description: 'Quiet residential area with mature trees and green spaces.' },
+      { icon: 'ShoppingBag', title: 'Local Amenities', description: 'Close to shops, restaurants, and Eastern Michigan University.' },
+    ],
+    features: [
+      { icon: 'Sun', title: 'No HOA Restrictions', description: 'Build your dream home without restrictive HOA guidelines.' },
+      { icon: 'MapPin', title: 'Improved Lots', description: 'All lots come with utilities and infrastructure ready.' },
+      { icon: 'TreePine', title: 'Phased Development', description: 'Phase 1 lots available now, with additional phases through 2027.' },
+    ],
+  },
+  {
     slug: 'ann-arbor',
     name: 'Ann Arbor',
     city: 'Ann Arbor',
