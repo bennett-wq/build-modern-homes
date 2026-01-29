@@ -22,20 +22,12 @@ const DrawerOverlay = React.forwardRef<
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
-type DrawerContentProps = React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
-  /**
-   * When true, we don't render the DrawerOverlay.
-   * Needed for third-party overlays (e.g. Plaid) that mount to <body> and manage their own modal layer.
-   */
-  hideOverlay?: boolean;
-  /** Optional overlay className override (only applies when hideOverlay=false). */
-  overlayClassName?: string;
-};
-
-const DrawerContent = React.forwardRef<React.ElementRef<typeof DrawerPrimitive.Content>, DrawerContentProps>(
-  ({ className, children, hideOverlay, overlayClassName, ...props }, ref) => (
+const DrawerContent = React.forwardRef<
+  React.ElementRef<typeof DrawerPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
   <DrawerPortal>
-    {!hideOverlay ? <DrawerOverlay className={overlayClassName} /> : null}
+    <DrawerOverlay />
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
@@ -48,8 +40,7 @@ const DrawerContent = React.forwardRef<React.ElementRef<typeof DrawerPrimitive.C
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
-  ),
-);
+));
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

@@ -21,6 +21,7 @@ import GrandHavenSitePlan from "./pages/GrandHavenSitePlan";
 import BuildWizard from "./pages/BuildWizard";
 import Configurator from "./pages/Configurator";
 import QuoteSummary from "./pages/QuoteSummary";
+import SecureBankConnect from "./pages/SecureBankConnect";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminPricing from "./pages/admin/AdminPricing";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -67,6 +68,8 @@ const App = () => (
           <Route path="/design-studio" element={<DesignStudio />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/quote/:quoteId" element={<QuoteSummary />} />
+          {/* Secure bank connection (opens in popup/new tab) */}
+          <Route path="/secure-bank-connect" element={<SecureBankConnect />} />
           {/* Admin routes (not in public nav) */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/pricing" element={<AdminPricing />} />
