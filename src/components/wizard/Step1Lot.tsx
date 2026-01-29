@@ -81,17 +81,19 @@ export function Step1Lot({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border bg-card shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-xl font-semibold text-foreground tracking-tight">
               Choose Your Homesite
             </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Select a lot to see your all-in price instantly
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+              {phase1Count > 0 
+                ? `${phase1Count} lots available now`
+                : 'Select a lot to see your all-in price'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {phase1Count > 0 && !isMobile && (
               <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-xs">
                 <Sparkles className="h-3 w-3 mr-1" />
@@ -100,13 +102,13 @@ export function Step1Lot({
             )}
             {isMobile && (
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => setMobileListOpen(true)}
-                className="shrink-0"
+                className="shrink-0 bg-accent text-accent-foreground hover:bg-accent/90"
               >
                 <MapPin className="h-4 w-4 mr-1.5" />
-                Browse Lots
+                Browse
               </Button>
             )}
           </div>
@@ -247,27 +249,27 @@ export function Step1Lot({
         hideBack={true}
       >
         {selectedLot ? (
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Lot Icon & Details */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shrink-0 shadow-lg">
-                <MapPin className="h-6 w-6 text-accent-foreground" />
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+            {/* Lot Icon & Details - Mobile optimized */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shrink-0 shadow-lg">
+                <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-accent-foreground" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-bold text-foreground text-lg">{selectedLot.label}</p>
+                  <p className="font-bold text-foreground text-base sm:text-lg">{selectedLot.label}</p>
                   {selectedLot.phase === 1 && selectedLot.status === 'available' && (
-                    <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-xs px-2 py-0.5 shrink-0">
-                      <Sparkles className="h-3 w-3 mr-1" />
+                    <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shrink-0 hidden sm:flex">
+                      <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                       Available Now
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                <div className="flex items-center gap-2 sm:gap-3 mt-0.5 flex-wrap">
                   <Badge
                     variant="secondary"
                     className={cn(
-                      'text-xs font-semibold',
+                      'text-[10px] sm:text-xs font-semibold',
                       selectedLot.status === 'available' && 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200',
                       selectedLot.status === 'reserved' && 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200',
                       selectedLot.status === 'sold' && 'bg-gray-500/15 text-gray-600 border-gray-200'
@@ -276,26 +278,26 @@ export function Step1Lot({
                     {selectedLot.status.charAt(0).toUpperCase() + selectedLot.status.slice(1)}
                   </Badge>
                   {selectedLot.acreage && (
-                    <span className="text-sm text-muted-foreground font-medium">{selectedLot.acreage} acres</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground font-medium">{selectedLot.acreage} ac</span>
                   )}
                   {selectedLot.premium !== undefined && (
-                    <span className="text-sm text-foreground font-semibold">
-                      ${selectedLot.premium.toLocaleString()} lot
+                    <span className="text-xs sm:text-sm text-foreground font-semibold">
+                      ${selectedLot.premium.toLocaleString()}
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* All-in price badge - Desktop only */}
+            {/* All-in price badge - Show on larger mobile and up */}
             {allInPrice && canProceed && (
-              <div className="hidden md:flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent/15 to-accent/5 border border-accent/30 ml-auto">
-                <TrendingUp className="h-5 w-5 text-accent" />
+              <div className="hidden sm:flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-gradient-to-r from-accent/15 to-accent/5 border border-accent/30">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">All-In Estimate</p>
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-medium">All-In</p>
                   <AnimatedPriceCompact 
                     value={allInPrice} 
-                    className="text-lg font-bold text-foreground"
+                    className="text-sm sm:text-lg font-bold text-foreground"
                   />
                 </div>
               </div>
@@ -303,20 +305,20 @@ export function Step1Lot({
 
             {/* Not available warning */}
             {!canProceed && selectedLot && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 ml-auto">
+              <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
-                <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">Not available</span>
+                <span className="text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-medium">Not available</span>
               </div>
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-              <MapPin className="h-5 w-5" />
+          <div className="flex items-center gap-2 sm:gap-3 text-muted-foreground">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-muted flex items-center justify-center">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <p className="text-sm font-medium">Select a lot to continue</p>
-              <p className="text-xs text-muted-foreground">Choose from {lots.filter(l => l.status === 'available').length} available lots</p>
+              <p className="text-xs sm:text-sm font-medium">Select a lot to continue</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{lots.filter(l => l.status === 'available').length} lots available</p>
             </div>
           </div>
         )}
