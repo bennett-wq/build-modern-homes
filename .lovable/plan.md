@@ -1,101 +1,145 @@
 
-# Fix Pre-Qualification Submission Error
 
-## Problem Identified
+## Overview
 
-The pre-qualification form fails to submit due to a **Row-Level Security (RLS) policy gap**. The issue is in the combination of INSERT + SELECT operations:
+This plan addresses two key requests:
 
-1. **INSERT works**: The `public_insert_financing_applications` policy correctly allows `anon` and `authenticated` users to insert when `user_id IS NULL`.
-
-2. **SELECT fails**: When the code calls `.insert(...).select('id').single()`, the database needs to return the newly created row. However, there is **no SELECT policy for the `anon` role**, causing the RLS violation.
-
-3. **Anonymous records are orphaned**: Even for authenticated users, the SELECT policies require `user_id = auth.uid()`. But anonymous submissions have `user_id = NULL`, so nobody (except admins/builders) can read them back.
-
-## Solution
-
-Add a SELECT policy that allows users to read back rows they just inserted. Since anonymous submissions set `user_id = null` and we need to return the ID immediately after insert, we have two options:
-
-**Option A (Recommended)**: Remove `.select()` from the insert and use the returned data differently
-- The INSERT operation alone will succeed
-- We don't need to read back the ID for the success flow
-
-**Option B**: Add a SELECT policy for `anon` role that allows reading rows where `user_id IS NULL`
-- This would expose all anonymous financing applications to anonymous users (security risk)
-
-**We'll go with Option A** - modify the insert to not require a SELECT, which is more secure.
+1. **Email Notifications via Resend** - Automatically notify new team members when they're added to the platform
+2. **Seamless Admin UX** - Improve navigation, consistency, and usability across Pricing, Leads, and Team dashboards
 
 ---
 
-## Implementation Steps
+## Part 1: Email Notifications with Resend
 
-### Step 1: Update PreQualificationFlow.tsx
+### What This Does
+When you add a team member at `/admin/users`, they'll automatically receive a welcome email letting them know they've been granted access and what role they have.
 
-Modify the `handleSubmit` function to:
-1. Remove `.select('id').single()` from the insert call
-2. Handle the response without needing the returned ID
-3. Generate a local ID or skip the ID entirely for the success state
+### Implementation Steps
 
-**Current code (lines 162-186):**
-```typescript
-const { data, error } = await supabase
-  .from('financing_applications')
-  .insert({...})
-  .select('id')
-  .single();
+**Step 1: Configure Resend API Key**
+- You'll need to provide a Resend API key
+- This will be stored securely and used by the backend to send emails
 
-if (error) throw error;
-setApplicationId(data.id);
+**Step 2: Update the `add-team-member` Edge Function**
+- After successfully adding/updating a user's role, send a welcome email
+- Email includes: their role (Admin or Builder), what they can access, and a link to sign in
+
+**Sample Email Content:**
+```
+Subject: You've been added to [Project Name] Team
+
+Hi there,
+
+You've been granted [Builder/Admin] access to the pricing admin console.
+
+What you can do:
+• View and edit pricing drafts
+• [Admin only] Publish pricing and manage team
+
+Sign in here: [link to /admin/login]
 ```
 
-**New code:**
-```typescript
-const { error } = await supabase
-  .from('financing_applications')
-  .insert({...});
+---
 
-if (error) throw error;
+## Part 2: Admin UX Improvements
 
-// Generate a placeholder ID for UI purposes
-const tempId = crypto.randomUUID();
-setApplicationId(tempId);
-```
+### Current Issues Identified
+1. **Inconsistent navigation** - Different header layouts between Pricing, Leads, and Users pages
+2. **Missing breadcrumbs/context** - No clear indication of where you are
+3. **Team list shows UUIDs** - User IDs instead of emails (not human-readable)
+4. **No quick actions on leads table** - Can't update status without navigating away
+5. **No unified sidebar** - Each page has its own nav pattern
 
-### Step 2: Add SELECT Policy for Newly Inserted Anonymous Rows (Optional Enhancement)
+### Proposed Solutions
 
-For better UX if we later need to show application status, we could add a policy:
+**A. Unified Admin Layout**
+Create a shared admin shell with:
+- Consistent sidebar navigation (Pricing, Leads, Team)
+- Same header across all admin pages
+- Visual indicator showing current page
+- User info + role badge in a consistent location
 
-```sql
--- Allow reading back newly inserted anonymous rows (within session)
-CREATE POLICY "anon_read_own_insert_financing_applications"
-ON public.financing_applications
-FOR SELECT
-TO anon
-USING (user_id IS NULL AND created_at > now() - interval '5 minutes');
-```
+**B. Team Management Improvements** (`AdminUsers.tsx`)
+- Display user **emails** instead of UUID snippets
+- Fetch emails from the auth system via the edge function
+- Show when they last signed in (if available)
 
-However, this is a security tradeoff - for now, simply removing the `.select()` is cleaner.
+**C. Leads Dashboard Enhancements** (`AdminLeads.tsx`)
+- Add inline status update dropdown directly in table rows
+- Add "quick view" drawer/modal to see full lead details
+- Add ability to add notes to leads
+- Make status badges clickable for quick filtering
+
+**D. Pricing Dashboard Polish** (`AdminPricing.tsx`)
+- Ensure navigation matches other admin pages
+- Keep consistent styling with Leads and Team pages
 
 ---
 
 ## Technical Details
 
-### Why the Error Says "INSERT violation"
-
-The error message `new row violates row-level security policy for table "financing_applications"` is misleading. In PostgreSQL, when using `INSERT ... RETURNING` (which is what `.select()` does under the hood), the RLS check for SELECT is applied to the RETURNING clause. If SELECT fails, the entire operation is rolled back and reported as an INSERT violation.
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `src/components/admin/AdminShell.tsx` | Shared layout wrapper with sidebar nav |
+| `src/components/admin/AdminNav.tsx` | Sidebar navigation component |
 
 ### Files to Modify
+| File | Changes |
+|------|---------|
+| `supabase/functions/add-team-member/index.ts` | Add Resend email sending logic |
+| `supabase/config.toml` | No changes needed (already configured) |
+| `src/pages/admin/AdminUsers.tsx` | Use AdminShell, display user emails |
+| `src/pages/admin/AdminLeads.tsx` | Use AdminShell, add inline status updates |
+| `src/pages/admin/AdminPricing.tsx` | Use AdminShell, consistent layout |
+| `src/pages/admin/AdminLogin.tsx` | Minor styling tweaks for consistency |
 
-1. **`src/components/financing/PreQualificationFlow.tsx`** (lines 162-190)
-   - Remove `.select('id').single()` from the insert
-   - Update success handling to not rely on returned data
-   - Keep all form validation and UI flow intact
+### Edge Function Changes
+The `add-team-member` function will:
+1. Complete existing role assignment logic
+2. Call Resend API to send welcome email
+3. Return success with email confirmation
+
+```typescript
+// Pseudocode for email sending
+import { Resend } from 'npm:resend@2.0.0';
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+// After successful role assignment...
+await resend.emails.send({
+  from: 'Team <noreply@YOUR-DOMAIN.com>',
+  to: [targetUser.email],
+  subject: 'You've been added to the team',
+  html: welcomeEmailTemplate(role, loginUrl)
+});
+```
+
+### Database Query for Displaying Emails
+The edge function already returns the user's email in its response. We'll update `AdminUsers.tsx` to:
+1. Request emails when loading the team list (via a new edge function or enhanced query)
+2. Display emails alongside roles
 
 ---
 
-## Expected Outcome
+## Prerequisites
 
-After this fix:
-- Anonymous users can submit pre-qualification forms successfully
-- The success toast and Step 3 confirmation will display correctly  
-- Lead data will be saved to the `financing_applications` table
-- Admin/builder team members can still view all applications via their SELECT policies
+Before implementation, you'll need to:
+
+1. **Set up Resend account** at https://resend.com
+2. **Verify your email domain** at https://resend.com/domains
+3. **Create an API key** at https://resend.com/api-keys
+4. **Provide the API key** when prompted
+
+---
+
+## Summary of Changes
+
+| Area | Improvement |
+|------|-------------|
+| Email Notifications | Welcome email when team members are added |
+| Admin Navigation | Unified sidebar across all admin pages |
+| Team Management | Show emails instead of UUIDs |
+| Leads Dashboard | Inline status updates, quick filtering |
+| Overall UX | Consistent headers, badges, and styling |
+
