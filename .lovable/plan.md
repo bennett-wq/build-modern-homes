@@ -1,163 +1,194 @@
 
-## Goal
-Make the “Connect bank” (Plaid Link) flow reliable and usable in the Lovable editor preview (where your app runs inside an iframe), while also improving the production-grade architecture so it feels like a top-tier fintech experience.
+## Immediate stabilization (site-wide scrolling + “everything feels broken” prevention)
 
-## What we know (from the investigation + your answers)
-- The failure happens in **Editor preview** on **Desktop Chrome/Edge**.
-- The symptom is: **Plaid closes (“shuts down”)** when interacting with inputs (e.g., phone number).
-- We have already tried the common “drawer focus trap / overlay” mitigations (disable modal, hide overlay, close guards, memoization). Those got us different failure modes (freeze/close), but it’s still unstable.
-- This strongly points to a **host environment constraint**: Plaid Link is far less reliable when the host app itself is running inside a parent iframe (Lovable editor preview), especially when additional portals/overlays are involved.
+### 0.1 Reproduce and pinpoint the scroll lock source (fast, deterministic)
+- Add a temporary **Scroll Diagnostics** utility (dev-only) that can be toggled to print:
+  - `document.documentElement/body` computed `overflow`, `position`, `height`
+  - Radix/vaul attributes (e.g. `data-state`, `data-scroll-locked`, etc.)
+  - whether any `Dialog/Sheet/Drawer` portals are still mounted while “closed”
+- Use it to verify: is scroll locked because
+  1) `html/body { overflow: hidden }` is stuck, or  
+  2) pages are structurally “non-scrollable” due to `overflow-hidden` + fixed-height layouts (e.g. wizard pages).
 
-## Working hypothesis (root cause)
-Even with our Radix/Drawer mitigations, the editor preview iframe environment can still cause Plaid Link to exit unexpectedly due to:
-- Nested iframe + portal layers + focus/blur events being interpreted as “dismiss/exit”
-- Cross-frame event handling differences in embedded contexts
-- Potential restrictions/quirks of an “app inside an iframe” environment that Plaid doesn’t consistently tolerate (especially on sensitive input steps like phone verification)
+### 0.2 Add a global “scroll lock failsafe”
+Even if a library gets into a bad state, the app should recover.
+- Implement a **RouteChangeScrollUnlock** component (mounted once near the router) that on every route change:
+  - clears `document.body.style.overflow`, `position`, `top`, `width`
+  - clears `document.documentElement.style.overflow`
+  - removes known lock attributes/classes if present
+- Add an additional “on modal close” cleanup hook for the key overlays (FinancingModal → PreQualificationFlow → InfoDrawer).
 
-In other words: continuing to fight the modal-in-drawer approach inside an embedded iframe is high-risk and has already proven brittle.
-
-## Strategy: Make Plaid run in a clean, top-level context (always reliable)
-Instead of opening Plaid Link inside the drawer in the embedded preview, we will launch the bank connection in a **dedicated top-level page** (full-screen) and communicate the result back to the wizard.
-
-This is a standard enterprise approach used by large fintech platforms: isolate the bank-link flow into a controlled surface with minimal UI interference.
-
----
-
-## Implementation plan (phased, with clear acceptance criteria)
-
-### Phase 1 — Add a dedicated “Secure Bank Connection” page (clean environment)
-**What we will build**
-- A new route/page (example: `/secure-bank-connect`) that:
-  - Renders a minimal layout (no drawers, no Radix Sheet/Drawer, no Framer Motion wrappers).
-  - Initializes Plaid Link with a freshly generated link token.
-  - Optionally auto-opens Plaid when ready (with a clear “Continue” button fallback).
-  - On success:
-    - Sends `{ public_token, institution_name }` back to the opener via `window.opener.postMessage(...)` (if opened as a popup/new tab).
-    - Shows a “Success — return to application” UX and closes itself if possible.
-  - On exit/error:
-    - Shows a clear retry UI and records diagnostics.
-
-**Why this works**
-- It avoids the drawer/overlay and embedded iframe interaction that’s currently causing Plaid to exit.
-
-**Files involved**
-- `src/App.tsx` (add route)
-- New page: `src/pages/SecureBankConnect.tsx` (or similar)
+### 0.3 Fix structural non-scroll cases (especially wizard-style pages)
+Audit pages that intentionally use `overflow-hidden` to create “app-like” steps (e.g. BuildWizard) and ensure they have:
+- Exactly one scroll container that is actually scrollable (e.g. `main` or a step panel)
+- Proper flexbox constraints (`min-h-0` on flex children) so nested `overflow-auto` works on mobile
+- Sticky footer spacing (`WizardFooterSpacer`) applied consistently so content is not trapped behind the footer
 
 **Acceptance criteria**
-- From the editor preview, the bank connection page can open and Plaid no longer exits when typing phone number / interacting.
+- You can scroll normally on marketing pages, models, developments.
+- On wizard pages: the intended content region scrolls reliably; nothing feels “frozen”.
 
 ---
 
-### Phase 2 — Change the Pre-Qualification flow to open Plaid in a top-level window when embedded
-**What we will change**
-- Detect when the app is running embedded:
-  - `const isEmbedded = window.self !== window.top;`
-- In `PreQualificationFlow` Step 2:
-  - Replace the current inline Plaid modal launch with:
-    - “Open secure bank connection” button
-    - On click:
-      1. Create a link token (either via existing backend function or by reusing existing client invoke)
-      2. `window.open('/secure-bank-connect?...', 'plaid_connect', 'width=420,height=720')`
-      3. Listen for a `message` event from the new window
-      4. When message arrives, set:
-         - `plaidPublicToken`
-         - `plaidInstitutionName`
-         - keep the drawer on Step 2 and show “Connected”
-- Add robust handshake safety:
-  - Generate a `connectSessionId` (UUID)
-  - Pass it to the new window in the querystring
-  - Require that same `connectSessionId` in the returning `postMessage`
-  - Validate `event.origin === window.location.origin`
+## Mobile “full site audit” plan (ruthless and structured)
 
-**Why this works**
-- In editor preview: Plaid runs top-level, not nested under the preview iframe.
-- In published site: we can choose to keep the same approach for maximum reliability, or only use it when embedded.
+### 1.1 Audit scope (the routes that must be perfect)
+We will test each on iOS-sized and Android-sized viewports (and also tablet):
+1) Home (`/`)
+2) Models list + detail (`/models`, `/models/:modelId`)
+3) Developments list + detail (`/developments`, `/developments/:slug`)
+4) Community build wizard (`/developments/:slug/build`) — “lot picking experience”
+5) Direct quote configurator (`/build`) — “Step 7 → 8” issue
+6) Financing funnel entry points (wherever “Get Pre-Qualified” is visible)
+7) Secure bank connection host (`/secure-bank-connect`)
 
-**Files involved**
-- `src/components/financing/PreQualificationFlow.tsx`
-- `src/components/financing/PlaidLinkButton.tsx` (may be refactored into a “token-driven” component for the new page)
+### 1.2 Audit method (how we won’t miss things)
+For each route we will validate:
+- Scroll: page scroll + inner scroll areas (lists, drawers, panels)
+- Touch: tap targets, accidental dismiss, drag conflicts, pinch/zoom conflicts on site plan
+- Keyboard: inputs don’t hide CTAs; focus doesn’t trap the user
+- Sticky UI: headers/footers don’t cover actionable controls
+- Loading states: skeletons/spinners, clear “what’s happening” copy, no dead-ends
+- Accessibility basics: focus visible, logical tab order, “role=listbox” interactions don’t break touch
+
+**Deliverable**
+- A short “Mobile audit report” list of issues + severity + fix priority, then we implement fixes in priority order.
+
+---
+
+## Fix 1: “Can’t proceed from Step 7 to 8” (Configurator /build)
+
+### Likely causes we will confirm
+1) **Proceed gating**: Step 7 uses `Step3Design` with `canProceed = selectedPackageId && selectedGarageDoorId`.  
+   If certain models don’t support garage selection (or default isn’t set), mobile users can get stuck.
+2) **Scroll / footer overlap**: On mobile the selection panel might not scroll due to missing `min-h-0`, so the user can’t reach the controls needed to satisfy `canProceed`.
+
+### Planned fixes
+- Make Step 7 “always completable”:
+  - If a model requires garage selection, auto-select a default garage choice the moment a package is selected (or on step entry).
+  - If a model does not require garage selection, update `canProceed` to only require package.
+  - Add clear inline validation messaging (“Select a package to continue”, “Select a garage style to continue”) with auto-scroll to the missing section.
+- Ensure nested scroll works:
+  - Add `min-h-0` to the right containers in `Step3Design` so `TabsContent overflow-auto` is actually scrollable.
+  - Ensure `WizardFooterSpacer` is present and effective on mobile to avoid content being hidden behind the sticky footer.
 
 **Acceptance criteria**
-- In editor preview, clicking “Connect bank” opens a new window/tab that completes the bank connection without exiting.
-- After completion, the main wizard shows “Connected to {Institution}” and allows submit.
+- On mobile, Step 7 always allows the user to reach and use required controls and proceed to Step 8.
 
 ---
 
-### Phase 3 — Reduce complexity and remove the fragile overlay hacks (stabilize UX)
-Once Phase 2 is working, we’ll simplify the existing drawer logic to reduce regressions:
-- Remove/stop relying on:
-  - `allowOutsideInteraction={isPlaidModalOpen}`
-  - close debounces and dismissal guards intended for inline Plaid overlays
-- Keep the pre-qualification drawer as a normal modal drawer again (predictable UI).
-- This reduces the chance that other drawers/sheets across the app are impacted by Plaid-specific workarounds.
+## Fix 2: Communities “lot picking” on mobile (Development build wizard)
 
-**Files involved**
-- `src/components/financing/PreQualificationFlow.tsx`
-- Potentially `src/components/ui/info-drawer.tsx`, `src/components/ui/sheet.tsx`, `src/components/ui/drawer.tsx` (only if cleanup is needed)
+### Likely causes we will confirm
+- Gesture conflicts between:
+  - Site plan viewer container using `touch-none`/`select-none` patterns
+  - Custom bottom sheet using `touchAction: pan-y`
+  - ScrollArea usage in lot list
+
+### Planned fixes
+- Normalize gesture behavior:
+  - Ensure the site plan supports the intended mobile gestures (pan/zoom if desired) without blocking basic page interactions.
+  - Ensure the mobile lot list sheet:
+    - scrolls reliably (use a single scroll container, `min-h-0`, `overflow-auto`, and iOS momentum scrolling where appropriate)
+    - doesn’t accidentally close when trying to scroll
+- UX upgrades:
+  - Make “Browse lots” and selection confirmation feel crisp:
+    - Clear “Selected” state
+    - Immediate “All-in” feedback
+    - A single obvious path to continue
+  - Reduce cognitive load with tighter filtering and “Available Now” default focus.
 
 **Acceptance criteria**
-- Drawer behaves normally (overlay/focus trap works) and bank connect still works (because it’s now externalized).
+- Lot selection on mobile is fast, obvious, and never fights scrolling/dragging.
+- The user can always continue without UI getting in the way.
 
 ---
 
-### Phase 4 — Fintech-grade polish + resilience (what “top of the line” looks like)
-**User experience upgrades**
-- Add a “Secure connection” explanation panel before launching:
-  - “We’ll open a secure window to connect your bank. This keeps your session stable and protected.”
-- Handle popup blockers:
-  - If `window.open` returns `null`, show:
-    - “Pop-up blocked. Click here to open in this tab instead.”
-    - Fallback: navigate current tab to `/secure-bank-connect` and provide a “Back to application” return flow.
-- Add a deterministic “Resume” state:
-  - If user returns without success, keep them on Step 2 with a clear “Try again” CTA.
-- Show richer error messages:
-  - If Plaid exits with an error, display:
-    - Friendly summary
-    - “Try again” button (generates a fresh link token)
-    - Optional “Contact support” CTA
+## Fix 3: Plaid reliability + “AHA” results experience
 
-**Operational excellence (PM-level instrumentation)**
-- Add structured logging/telemetry (client-side) for:
-  - link token creation start/success/fail
-  - connect window opened / blocked
-  - message received / invalid origin / invalid sessionId
-  - Plaid onExit metadata (sanitized)
-- Optionally persist minimal event rows to the backend for debugging (non-PII) so we can diagnose real-world failures.
+### 3.1 Stop the infinite “Analyzing…” and timeouts
+We’ll address both frontend UX and backend execution time.
+
+**Frontend**
+- Implement a staged analysis UI (a real progress narrative):
+  1) “Securing your connection”
+  2) “Verifying income & assets”
+  3) “Calculating affordability & DTI”
+  4) “Matching best programs”
+- Add a **hard UX timeout** (e.g. 25–35s):
+  - If still pending: show “We’re still verifying — you’re not stuck.”
+  - Offer a safe fallback:
+    - “Continue — we’ll email results” (application remains submitted)
+    - “Retry verification” (re-invoke)
+    - “Switch to manual verification” (so the user can still finish)
+- Ensure the secure connect window reports meaningful failure reasons back to the wizard (not just “cancelled”).
+
+**Backend**
+- Optimize the pre-qualification function for latency:
+  - Add timeouts (AbortController) around Plaid API calls
+  - Parallelize independent Plaid calls where possible
+  - If Plaid is slow/unavailable, fall back to self-reported data quickly and mark `confidence_level` lower
+- Consider splitting responsibilities if needed:
+  - `plaid-exchange-token`: exchange token + store access token
+  - `prequal-engine`: compute decision primarily from stored verified_financials (fast path)
+  - This reduces “single call does everything” runtime risk.
+
+### 3.2 Deliver the “massive AHA” moment (results screen)
+Design the results as a fintech-grade dashboard:
+- “Verified snapshot” card:
+  - Verified income used
+  - Assets + liabilities
+  - Verification method + timestamp
+- DTI visualization:
+  - Front-end and back-end DTI with color-coded thresholds
+- “Best match” program:
+  - one top recommendation with why it fits
+  - secondary eligible programs (if any)
+- Clear next steps CTAs:
+  - “Schedule a 10-minute call”
+  - “Download your summary”
+  - “Continue building your quote”
+- Tone: confident, transparent, and fast.
 
 **Acceptance criteria**
-- Clear, guided flow with reliable retries and no “dead ends.”
-- If anything fails, the user always has a visible, simple path to recover.
+- Verification never feels like it’s “hanging”; users always have clarity and control.
+- Results are instantly understandable and feel premium (the “AHA” moment).
 
 ---
 
-## How we’ll use your uploaded video (Screenflick_Movie.mp4)
-During implementation we’ll use it to validate:
-- The exact click sequence that triggers shutdown
-- Whether the shutdown happens at a consistent input step
-- Whether the drawer or Plaid window is losing focus/closing first
-This will help confirm the fix actually addresses the observed behavior, not just the theory.
+## End-to-end test plan (what we will verify before calling it fixed)
+
+### Desktop (Editor preview + normal tab)
+- Site scroll works on `/`, `/models`, `/developments`, `/build`
+- Financing drawer opens/closes without breaking scroll
+- Secure bank connect opens, connects, returns reliably
+- Prequal “Analyzing” never dead-ends; always resolves or offers a graceful fallback
+
+### Mobile (multiple sizes)
+- Configurator Step 7 → Step 8 is unblocked
+- Community lot selection is smooth and scrollable
+- Sticky footer does not hide primary actions
+- Inputs and keyboard do not break navigation
+
+### Automated sanity checks (optional but recommended)
+- Add a small Playwright suite for:
+  - scrollability assertions (page can scroll, not locked)
+  - step progression (Configurator step transitions)
+  - lot selection (tap lot → continue enabled)
 
 ---
 
-## Test plan (must pass before we call it “fixed”)
-1. **Editor preview (embedded iframe)**
-   - Open Pre-Qual → Step 2 → Connect bank
-   - New secure window opens
-   - Enter phone number and proceed (no shutdown)
-   - Success returns to wizard and shows “Connected”
-2. **Published site (normal top-level browser tab)**
-   - Same flow, confirm consistent behavior
-3. **Popup blocked scenario**
-   - Verify fallback (open in same tab) works
-4. **Retry scenario**
-   - Exit Plaid, retry, ensure a fresh link token is used and it still works
+## Execution order (to minimize regressions)
+1) Restore/guarantee global scrolling (failsafe + structural fixes)
+2) Fix Step 7 → 8 gating + mobile scroll containers
+3) Fix community lot picking gestures/scroll
+4) Plaid timeout reliability improvements (backend + UX)
+5) “AHA” results polish + instrumentation
 
 ---
 
-## Deliverables summary
-- A dedicated, clean `/secure-bank-connect` experience
-- Pre-qualification wizard updated to use secure top-level bank connect when embedded (editor preview)
-- Simplified drawer behavior (remove brittle Plaid-in-drawer hacks)
-- Fintech-grade UX polish + failure recovery + optional telemetry
-
+## Deliverables you’ll get
+- Scroll restored across the site (no more “everything is frozen”)
+- A written mobile audit + implemented fixes for the highest-impact issues
+- Step 7 → 8 and community lot picking working flawlessly on mobile
+- Plaid flow that feels fast, trustworthy, and culminates in a premium “AHA” decision experience
