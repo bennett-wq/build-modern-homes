@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShieldCheck, DollarSign, Calendar, Home, ArrowRight, CheckCircle } from 'lucide-react';
+import { ShieldCheck, DollarSign, Calendar, Home, ArrowRight, CheckCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { InfoDrawer } from '@/components/ui/info-drawer';
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PreQualificationFlow } from '@/components/financing/PreQualificationFlow';
 
 interface FinancingModalProps {
   open: boolean;
@@ -25,6 +26,8 @@ interface FinancingModalProps {
   modelSlug?: string | null;
   packageId?: string | null;
   garageDoorId?: string | null;
+  purchasePrice?: number;
+  quoteId?: string;
 }
 
 interface FinancingFormData {
@@ -41,6 +44,8 @@ export function FinancingModal({
   modelSlug,
   packageId,
   garageDoorId,
+  purchasePrice = 350000,
+  quoteId,
 }: FinancingModalProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FinancingFormData>({
@@ -49,6 +54,7 @@ export function FinancingModal({
     purchaseTimeframe: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreQual, setShowPreQual] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +83,7 @@ export function FinancingModal({
   const isFormValid = formData.intendedUse && formData.purchaseTimeframe;
 
   return (
+    <>
     <InfoDrawer
       open={open}
       onOpenChange={onOpenChange}
@@ -113,6 +120,30 @@ export function FinancingModal({
               Low Down Payment
             </span>
           </div>
+        </div>
+
+        {/* Get Pre-Qualified CTA */}
+        <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-blue-600 rounded-lg">
+              <Sparkles className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground text-sm">
+                Get Pre-Qualified Now
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Connect your bank for instant verification
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowPreQual(true)}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Get Pre-Qualified in 2 Minutes
+          </Button>
         </div>
 
         {/* Eligibility Form */}
@@ -217,6 +248,19 @@ export function FinancingModal({
         </form>
       </div>
     </InfoDrawer>
+
+    {/* Pre-Qualification Flow */}
+    <PreQualificationFlow
+      open={showPreQual}
+      onOpenChange={setShowPreQual}
+      purchasePrice={purchasePrice}
+      quoteId={quoteId}
+      onComplete={(applicationId) => {
+        setShowPreQual(false);
+        onOpenChange(false);
+      }}
+    />
+    </>
   );
 }
 
