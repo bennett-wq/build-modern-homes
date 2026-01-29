@@ -742,7 +742,7 @@ export type Database = {
       app_role: "admin" | "builder"
       build_type: "xmod" | "mod"
       development_status: "active" | "coming-soon" | "sold-out"
-      foundation_type: "slab" | "basement"
+      foundation_type: "slab" | "basement" | "crawl"
       garage_style: "traditional" | "carriage" | "modern" | "craftsman"
       lot_status: "available" | "reserved" | "sold" | "pending"
       quote_status: "draft" | "submitted" | "contacted" | "converted"
@@ -881,7 +881,7 @@ export const Constants = {
       app_role: ["admin", "builder"],
       build_type: ["xmod", "mod"],
       development_status: ["active", "coming-soon", "sold-out"],
-      foundation_type: ["slab", "basement"],
+      foundation_type: ["slab", "basement", "crawl"],
       garage_style: ["traditional", "carriage", "modern", "craftsman"],
       lot_status: ["available", "reserved", "sold", "pending"],
       quote_status: ["draft", "submitted", "contacted", "converted"],
