@@ -60,14 +60,26 @@ export function Step1Lot({
     return lots.filter(l => l.phase === 1 && l.status === 'available').length;
   }, [lots]);
 
-  // Trigger celebration animation on selection
+  // Trigger celebration animation on selection + auto-advance
   useEffect(() => {
     if (selectedLotId) {
       setJustSelected(true);
-      const timer = setTimeout(() => setJustSelected(false), 1500);
-      return () => clearTimeout(timer);
+      const celebrationTimer = setTimeout(() => setJustSelected(false), 1500);
+      
+      // Auto-advance after brief celebration (only if lot is available)
+      const selectedLotForAdvance = lots.find(l => l.id === selectedLotId);
+      if (selectedLotForAdvance?.status === 'available') {
+        const advanceTimer = setTimeout(() => {
+          onNext();
+        }, 1200);
+        return () => {
+          clearTimeout(celebrationTimer);
+          clearTimeout(advanceTimer);
+        };
+      }
+      return () => clearTimeout(celebrationTimer);
     }
-  }, [selectedLotId]);
+  }, [selectedLotId, lots, onNext]);
 
   const handleLotClick = useCallback((lot: Lot | null) => {
     if (lot) {

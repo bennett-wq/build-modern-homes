@@ -363,8 +363,44 @@ export function Step4Review({
             </div>
           </motion.div>
 
-          {/* Footer spacer for scroll safety */}
-          <WizardFooterSpacer className="h-8" />
+          {/* Footer spacer for sticky CTA */}
+          <WizardFooterSpacer />
+        </div>
+      </div>
+
+      {/* Primary CTA Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <Button 
+              variant="outline" 
+              onClick={onBack}
+              className="shrink-0"
+            >
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              <span className="hidden sm:inline">Back to Design</span>
+              <span className="sm:hidden">Back</span>
+            </Button>
+            
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowScheduleModal(true)}
+                className="hidden sm:flex"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Schedule Call
+              </Button>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-accent to-accent/90 hover:from-accent/90 hover:to-accent/80 text-accent-foreground shadow-lg min-w-[140px] sm:min-w-[180px]"
+                onClick={() => setShowPreQualFlow(true)}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Get Pre-Qualified
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
