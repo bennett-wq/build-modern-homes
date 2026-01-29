@@ -84,9 +84,10 @@ export const MODELS: ModelConfig[] = [
     beds: 3,
     baths: 2,
     sqft: 1620,
-    length: 64,
+    length: 64, // CMH Quote: 64' x 32'
     defaultBuildType: 'xmod',
     defaultFoundationType: 'slab',
+    pricingSource: 'CMH Quote #52202 (XMOD), #52407 (MOD)',
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 97087, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod', foundationType: 'basement', baseHomePrice: 97087, deliveryInstallAllowance: 28000 },
@@ -100,14 +101,15 @@ export const MODELS: ModelConfig[] = [
     beds: 4,
     baths: 2,
     sqft: 1620,
-    length: 64,
+    length: 60, // CMH Quote: 32' x 60'
     defaultBuildType: 'xmod',
     defaultFoundationType: 'slab',
+    pricingSource: 'CMH Quote #52418 (XMOD), #52422 (MOD)',
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 98246, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod', foundationType: 'basement', baseHomePrice: 98246, deliveryInstallAllowance: 28000 },
-      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 112559, deliveryInstallAllowance: 22500 },
-      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 112559, deliveryInstallAllowance: 28000 },
+      { buildType: 'mod', foundationType: 'slab', baseHomePrice: 108493, deliveryInstallAllowance: 22500 }, // Updated from $112,559 per audit
+      { buildType: 'mod', foundationType: 'basement', baseHomePrice: 108493, deliveryInstallAllowance: 28000 },
     ],
   },
   {
@@ -116,9 +118,10 @@ export const MODELS: ModelConfig[] = [
     beds: 3,
     baths: 2,
     sqft: 1620,
-    length: 64,
+    length: 60, // CMH Quote: 32' x 60'
     defaultBuildType: 'xmod',
     defaultFoundationType: 'slab',
+    pricingSource: 'CMH Quote #52409 (XMOD), #52410 (MOD)',
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 97182, deliveryInstallAllowance: 22500 },
       { buildType: 'xmod', foundationType: 'basement', baseHomePrice: 97182, deliveryInstallAllowance: 28000 },
@@ -132,10 +135,10 @@ export const MODELS: ModelConfig[] = [
     beds: 3,
     baths: 2,
     sqft: 1065,
-    length: 48,
+    length: 48, // CMH Quote: 24' x 48'
     defaultBuildType: 'mod',
     defaultFoundationType: 'slab',
-    pricingSource: 'Laurel MOD Quote',
+    pricingSource: 'CMH Quote #52533 (MOD)',
     pricing: [
       { buildType: 'mod', foundationType: 'slab', baseHomePrice: 95245, deliveryInstallAllowance: 22500 },
     ],
@@ -145,11 +148,11 @@ export const MODELS: ModelConfig[] = [
     name: 'Keeneland',
     beds: 3,
     baths: 2,
-    sqft: 1800,
-    length: 58,
+    sqft: 1635, // Livable sqft (58x32 includes garage)
+    length: 58, // CMH Quote: 58' x 32'
     defaultBuildType: 'xmod',
     defaultFoundationType: 'slab',
-    pricingSource: 'Keeneland Pricing',
+    pricingSource: 'CMH Quote #52250 (XMOD)',
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 106227, deliveryInstallAllowance: 22500 },
     ],
@@ -160,10 +163,10 @@ export const MODELS: ModelConfig[] = [
     beds: 2,
     baths: 2,
     sqft: 990,
-    length: 66,
+    length: 66, // 16' x 66'
     defaultBuildType: 'xmod',
     defaultFoundationType: 'slab',
-    pricingSource: 'BaseMod Home Package (placeholder)',
+    pricingSource: 'BaseMod Placeholder (awaiting CMH quote)',
     pricing: [
       { buildType: 'xmod', foundationType: 'slab', baseHomePrice: 62213, deliveryInstallAllowance: 18000, freightPending: true },
     ],
@@ -208,6 +211,47 @@ export const OPTIONS: UpgradeOption[] = [
     buildTypes: ['mod'],
     category: 'floor_plan',
   },
+  // New options from CMH Buyer Selections tabs
+  {
+    id: 'ebuilt-plus-electric',
+    label: 'eBuilt Plus - DOE Certified',
+    price: 1500,
+    appliesTo: [],
+    buildTypes: [],
+    category: 'floor_plan',
+  },
+  {
+    id: 'crossmod-inspection-fee',
+    label: 'CrossMod Inspection Fee (SC)',
+    price: 750,
+    appliesTo: [],
+    buildTypes: ['xmod'],
+    category: 'floor_plan',
+  },
+  {
+    id: 'garbage-disposal',
+    label: 'Garbage Disposal',
+    price: 170,
+    appliesTo: [],
+    buildTypes: [],
+    category: 'floor_plan',
+  },
+  {
+    id: 'carrier-gas-furnace',
+    label: 'Carrier High Efficiency Gas Furnace',
+    price: 765,
+    appliesTo: [],
+    buildTypes: [],
+    category: 'floor_plan',
+  },
+  {
+    id: 'basement-upgrade',
+    label: 'Full Basement (upgrade from crawl)',
+    price: 17907,
+    appliesTo: [],
+    buildTypes: ['mod'],
+    category: 'floor_plan',
+  },
   // Exterior options
   {
     id: 'black-fascia-package',
@@ -233,7 +277,7 @@ export const OPTIONS: UpgradeOption[] = [
     buildTypes: [],
     category: 'exterior',
   },
-  // Siding upgrades (PlyGem) - length-based, handled separately
+  // Siding upgrades (PlyGem) - length-based
   {
     id: 'plygem-under-55',
     label: 'Premium Siding Upgrade',
