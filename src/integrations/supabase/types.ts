@@ -811,48 +811,7 @@ export type Database = {
       }
     }
     Views: {
-      model_pricing_public: {
-        Row: {
-          base_home_price: number | null
-          build_type: Database["public"]["Enums"]["build_type"] | null
-          effective_from: string | null
-          foundation_type: Database["public"]["Enums"]["foundation_type"] | null
-          id: string | null
-          is_current: boolean | null
-          model_id: string | null
-        }
-        Insert: {
-          base_home_price?: number | null
-          build_type?: Database["public"]["Enums"]["build_type"] | null
-          effective_from?: string | null
-          foundation_type?:
-            | Database["public"]["Enums"]["foundation_type"]
-            | null
-          id?: string | null
-          is_current?: boolean | null
-          model_id?: string | null
-        }
-        Update: {
-          base_home_price?: number | null
-          build_type?: Database["public"]["Enums"]["build_type"] | null
-          effective_from?: string | null
-          foundation_type?:
-            | Database["public"]["Enums"]["foundation_type"]
-            | null
-          id?: string | null
-          is_current?: boolean | null
-          model_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "model_pricing_model_id_fkey"
-            columns: ["model_id"]
-            isOneToOne: false
-            referencedRelation: "models"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       get_public_lot_data: {
@@ -877,6 +836,18 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_public_model_pricing: {
+        Args: never
+        Returns: {
+          base_home_price: number
+          build_type: string
+          effective_from: string
+          foundation_type: string
+          id: string
+          is_current: boolean
+          model_id: string
+        }[]
       }
       has_role: {
         Args: {
