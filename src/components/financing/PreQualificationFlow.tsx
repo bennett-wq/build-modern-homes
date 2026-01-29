@@ -114,6 +114,7 @@ export function PreQualificationFlow({
   const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
   const [plaidInstitutionName, setPlaidInstitutionName] = useState<string | null>(null);
   const [isVerifyingFinancials, setIsVerifyingFinancials] = useState(false);
+  const [isPlaidModalOpen, setIsPlaidModalOpen] = useState(false);
   const [prequalResults, setPrequalResults] = useState<{
     eligiblePrograms: Array<{ name: string; matchQuality: string; description: string }>;
     dtiRatio: number | null;
@@ -140,6 +141,7 @@ export function PreQualificationFlow({
   };
 
   // Memoized Plaid callbacks to prevent unnecessary re-renders
+  // These use useCallback with empty deps to ensure stability
   const handlePlaidSuccess = useCallback(
     ({ publicToken, institutionName }: { publicToken: string; institutionName?: string }) => {
       setPlaidPublicToken(publicToken);
@@ -156,8 +158,15 @@ export function PreQualificationFlow({
         variant: 'destructive',
       });
     },
-    [toast]
+    // Note: We intentionally don't include toast in deps to keep this stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
+
+  // Track when Plaid modal is open to prevent interference
+  const handlePlaidOpenChange = useCallback((isOpen: boolean) => {
+    setIsPlaidModalOpen(isOpen);
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -584,6 +593,7 @@ export function PreQualificationFlow({
               <PlaidLinkButton
                 onSuccess={handlePlaidSuccess}
                 onError={handlePlaidError}
+                onOpenChange={handlePlaidOpenChange}
               />
             </div>
           </div>
