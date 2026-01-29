@@ -6,6 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Timeout utility for API calls
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, timeoutMs);
+    
+    promise
+      .then((result) => {
+        clearTimeout(timeout);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+  });
+}
+
+// API timeout constant
+const PLAID_API_TIMEOUT = 10000; // 10 seconds per API call
+
+// Loan program eligibility thresholds
+
 // Loan program eligibility thresholds
 const LOAN_PROGRAMS = {
   mh_advantage: {
@@ -152,30 +176,42 @@ serve(async (req) => {
       console.log('Fetching verified income from Plaid...');
       
       try {
-        // For sandbox: Use transactions to estimate income since income verification
-        // requires special sandbox setup. In production, use /income/verification/summary/get
-        const identityResp = await fetch(`${plaidBase}/identity/get`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_id: PLAID_CLIENT_ID,
-            secret: PLAID_SECRET,
-            access_token: plaidConnection.access_token,
-          }),
-        });
-
-        // Get account balances for asset verification
-        const balanceResp = await fetch(`${plaidBase}/accounts/balance/get`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_id: PLAID_CLIENT_ID,
-            secret: PLAID_SECRET,
-            access_token: plaidConnection.access_token,
-          }),
-        });
+        // Parallel fetch: identity, balances, and transactions all at once
+        const [balanceResp, transactionsResp] = await Promise.all([
+          // Get account balances for asset verification
+          withTimeout(
+            fetch(`${plaidBase}/accounts/balance/get`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                client_id: PLAID_CLIENT_ID,
+                secret: PLAID_SECRET,
+                access_token: plaidConnection.access_token,
+              }),
+            }),
+            PLAID_API_TIMEOUT,
+            'Balance fetch timed out'
+          ),
+          // Get transactions to verify employment (last 30 days)
+          withTimeout(
+            fetch(`${plaidBase}/transactions/get`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                client_id: PLAID_CLIENT_ID,
+                secret: PLAID_SECRET,
+                access_token: plaidConnection.access_token,
+                start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                end_date: new Date().toISOString().split('T')[0],
+              }),
+            }),
+            PLAID_API_TIMEOUT,
+            'Transactions fetch timed out'
+          ),
+        ]);
 
         const balanceData = await balanceResp.json();
+        const transactionsData = await transactionsResp.json();
         
         // Calculate total assets from account balances
         let totalAssets = 0;
@@ -196,27 +232,9 @@ serve(async (req) => {
 
         // For sandbox testing: estimate income based on account activity
         // In production, this would come from /income/verification/summary/get
-        // Using sandbox test data patterns
         const sandboxAnnualIncome = PLAID_ENV === 'sandbox' ? 85000 : 0;
         const sandboxMonthlyIncome = sandboxAnnualIncome / 12;
 
-        // Get transactions to verify employment (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        const transactionsResp = await fetch(`${plaidBase}/transactions/get`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_id: PLAID_CLIENT_ID,
-            secret: PLAID_SECRET,
-            access_token: plaidConnection.access_token,
-            start_date: thirtyDaysAgo.toISOString().split('T')[0],
-            end_date: new Date().toISOString().split('T')[0],
-          }),
-        });
-
-        const transactionsData = await transactionsResp.json();
         let employerName: string | null = null;
         let employmentVerified = false;
 

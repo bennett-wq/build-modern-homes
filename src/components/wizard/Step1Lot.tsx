@@ -234,15 +234,21 @@ export function Step1Lot({
                   </Button>
                 </div>
                 
-                {/* Lot list */}
-                <div className="flex-1 overflow-hidden">
+                {/* Lot list - fixed height with proper scroll */}
+                <div 
+                  className="flex-1 overflow-auto min-h-0" 
+                  style={{ 
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain'
+                  }}
+                >
                   <LotListPanel
                     lots={lots}
                     selectedLotId={selectedLotId}
                     hoveredLotId={null}
                     onSelectLot={handleLotFromList}
                     onHoverLot={() => {}}
-                    className="h-full"
+                    className="h-auto"
                     baseHomePackage={baseHomePackage}
                     baseSitework={baseSitework}
                     baseFeesAllowance={baseFeesAllowance}

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { usePricingConfig } from "@/state/usePricingConfig";
+import { RouteChangeScrollUnlock } from "@/components/RouteChangeScrollUnlock";
 import Index from "./pages/Index";
 import Developments from "./pages/Developments";
 import DevelopmentDetail from "./pages/DevelopmentDetail";
@@ -49,6 +50,7 @@ const App = () => (
       <Sonner />
       <PricingInitializer />
       <BrowserRouter>
+        <RouteChangeScrollUnlock />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/build" element={<Configurator />} />
