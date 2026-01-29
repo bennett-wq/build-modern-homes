@@ -900,7 +900,19 @@ export type Database = {
         | "delivered_installed"
         | "supply_only"
         | "community_all_in"
-      upgrade_category: "floor_plan" | "exterior" | "garage" | "foundation"
+      upgrade_category:
+        | "floor_plan"
+        | "exterior"
+        | "garage"
+        | "foundation"
+        | "heating"
+        | "appliance"
+        | "electrical"
+        | "plumbing"
+        | "bath"
+        | "countertop"
+        | "cabinet"
+        | "interior"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1063,7 +1075,20 @@ export const Constants = {
         "supply_only",
         "community_all_in",
       ],
-      upgrade_category: ["floor_plan", "exterior", "garage", "foundation"],
+      upgrade_category: [
+        "floor_plan",
+        "exterior",
+        "garage",
+        "foundation",
+        "heating",
+        "appliance",
+        "electrical",
+        "plumbing",
+        "bath",
+        "countertop",
+        "cabinet",
+        "interior",
+      ],
     },
   },
 } as const
