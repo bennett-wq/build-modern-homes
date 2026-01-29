@@ -814,6 +814,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_lot_data: {
+        Args: never
+        Returns: {
+          acreage: number | null
+          created_at: string
+          development_id: string
+          id: string
+          lot_number: string
+          net_acreage: number | null
+          notes: string | null
+          polygon_coordinates: Json | null
+          premium: number
+          restrictions: Json | null
+          status: Database["public"]["Enums"]["lot_status"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "lots"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
