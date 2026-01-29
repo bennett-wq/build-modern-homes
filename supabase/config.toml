@@ -5,3 +5,15 @@ verify_jwt = false
 
 [functions.list-team-members]
 verify_jwt = false
+
+[functions.plaid-create-link-token]
+verify_jwt = false
+
+[functions.plaid-exchange-token]
+verify_jwt = false
+
+[functions.plaid-get-financials]
+verify_jwt = false
+
+[functions.prequal-engine]
+verify_jwt = false
