@@ -230,11 +230,8 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
       </div>
 
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="mb-2">
           <h3 className="font-semibold text-foreground text-base">The {model.name}</h3>
-          <Badge variant="secondary" className="text-xs font-medium shrink-0">
-            ${model.price.toLocaleString()}
-          </Badge>
         </div>
         
         <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
