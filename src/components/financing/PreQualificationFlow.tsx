@@ -113,6 +113,14 @@ export function PreQualificationFlow({
   const [verificationMethod, setVerificationMethod] = useState<VerificationMethod>('manual');
   const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
   const [plaidInstitutionName, setPlaidInstitutionName] = useState<string | null>(null);
+  const [isVerifyingFinancials, setIsVerifyingFinancials] = useState(false);
+  const [prequalResults, setPrequalResults] = useState<{
+    eligiblePrograms: Array<{ name: string; matchQuality: string; description: string }>;
+    dtiRatio: number | null;
+    frontEndDti: number | null;
+    verifiedIncome: number | null;
+    monthlyPayment: number | null;
+  } | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<FormData>({
@@ -218,11 +226,11 @@ export function PreQualificationFlow({
 
       if (error) throw error;
 
-       // If Plaid was selected, save the public_token server-side (never store access tokens in the client)
-       if (verificationMethod === 'plaid_verified' && plaidPublicToken) {
+       // If Plaid was selected, save the public_token server-side and run prequal engine
+       if (verificationMethod === 'plaid_verified' && plaidPublicToken && inserted?.id) {
          const { error: exchangeError } = await supabase.functions.invoke('plaid-exchange-token', {
            body: {
-             application_id: inserted?.id,
+             application_id: inserted.id,
              public_token: plaidPublicToken,
              institution_name: plaidInstitutionName,
            },
@@ -234,6 +242,50 @@ export function PreQualificationFlow({
              title: 'Bank connection issue',
              description: "We saved your application, but couldn't finalize the bank connection. We'll follow up to complete verification.",
            });
+         } else {
+           // Run prequal engine to get verified results
+           setIsVerifyingFinancials(true);
+           try {
+             const { data: prequalData, error: prequalError } = await supabase.functions.invoke('prequal-engine', {
+               body: { application_id: inserted.id },
+             });
+
+             if (!prequalError && prequalData) {
+               // Map program results to UI-friendly format
+               const programDescriptions: Record<string, string> = {
+                 mh_advantage: 'Fannie Mae program with conventional terms for manufactured homes',
+                 choicehome: 'Freddie Mac program offering competitive rates for factory-built homes',
+                 construction_to_perm: 'Single-close loan covering construction and permanent financing',
+                 fha_title_1: 'FHA-insured loan for manufactured homes with flexible requirements',
+                 conventional: 'Standard conventional mortgage with competitive rates',
+               };
+
+               const eligiblePrograms = (prequalData.eligible_programs || []).map((p: any) => ({
+                 name: p.program.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+                 matchQuality: p.match_quality,
+                 description: programDescriptions[p.program] || 'Qualified lending program',
+               }));
+
+               setPrequalResults({
+                 eligiblePrograms,
+                 dtiRatio: prequalData.dti_ratio,
+                 frontEndDti: prequalData.front_end_dti,
+                 verifiedIncome: prequalData.verified_annual_income,
+                 monthlyPayment: prequalData.monthly_payment,
+               });
+
+               // Update status based on engine results
+               if (prequalData.status === 'pre_qualified') {
+                 setPreQualStatus('pre_qualified');
+               } else if (prequalData.status === 'needs_review') {
+                 setPreQualStatus('needs_review');
+               }
+             }
+           } catch (prequalErr) {
+             console.error('Prequal engine error:', prequalErr);
+           } finally {
+             setIsVerifyingFinancials(false);
+           }
          }
        }
 
@@ -678,8 +730,9 @@ export function PreQualificationFlow({
 
   const renderStep3 = () => {
     const isPreQualified = preQualStatus === 'pre_qualified';
-    const isPending = preQualStatus === 'pending';
+    const isPending = preQualStatus === 'pending' || isVerifyingFinancials;
     const loanAmount = purchasePrice * (1 - formData.downPaymentPercent / 100);
+    const hasVerifiedResults = prequalResults && prequalResults.eligiblePrograms.length > 0;
 
     return (
       <motion.div
@@ -696,10 +749,14 @@ export function PreQualificationFlow({
             'inline-flex items-center justify-center p-4 rounded-full mb-4',
             isPreQualified
               ? 'bg-green-100 dark:bg-green-900'
+              : isPending
+              ? 'bg-blue-100 dark:bg-blue-900'
               : 'bg-amber-100 dark:bg-amber-900'
           )}
         >
-          {isPreQualified ? (
+          {isPending ? (
+            <Loader2 className="h-8 w-8 text-blue-600 dark:text-blue-400 animate-spin" />
+          ) : isPreQualified ? (
             <Sparkles className="h-8 w-8 text-green-600 dark:text-green-400" />
           ) : (
             <CheckCircle2 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
@@ -708,26 +765,54 @@ export function PreQualificationFlow({
 
         <div>
           <h3 className="text-xl font-bold text-foreground mb-2">
-            {isPreQualified
+            {isPending
+              ? 'Verifying your financials...'
+              : isPreQualified
               ? "You're Pre-Qualified!"
-              : isPending
-              ? 'Verifying your financials'
               : 'Application Received'}
           </h3>
           <p className="text-muted-foreground">
-            {isPreQualified
-              ? 'Great news! Based on your profile, you may qualify for financing.'
-              : isPending
-              ? 'Thanks! We’re confirming your bank data and will follow up shortly.'
+            {isPending
+              ? 'Analyzing your bank data to find the best programs for you.'
+              : isPreQualified
+              ? 'Great news! Based on your verified financials, you qualify for multiple programs.'
               : "We've received your application and will review it shortly."}
           </p>
         </div>
+
+        {/* Verified Financial Summary - shown after prequal engine */}
+        {hasVerifiedResults && prequalResults.verifiedIncome && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="grid grid-cols-2 gap-3"
+          >
+            <div className="p-3 rounded-xl bg-muted/50 border border-border">
+              <p className="text-xs text-muted-foreground">Verified Income</p>
+              <p className="text-lg font-semibold text-foreground">
+                {formatCurrency(prequalResults.verifiedIncome)}/yr
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-muted/50 border border-border">
+              <p className="text-xs text-muted-foreground">DTI Ratio</p>
+              <p className={cn(
+                'text-lg font-semibold',
+                (prequalResults.dtiRatio ?? 0) <= 43 ? 'text-green-600' : 'text-amber-600'
+              )}>
+                {prequalResults.dtiRatio?.toFixed(1)}%
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Amount Card */}
         <div className={cn(
           'p-6 rounded-2xl',
           isPreQualified
             ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800'
+            : isPending
+            ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800'
             : 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800'
         )}>
           <p className="text-sm text-muted-foreground mb-1">
@@ -736,10 +821,78 @@ export function PreQualificationFlow({
           <p className="text-3xl font-bold text-foreground">
             {formatCurrency(isPreQualified ? loanAmount * 1.1 : loanAmount)}
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {formData.downPaymentPercent}% down • 30-year fixed
-          </p>
+          {prequalResults?.monthlyPayment ? (
+            <p className="text-sm text-muted-foreground mt-2">
+              Est. <span className="font-medium text-foreground">{formatCurrency(prequalResults.monthlyPayment)}/mo</span> (PITI + PMI)
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-2">
+              {formData.downPaymentPercent}% down • 30-year fixed
+            </p>
+          )}
         </div>
+
+        {/* Matched Programs */}
+        {hasVerifiedResults && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-left space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-blue-600" />
+              <p className="font-medium text-sm">Matched Programs</p>
+            </div>
+            <div className="space-y-2">
+              {prequalResults.eligiblePrograms.map((program, idx) => (
+                <motion.div
+                  key={program.name}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + idx * 0.1 }}
+                  className={cn(
+                    'flex items-start gap-3 p-3 rounded-lg border',
+                    program.matchQuality === 'excellent'
+                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                      : program.matchQuality === 'good'
+                      ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
+                      : 'bg-muted/50 border-border'
+                  )}
+                >
+                  <div className={cn(
+                    'p-1.5 rounded',
+                    program.matchQuality === 'excellent'
+                      ? 'bg-green-100 dark:bg-green-900'
+                      : program.matchQuality === 'good'
+                      ? 'bg-blue-100 dark:bg-blue-900'
+                      : 'bg-muted'
+                  )}>
+                    <CheckCircle2 className={cn(
+                      'h-3 w-3',
+                      program.matchQuality === 'excellent'
+                        ? 'text-green-600'
+                        : program.matchQuality === 'good'
+                        ? 'text-blue-600'
+                        : 'text-muted-foreground'
+                    )} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{program.name}</p>
+                      {program.matchQuality === 'excellent' && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-medium">
+                          Best Match
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{program.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Next Steps */}
         <div className="text-left space-y-3">
@@ -774,8 +927,9 @@ export function PreQualificationFlow({
           onClick={() => onOpenChange(false)}
           className="w-full"
           size="lg"
+          disabled={isPending}
         >
-          Done
+          {isPending ? 'Analyzing...' : 'Done'}
         </Button>
 
         <p className="text-xs text-muted-foreground">
