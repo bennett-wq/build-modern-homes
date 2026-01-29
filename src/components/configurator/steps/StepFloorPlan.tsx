@@ -1,14 +1,17 @@
 // ============================================================================
-// Step 5: Personalize Floor Plan
+// Step 6: Personalize Floor Plan
+// Uses database-driven upgrade options with fallback to static config
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, X, FileText, Info } from 'lucide-react';
+import { ArrowRight, ArrowLeft, FileText, Info, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { FloorPlanImageViewer } from '@/components/FloorPlanImageViewer';
 import { type ModelConfig, type BuildType, getAvailableFloorPlanOptions } from '@/data/pricing-config';
+import { useFilteredUpgradeOptions } from '@/hooks/useUpgradeOptions';
+import { useModels } from '@/hooks/useModels';
 import { cn } from '@/lib/utils';
 
 interface StepFloorPlanProps {
@@ -39,7 +42,42 @@ export function StepFloorPlan({
 }: StepFloorPlanProps) {
   const [floorPlanOpen, setFloorPlanOpen] = useState(false);
   
-  const availableOptions = getAvailableFloorPlanOptions(model, buildType);
+  // Fetch models from database to get UUID for the selected model
+  const { models: dbModels, isLoading: modelsLoading } = useModels();
+  
+  // Find the database model by slug to get its UUID
+  const dbModel = useMemo(() => {
+    return dbModels.find(m => m.slug === model.slug);
+  }, [dbModels, model.slug]);
+  
+  // Fetch upgrade options from database, filtered by model ID and build type
+  const { 
+    filteredFloorPlanOptions: dbOptions, 
+    isLoading: optionsLoading,
+    error: optionsError 
+  } = useFilteredUpgradeOptions(dbModel?.id || null, buildType);
+  
+  // Fallback to static options if database fetch fails or returns empty
+  const staticOptions = getAvailableFloorPlanOptions(model, buildType);
+  
+  // Use database options if available, otherwise fall back to static
+  const availableOptions = useMemo(() => {
+    // If we have database options, use them
+    if (dbOptions && dbOptions.length > 0) {
+      return dbOptions.map(opt => ({
+        id: opt.slug, // Use slug as ID for consistency with store
+        name: opt.label,
+        description: opt.description || '',
+        price: opt.base_price,
+        available: opt.is_active,
+        buildTypes: opt.applies_to_build_types || undefined,
+      }));
+    }
+    // Fall back to static options
+    return staticOptions;
+  }, [dbOptions, staticOptions]);
+  
+  const isLoading = modelsLoading || optionsLoading;
   const hasOptions = availableOptions.length > 0;
   
   return (
@@ -71,11 +109,16 @@ export function StepFloorPlan({
         >
           <h3 className="text-lg font-semibold text-foreground">Available Options</h3>
           
-          {hasOptions ? (
+          {isLoading ? (
+            <div className="p-6 rounded-xl bg-muted/30 border border-border flex items-center justify-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              <p className="text-muted-foreground">Loading options...</p>
+            </div>
+          ) : hasOptions ? (
             <div className="space-y-3">
               {availableOptions.map((option, index) => {
                 const isSelected = isOptionSelected(option.id);
-                const isAvailable = option.available;
+                const isAvailable = option.available !== false;
                 const appliesToBuildType = !option.buildTypes || option.buildTypes.includes(buildType);
                 const isDisabled = !isAvailable || !appliesToBuildType;
                 

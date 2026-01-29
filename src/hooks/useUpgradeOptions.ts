@@ -147,16 +147,18 @@ export function useFilteredUpgradeOptions(
   const base = useUpgradeOptions();
 
   const filterOption = (opt: UpgradeOption): boolean => {
-    // Check model filter
-    if (modelId && opt.applies_to_models && opt.applies_to_models.length > 0) {
-      if (!opt.applies_to_models.includes(modelId)) {
+    // Check model filter - only filter if applies_to_models is a non-empty array
+    const modelList = opt.applies_to_models;
+    if (modelId && Array.isArray(modelList) && modelList.length > 0) {
+      if (!modelList.includes(modelId)) {
         return false;
       }
     }
 
-    // Check build type filter
-    if (buildType && opt.applies_to_build_types && opt.applies_to_build_types.length > 0) {
-      if (!opt.applies_to_build_types.includes(buildType)) {
+    // Check build type filter - only filter if applies_to_build_types is a non-empty array
+    const buildTypeList = opt.applies_to_build_types;
+    if (buildType && Array.isArray(buildTypeList) && buildTypeList.length > 0) {
+      if (!buildTypeList.includes(buildType)) {
         return false;
       }
     }
