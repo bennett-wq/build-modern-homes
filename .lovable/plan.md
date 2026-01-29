@@ -1,145 +1,244 @@
 
 
-## Overview
+## Next-Generation Loan Pre-Qualification System
 
-This plan addresses two key requests:
+### Vision: "Get Pre-Qualified in Under 2 Minutes"
 
-1. **Email Notifications via Resend** - Automatically notify new team members when they're added to the platform
-2. **Seamless Admin UX** - Improve navigation, consistency, and usability across Pricing, Leads, and Team dashboards
-
----
-
-## Part 1: Email Notifications with Resend
-
-### What This Does
-When you add a team member at `/admin/users`, they'll automatically receive a welcome email letting them know they've been granted access and what role they have.
-
-### Implementation Steps
-
-**Step 1: Configure Resend API Key**
-- You'll need to provide a Resend API key
-- This will be stored securely and used by the backend to send emails
-
-**Step 2: Update the `add-team-member` Edge Function**
-- After successfully adding/updating a user's role, send a welcome email
-- Email includes: their role (Admin or Builder), what they can access, and a link to sign in
-
-**Sample Email Content:**
-```
-Subject: You've been added to [Project Name] Team
-
-Hi there,
-
-You've been granted [Builder/Admin] access to the pricing admin console.
-
-What you can do:
-• View and edit pricing drafts
-• [Admin only] Publish pricing and manage team
-
-Sign in here: [link to /admin/login]
-```
+Transform BaseMod Financial from a basic lead capture form into a VC-grade, borrower-centric pre-qualification engine that rivals the best fintech experiences. This system will securely verify financial credentials through Plaid integration, provide instant DTI-based decisions, and deliver a premium experience aligned with Fannie Mae MH Advantage and Freddie Mac CHOICEHome programs.
 
 ---
 
-## Part 2: Admin UX Improvements
+## What You'll Get
 
-### Current Issues Identified
-1. **Inconsistent navigation** - Different header layouts between Pricing, Leads, and Users pages
-2. **Missing breadcrumbs/context** - No clear indication of where you are
-3. **Team list shows UUIDs** - User IDs instead of emails (not human-readable)
-4. **No quick actions on leads table** - Can't update status without navigating away
-5. **No unified sidebar** - Each page has its own nav pattern
+### 1. Instant Financial Verification via Plaid
+- **One-click bank connection** instead of manual income/asset entry
+- Verified income data (paystubs, W-2 equivalents, bank deposits)
+- Asset verification for down payment proof
+- Real credit score (with soft pull consent)
+- Eliminates guessing and self-reported ranges
 
-### Proposed Solutions
+### 2. Smart DTI-Based Decisioning Engine
+- Real-time Debt-to-Income calculation using verified data
+- Automatic loan amount calculation based on actual financials
+- MH Advantage / CHOICEHome eligibility flagging
+- Tiered results: Pre-Qualified / Conditionally Pre-Qualified / Needs Review
 
-**A. Unified Admin Layout**
-Create a shared admin shell with:
-- Consistent sidebar navigation (Pricing, Leads, Team)
-- Same header across all admin pages
-- Visual indicator showing current page
-- User info + role badge in a consistent location
+### 3. Premium User Experience
+- 3-step streamlined flow (60-90 seconds typical)
+- Progress animations and real-time feedback
+- Mobile-first responsive design
+- Save and resume capability
+- Instant downloadable pre-qualification letter
 
-**B. Team Management Improvements** (`AdminUsers.tsx`)
-- Display user **emails** instead of UUID snippets
-- Fetch emails from the auth system via the edge function
-- Show when they last signed in (if available)
-
-**C. Leads Dashboard Enhancements** (`AdminLeads.tsx`)
-- Add inline status update dropdown directly in table rows
-- Add "quick view" drawer/modal to see full lead details
-- Add ability to add notes to leads
-- Make status badges clickable for quick filtering
-
-**D. Pricing Dashboard Polish** (`AdminPricing.tsx`)
-- Ensure navigation matches other admin pages
-- Keep consistent styling with Leads and Team pages
+### 4. Loan Program Intelligence
+- Automatic matching to eligible programs (MH Advantage, CHOICEHome, FHA Title I, VA, Construction-to-Perm)
+- Program comparison cards showing benefits
+- Down payment requirement optimization
+- Rate estimates by program type
 
 ---
 
-## Technical Details
+## Technical Architecture
 
-### Files to Create
-| File | Purpose |
-|------|---------|
-| `src/components/admin/AdminShell.tsx` | Shared layout wrapper with sidebar nav |
-| `src/components/admin/AdminNav.tsx` | Sidebar navigation component |
+### New Edge Functions
 
-### Files to Modify
-| File | Changes |
-|------|---------|
-| `supabase/functions/add-team-member/index.ts` | Add Resend email sending logic |
-| `supabase/config.toml` | No changes needed (already configured) |
-| `src/pages/admin/AdminUsers.tsx` | Use AdminShell, display user emails |
-| `src/pages/admin/AdminLeads.tsx` | Use AdminShell, add inline status updates |
-| `src/pages/admin/AdminPricing.tsx` | Use AdminShell, consistent layout |
-| `src/pages/admin/AdminLogin.tsx` | Minor styling tweaks for consistency |
+| Function | Purpose |
+|----------|---------|
+| `plaid-create-link-token` | Generate Plaid Link token for frontend |
+| `plaid-exchange-token` | Exchange public token for access token |
+| `plaid-get-financials` | Fetch verified income, assets, liabilities |
+| `prequal-engine` | Run DTI calculations and eligibility logic |
+| `generate-prequal-letter` | Create downloadable PDF letter |
 
-### Edge Function Changes
-The `add-team-member` function will:
-1. Complete existing role assignment logic
-2. Call Resend API to send welcome email
-3. Return success with email confirmation
+### Database Schema Additions
 
-```typescript
-// Pseudocode for email sending
-import { Resend } from 'npm:resend@2.0.0';
+```text
+plaid_connections (new table)
+├── id (uuid, PK)
+├── application_id (FK → financing_applications)
+├── plaid_item_id (encrypted)
+├── access_token (encrypted, never exposed to client)
+├── institution_name
+├── products_enabled (income, assets, identity, liabilities)
+├── consent_timestamp
+├── created_at
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+verified_financials (new table)
+├── id (uuid, PK)
+├── application_id (FK → financing_applications)
+├── verified_annual_income (decimal)
+├── verified_monthly_income (decimal)
+├── verified_assets_total (decimal)
+├── verified_liabilities_total (decimal)
+├── employment_verified (boolean)
+├── employer_name
+├── income_sources (jsonb)
+├── data_freshness (timestamp)
+├── created_at
 
-// After successful role assignment...
-await resend.emails.send({
-  from: 'Team <noreply@YOUR-DOMAIN.com>',
-  to: [targetUser.email],
-  subject: 'You've been added to the team',
-  html: welcomeEmailTemplate(role, loginUrl)
-});
+financing_applications (additions)
+├── verification_method (enum: 'manual', 'plaid_verified')
+├── dti_ratio (decimal)
+├── front_end_dti (decimal)
+├── eligible_programs (text[])
+├── prequal_letter_url (text)
+├── consent_credit_pull (boolean)
+├── consent_timestamp
 ```
 
-### Database Query for Displaying Emails
-The edge function already returns the user's email in its response. We'll update `AdminUsers.tsx` to:
-1. Request emails when loading the team list (via a new edge function or enhanced query)
-2. Display emails alongside roles
+### Frontend Components
+
+| Component | Description |
+|-----------|-------------|
+| `PlaidLinkButton` | Wrapper for Plaid Link SDK with branded styling |
+| `VerificationProgress` | Real-time status during Plaid data fetch |
+| `EligibilityResults` | Program cards showing what you qualify for |
+| `PreQualLetter` | Downloadable/shareable pre-qualification letter |
+| `FinancialSummary` | Verified income/assets display (redacted for privacy) |
+
+---
+
+## User Flow
+
+```text
+Step 1: Quick Contact (30 sec)
+├── Name, email, phone
+├── Intended use (primary/second/investment)
+├── Purchase price (auto-filled from quote)
+└── [Continue]
+
+Step 2: Verify Financials (45 sec)
+├── Option A: Connect Bank (Plaid - recommended)
+│   ├── Launch Plaid Link
+│   ├── User selects bank & logs in
+│   ├── Grant income/asset permissions
+│   └── Auto-fetch verified data
+├── Option B: Manual Entry (fallback)
+│   ├── Income range dropdown
+│   ├── Credit score estimate
+│   └── Employment status
+└── Down payment % selector
+
+Step 3: Instant Results (15 sec)
+├── Pre-Qualification Status (animated reveal)
+├── Eligible Programs (MH Advantage, CHOICEHome, etc.)
+├── Maximum loan amount
+├── Estimated monthly payment (PITI)
+├── Download Pre-Qual Letter button
+└── Schedule a Call CTA
+```
+
+---
+
+## Loan Program Logic
+
+### MH Advantage Eligibility
+- HUD-labeled manufactured home with MH Advantage sticker
+- Permanent foundation
+- Real property titled
+- Up to 97% LTV (3% down) for primary residence
+- 90% LTV for second homes
+- Standard conventional underwriting
+
+### CHOICEHome Eligibility
+- Freddie Mac CHOICEHome label
+- Real property classification
+- Up to 97% LTV with Home Possible
+- 620+ credit score minimum
+
+### Construction-to-Perm
+- Single-close option
+- Converts to permanent mortgage upon completion
+- Interest-only during construction phase
+- Available for all BaseMod models
+
+### FHA Title I
+- For chattel (personal property) classification
+- 20-year max term for single-wide
+- 25-year max for multi-section
+- Lower credit score tolerance
+
+---
+
+## Security & Compliance
+
+### Data Protection
+- Plaid access tokens stored encrypted (never client-exposed)
+- Verified financials encrypted at rest
+- Automatic data expiration (30 days)
+- Consent timestamps for compliance
+
+### Regulatory Considerations
+- Clear disclosures: "This is not a commitment to lend"
+- Soft credit pull consent language
+- ECOA-compliant language
+- Privacy policy link
+
+---
+
+## Implementation Phases
+
+### Phase 1: Core Engine (Week 1)
+- Create Plaid edge functions (link token, exchange, fetch)
+- Add database tables for verified financials
+- Build DTI calculation engine
+- Update `PreQualificationFlow` with verification choice
+
+### Phase 2: Smart Decisioning (Week 2)
+- Implement program eligibility logic
+- Build results display with program cards
+- Add conditional pre-qual paths
+- Create verified financials display
+
+### Phase 3: Premium Polish (Week 3)
+- Pre-qualification letter PDF generation
+- Email delivery of results
+- Save and resume functionality
+- Mobile optimization pass
+
+### Phase 4: Admin Enhancements
+- Leads dashboard: show verification status
+- Verified vs manual indicators
+- DTI and program eligibility columns
+- One-click "call now" for hot leads
 
 ---
 
 ## Prerequisites
 
-Before implementation, you'll need to:
+### Plaid Account Setup
+1. Create account at [plaid.com](https://plaid.com)
+2. Enable products: Income, Assets, Liabilities, Identity
+3. Get Client ID and Secret (Sandbox for testing, Production for launch)
+4. Configure webhook URL for async updates
 
-1. **Set up Resend account** at https://resend.com
-2. **Verify your email domain** at https://resend.com/domains
-3. **Create an API key** at https://resend.com/api-keys
-4. **Provide the API key** when prompted
+### Secrets Required
+- `PLAID_CLIENT_ID`
+- `PLAID_SECRET`
+- `PLAID_ENV` (sandbox / development / production)
 
 ---
 
-## Summary of Changes
+## Success Metrics
 
-| Area | Improvement |
-|------|-------------|
-| Email Notifications | Welcome email when team members are added |
-| Admin Navigation | Unified sidebar across all admin pages |
-| Team Management | Show emails instead of UUIDs |
-| Leads Dashboard | Inline status updates, quick filtering |
-| Overall UX | Consistent headers, badges, and styling |
+| Metric | Current | Target |
+|--------|---------|--------|
+| Pre-qual completion rate | ~40% | 70%+ |
+| Time to completion | 3-5 min | <2 min |
+| Verified applications | 0% | 60%+ |
+| Lead-to-call conversion | Unknown | Track |
+
+---
+
+## Summary
+
+This upgrade transforms your pre-qualification from a basic form into a true fintech-grade experience:
+
+- **Plaid Integration** for instant, verified financial data
+- **Smart DTI Engine** for real-time eligibility decisions
+- **Program Matching** for MH Advantage, CHOICEHome, and construction-to-perm
+- **Premium UX** with animations, progress tracking, and instant letters
+- **Admin Insights** with verification status and eligibility flags
+
+The result: borrowers get instant, credible answers. Your team gets pre-qualified leads with verified financials. Everyone wins.
 
