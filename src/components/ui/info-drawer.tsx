@@ -30,6 +30,11 @@ interface InfoDrawerProps {
   description?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /**
+   * When true, the drawer does NOT trap focus or disable pointer events outside.
+   * This is critical for third-party overlays (e.g. Plaid Link) that mount to <body>.
+   */
+  allowOutsideInteraction?: boolean;
 }
 
 export function InfoDrawer({
@@ -39,13 +44,14 @@ export function InfoDrawer({
   description,
   children,
   className,
+  allowOutsideInteraction,
 }: InfoDrawerProps) {
   const isMobile = useIsMobile();
 
   // Mobile: Bottom sheet with drag handle
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer open={open} onOpenChange={onOpenChange} modal={!allowOutsideInteraction}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle>{title}</DrawerTitle>
@@ -63,7 +69,7 @@ export function InfoDrawer({
 
   // Desktop: Right-side slide-over drawer
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={!allowOutsideInteraction}>
       <SheetContent
         side="right"
         className={cn(

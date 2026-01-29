@@ -975,6 +975,7 @@ export function PreQualificationFlow({
       onOpenChange={handleDrawerOpenChange}
       title="BaseMod Financial"
       description="Pre-qualify in 2 minutes"
+      allowOutsideInteraction={isPlaidModalOpen}
     >
       {renderStepIndicator()}
       
