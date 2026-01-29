@@ -81,7 +81,7 @@ export const developments: Development[] = [
     state: 'Michigan',
     sitePlanImagePath: '/images/developments/ypsilanti/hero-prospect-site-plan.png',
     description: 'This BaseMod community is still in planning stages for launch in 2026. Located at 1230 N Prospect Road, Ypsilanti MI. No HOA Restrictions.',
-    status: 'coming-soon',
+    status: 'active',
     locationHighlights: [
       { icon: 'MapPin', title: 'Prime Location', description: 'Located on N Prospect Road with easy access to Ypsilanti and Ann Arbor.' },
       { icon: 'Car', title: 'Commuter Friendly', description: 'Convenient access to I-94 and US-23 for easy commuting.' },
