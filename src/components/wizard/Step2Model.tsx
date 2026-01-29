@@ -54,7 +54,11 @@ export function Step2Model({
 
   const handleSelect = useCallback((slug: string) => {
     onSelectModel(slug);
-  }, [onSelectModel]);
+    // Auto-advance after brief feedback delay
+    setTimeout(() => {
+      onNext();
+    }, 800);
+  }, [onSelectModel, onNext]);
 
   return (
     <div className="h-full flex flex-col">
