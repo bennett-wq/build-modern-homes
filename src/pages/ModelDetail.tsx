@@ -60,7 +60,7 @@ const modelData: Record<string, {
       "2 Bed · Office / Den option",
       "2 or 3 Bedroom configurations available",
     ],
-    foundationType: "Basement or slab foundation (site-specific)",
+    foundationType: "Crawl (8x8x16 CMU blocks on spread/trench footing) or basement (+$17k)",
     badges: ["Factory-built", "Modular available", "Garage + porch ready"],
     buyerBullets: [
       "Designed for curb appeal with a site-built garage + porch",
@@ -81,7 +81,7 @@ const modelData: Record<string, {
       "Optional third bathroom (utility room conversion; site/plumbing dependent)",
       "Designed for tight setbacks / narrow-lot fit",
     ],
-    foundationType: "Basement or slab foundation (site-specific)",
+    foundationType: "Crawl (8x8x16 CMU blocks on spread/trench footing) or basement (+$17k)",
     badges: ["Factory-built", "Modular available", "Best Value"],
     buyerBullets: [
       "Efficient footprint ideal for narrow lots",
@@ -104,7 +104,7 @@ const modelData: Record<string, {
       "Optional third bathroom",
       "Highly efficient layout for tighter setbacks",
     ],
-    foundationType: "Crawl or basement foundation (site-specific)",
+    foundationType: "Crawl (8x8x16 CMU blocks on spread/trench footing) or basement (+$17k)",
     badges: ["Factory-built", "Modular available", "Family Favorite"],
     buyerBullets: [
       "Four bedrooms in a compact, efficient footprint",
@@ -125,7 +125,7 @@ const modelData: Record<string, {
       "Open-concept living core maximizes usable space",
       "Versatile for creative exterior treatments",
     ],
-    foundationType: "Slab or basement foundation (site-specific)",
+    foundationType: "Crawl (8x8x16 CMU blocks on spread/trench footing) or basement (+$17k)",
     badges: ["Factory-built", "Modular available"],
     buyerBullets: [
       "Modern design with flexible exterior options",
@@ -147,7 +147,7 @@ const modelData: Record<string, {
       "Two-Car Garage with Two Doors",
       "Two-Car Garage with Single Modern Door",
     ],
-    foundationType: "Slab or crawl foundation (site-specific)",
+    foundationType: "Crawl (8x8x16 CMU blocks on spread/trench footing) or basement (+$17k)",
     badges: ["Factory-built", "Most Affordable"],
     buyerBullets: [
       "Flexible garage options to match your site",
@@ -168,7 +168,7 @@ const modelData: Record<string, {
       "Flex room as office or den",
       "Open living and kitchen core",
     ],
-    foundationType: "Slab or crawl foundation (site-specific)",
+    foundationType: "Crawl (8x8x16 CMU blocks on spread/trench footing)",
     badges: ["Factory-built", "Most Compact"],
     buyerBullets: [
       "Ultra-compact footprint for narrow or ADU sites",
