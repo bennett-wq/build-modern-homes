@@ -1,14 +1,15 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Home as HomeIcon, Ruler, BedDouble, Bath, AlertCircle } from "lucide-react";
+import { ArrowRight, Home as HomeIcon, Ruler, BedDouble, Bath } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
-import { homeModels } from "@/data/models";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useUnifiedPricingEngine } from "@/hooks/useUnifiedPricingEngine";
 import { HERO_PLACEHOLDER } from "@/lib/model-images";
 import { getHeroImageFallbackChain } from "@/lib/image-utils";
-
+import type { Model } from "@/types/database";
 // Trust chips - same as homepage
 const trustChips = [
   "Financing-ready pathways",
@@ -18,6 +19,9 @@ const trustChips = [
 ];
 
 export default function Models() {
+  const pricingEngine = useUnifiedPricingEngine();
+  const { models: modelsData, isLoading } = pricingEngine;
+  
   return (
     <Layout>
       {/* Hero Section - Apple-minimal matching homepage */}
@@ -95,11 +99,34 @@ export default function Models() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {homeModels.map((model, index) => (
-            <ModelCard key={model.slug} model={model} index={index} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-card rounded-xl border border-border overflow-hidden">
+                <Skeleton className="aspect-video w-full" />
+                <div className="p-5 space-y-3">
+                  <Skeleton className="h-6 w-32" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                  <Skeleton className="h-5 w-40" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 flex-1" />
+                    <Skeleton className="h-9 flex-1" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {modelsData.models.map((model, index) => (
+              <ModelCard key={model.slug} model={model} index={index} pricingEngine={pricingEngine} />
+            ))}
+          </div>
+        )}
       </Section>
 
       {/* CrossMod Explanation - Refined */}
@@ -194,18 +221,26 @@ export default function Models() {
 
 // Model Card Component - Premium, scannable with buyer-facing pricing
 interface ModelCardProps {
-  model: typeof homeModels[0];
+  model: Model;
   index: number;
+  pricingEngine: ReturnType<typeof useUnifiedPricingEngine>;
 }
 
-function ModelCard({ model, index }: ModelCardProps) {
+function ModelCard({ model, index, pricingEngine }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
+  // Get "Starting from" price from unified engine
+  const startingPrice = useMemo(() => {
+    return pricingEngine.getStartingFromPrice(model.slug);
+  }, [pricingEngine, model.slug]);
+  
+  const hasValidPrice = startingPrice.totals.displayedTotal > 0;
+  
   // Build fallback chain: heroImage -> /slug/hero.webp -> /slug/hero.png -> placeholder
   const fallbackChain = useMemo(
-    () => getHeroImageFallbackChain(model.slug, model.heroImage),
-    [model.slug, model.heroImage]
+    () => getHeroImageFallbackChain(model.slug, model.hero_image_url || undefined),
+    [model.slug, model.hero_image_url]
   );
   
   const currentSrc = fallbackChain[currentImageIndex];
@@ -266,7 +301,7 @@ function ModelCard({ model, index }: ModelCardProps) {
           </Link>
 
           {/* Spec chips */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-sm text-muted-foreground">
               <Ruler className="w-3.5 h-3.5" />
               {model.sqft.toLocaleString()} sq ft
@@ -280,6 +315,23 @@ function ModelCard({ model, index }: ModelCardProps) {
               {model.baths} bath
             </span>
           </div>
+          
+          {/* Starting from price - Database driven */}
+          {hasValidPrice && (
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground">
+                Starting from{" "}
+                <span className="font-semibold text-foreground">
+                  {pricingEngine.formatPrice(startingPrice.totals.displayedTotal)}
+                </span>
+              </p>
+              {startingPrice.freightPending && (
+                <p className="text-xs text-muted-foreground/70 mt-0.5">
+                  *Freight pending final quote
+                </p>
+              )}
+            </div>
+          )}
 
           {/* CTAs - Get Quote primary, View Details secondary */}
           <div className="flex gap-2">
