@@ -239,7 +239,7 @@ export function Step1Lot({
         </AnimatePresence>
       </div>
 
-      {/* Sticky Footer */}
+      {/* Sticky Footer - Enhanced with clear lot details */}
       <WizardStickyFooter
         onContinue={onNext}
         canContinue={!!canProceed}
@@ -247,63 +247,77 @@ export function Step1Lot({
         hideBack={true}
       >
         {selectedLot ? (
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center">
-                <MapPin className="h-5 w-5 text-accent" />
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Lot Icon & Details */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shrink-0 shadow-lg">
+                <MapPin className="h-6 w-6 text-accent-foreground" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-foreground">{selectedLot.label}</p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-bold text-foreground text-lg">{selectedLot.label}</p>
                   {selectedLot.phase === 1 && selectedLot.status === 'available' && (
-                    <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-[10px] px-1.5 py-0 h-4">
+                    <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 text-xs px-2 py-0.5 shrink-0">
+                      <Sparkles className="h-3 w-3 mr-1" />
                       Available Now
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                   <Badge
                     variant="secondary"
                     className={cn(
-                      'text-xs font-medium',
-                      selectedLot.status === 'available' && 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
-                      selectedLot.status === 'reserved' && 'bg-amber-500/10 text-amber-600 border-amber-200',
-                      selectedLot.status === 'sold' && 'bg-gray-500/10 text-gray-500 border-gray-200'
+                      'text-xs font-semibold',
+                      selectedLot.status === 'available' && 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200',
+                      selectedLot.status === 'reserved' && 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200',
+                      selectedLot.status === 'sold' && 'bg-gray-500/15 text-gray-600 border-gray-200'
                     )}
                   >
                     {selectedLot.status.charAt(0).toUpperCase() + selectedLot.status.slice(1)}
                   </Badge>
                   {selectedLot.acreage && (
-                    <span className="text-xs text-muted-foreground">{selectedLot.acreage} acres</span>
+                    <span className="text-sm text-muted-foreground font-medium">{selectedLot.acreage} acres</span>
                   )}
-                  {!canProceed && selectedLot && (
-                    <span className="flex items-center gap-1 text-amber-600 text-xs">
-                      <AlertCircle className="h-3 w-3" />
-                      Not available
+                  {selectedLot.premium !== undefined && (
+                    <span className="text-sm text-foreground font-semibold">
+                      ${selectedLot.premium.toLocaleString()} lot
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* All-in price badge */}
+            {/* All-in price badge - Desktop only */}
             {allInPrice && canProceed && (
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-accent/10 to-transparent border border-accent/20">
-                <TrendingUp className="h-4 w-4 text-accent" />
+              <div className="hidden md:flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent/15 to-accent/5 border border-accent/30 ml-auto">
+                <TrendingUp className="h-5 w-5 text-accent" />
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">All-In</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">All-In Estimate</p>
                   <AnimatedPriceCompact 
                     value={allInPrice} 
-                    className="text-sm font-bold text-foreground"
+                    className="text-lg font-bold text-foreground"
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Not available warning */}
+            {!canProceed && selectedLot && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 ml-auto">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">Not available</span>
               </div>
             )}
           </div>
         ) : (
           <div className="flex items-center gap-3 text-muted-foreground">
-            <MapPin className="h-5 w-5" />
-            <p className="text-sm">Select a lot to continue</p>
+            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Select a lot to continue</p>
+              <p className="text-xs text-muted-foreground">Choose from {lots.filter(l => l.status === 'available').length} available lots</p>
+            </div>
           </div>
         )}
       </WizardStickyFooter>

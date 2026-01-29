@@ -150,10 +150,20 @@ export function PreQualificationFlow({
       const loanAmount = purchasePrice - downPaymentAmount;
       const status = calculatePreQualStatus();
 
+      // Calculate monthly payment estimate for storage
+      const monthlyRate = 6.875 / 100 / 12;
+      const numPayments = 30 * 12;
+      const monthlyPI = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+      const monthlyTax = (purchasePrice * 0.015) / 12;
+      const monthlyInsurance = 1800 / 12;
+      const monthlyPMI = formData.downPaymentPercent < 20 ? (loanAmount * 0.005) / 12 : 0;
+      const monthlyPayment = Math.round(monthlyPI + monthlyTax + monthlyInsurance + monthlyPMI);
+
       const { data, error } = await supabase
         .from('financing_applications')
         .insert({
           quote_id: quoteId || null,
+          user_id: null, // Explicitly set to null for anonymous submissions
           contact_name: formData.contactName,
           contact_email: formData.contactEmail,
           contact_phone: formData.contactPhone || null,
@@ -165,6 +175,9 @@ export function PreQualificationFlow({
           down_payment_percent: formData.downPaymentPercent,
           down_payment_amount: downPaymentAmount,
           loan_amount_requested: loanAmount,
+          loan_term_years: 30,
+          interest_rate: 6.875,
+          monthly_payment_estimate: monthlyPayment,
           purchase_timeframe: formData.purchaseTimeframe as '0_3_months' | '3_6_months' | '6_12_months' | '12_plus',
           pre_qualification_status: status,
           pre_qualified_amount: status === 'pre_qualified' ? loanAmount * 1.1 : null,
@@ -178,6 +191,13 @@ export function PreQualificationFlow({
       setPreQualStatus(status);
       setCurrentStep(3);
       onComplete?.(data.id);
+
+      toast({
+        title: status === 'pre_qualified' ? '🎉 Congratulations!' : '✓ Application Received',
+        description: status === 'pre_qualified' 
+          ? "You're pre-qualified! We'll be in touch soon."
+          : "We've received your application and will review it shortly.",
+      });
 
     } catch (error) {
       console.error('Error submitting pre-qualification:', error);
@@ -216,28 +236,46 @@ export function PreQualificationFlow({
     <div className="flex items-center justify-center gap-2 mb-6">
       {[1, 2, 3].map((step) => (
         <React.Fragment key={step}>
-          <div
+          <motion.div
+            initial={false}
+            animate={{
+              scale: currentStep === step ? 1.1 : 1,
+              backgroundColor: currentStep === step 
+                ? 'rgb(37, 99, 235)' // blue-600
+                : currentStep > step 
+                ? 'rgb(34, 197, 94)' // green-500
+                : 'rgb(229, 231, 235)', // gray-200
+            }}
+            transition={{ duration: 0.2 }}
             className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300',
+              'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold',
               currentStep === step
-                ? 'bg-blue-600 text-white scale-110'
+                ? 'text-white shadow-lg ring-4 ring-blue-200 dark:ring-blue-900'
                 : currentStep > step
-                ? 'bg-green-500 text-white'
-                : 'bg-muted text-muted-foreground'
+                ? 'text-white'
+                : 'text-muted-foreground'
             )}
           >
             {currentStep > step ? (
-              <CheckCircle2 className="h-5 w-5" />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+              >
+                <CheckCircle2 className="h-6 w-6" />
+              </motion.div>
             ) : (
               step
             )}
-          </div>
+          </motion.div>
           {step < 3 && (
-            <div
-              className={cn(
-                'w-12 h-1 rounded-full transition-colors duration-300',
-                currentStep > step ? 'bg-green-500' : 'bg-muted'
-              )}
+            <motion.div
+              initial={false}
+              animate={{
+                backgroundColor: currentStep > step ? 'rgb(34, 197, 94)' : 'rgb(229, 231, 235)',
+              }}
+              transition={{ duration: 0.3 }}
+              className="w-16 h-1.5 rounded-full"
             />
           )}
         </React.Fragment>
