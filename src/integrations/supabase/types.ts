@@ -202,6 +202,8 @@ export type Database = {
       financing_applications: {
         Row: {
           annual_income_range: Database["public"]["Enums"]["income_range"]
+          consent_credit_pull: boolean | null
+          consent_timestamp: string | null
           contact_email: string
           contact_name: string
           contact_phone: string | null
@@ -209,7 +211,10 @@ export type Database = {
           credit_score_range: Database["public"]["Enums"]["credit_score_range"]
           down_payment_amount: number
           down_payment_percent: number
+          dti_ratio: number | null
+          eligible_programs: string[] | null
           employment_status: Database["public"]["Enums"]["employment_status"]
+          front_end_dti: number | null
           id: string
           intended_use: Database["public"]["Enums"]["intended_use"]
           interest_rate: number
@@ -219,14 +224,20 @@ export type Database = {
           notes: string | null
           pre_qualification_status: Database["public"]["Enums"]["prequal_status"]
           pre_qualified_amount: number | null
+          prequal_letter_url: string | null
           purchase_price: number
           purchase_timeframe: Database["public"]["Enums"]["purchase_timeframe"]
           quote_id: string | null
           updated_at: string
           user_id: string | null
+          verification_method:
+            | Database["public"]["Enums"]["verification_method"]
+            | null
         }
         Insert: {
           annual_income_range?: Database["public"]["Enums"]["income_range"]
+          consent_credit_pull?: boolean | null
+          consent_timestamp?: string | null
           contact_email: string
           contact_name: string
           contact_phone?: string | null
@@ -234,7 +245,10 @@ export type Database = {
           credit_score_range?: Database["public"]["Enums"]["credit_score_range"]
           down_payment_amount?: number
           down_payment_percent?: number
+          dti_ratio?: number | null
+          eligible_programs?: string[] | null
           employment_status?: Database["public"]["Enums"]["employment_status"]
+          front_end_dti?: number | null
           id?: string
           intended_use?: Database["public"]["Enums"]["intended_use"]
           interest_rate?: number
@@ -244,14 +258,20 @@ export type Database = {
           notes?: string | null
           pre_qualification_status?: Database["public"]["Enums"]["prequal_status"]
           pre_qualified_amount?: number | null
+          prequal_letter_url?: string | null
           purchase_price: number
           purchase_timeframe?: Database["public"]["Enums"]["purchase_timeframe"]
           quote_id?: string | null
           updated_at?: string
           user_id?: string | null
+          verification_method?:
+            | Database["public"]["Enums"]["verification_method"]
+            | null
         }
         Update: {
           annual_income_range?: Database["public"]["Enums"]["income_range"]
+          consent_credit_pull?: boolean | null
+          consent_timestamp?: string | null
           contact_email?: string
           contact_name?: string
           contact_phone?: string | null
@@ -259,7 +279,10 @@ export type Database = {
           credit_score_range?: Database["public"]["Enums"]["credit_score_range"]
           down_payment_amount?: number
           down_payment_percent?: number
+          dti_ratio?: number | null
+          eligible_programs?: string[] | null
           employment_status?: Database["public"]["Enums"]["employment_status"]
+          front_end_dti?: number | null
           id?: string
           intended_use?: Database["public"]["Enums"]["intended_use"]
           interest_rate?: number
@@ -269,11 +292,15 @@ export type Database = {
           notes?: string | null
           pre_qualification_status?: Database["public"]["Enums"]["prequal_status"]
           pre_qualified_amount?: number | null
+          prequal_letter_url?: string | null
           purchase_price?: number
           purchase_timeframe?: Database["public"]["Enums"]["purchase_timeframe"]
           quote_id?: string | null
           updated_at?: string
           user_id?: string | null
+          verification_method?:
+            | Database["public"]["Enums"]["verification_method"]
+            | null
         }
         Relationships: [
           {
@@ -507,6 +534,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      plaid_connections: {
+        Row: {
+          access_token: string
+          application_id: string
+          consent_timestamp: string
+          created_at: string
+          id: string
+          institution_name: string | null
+          plaid_item_id: string
+          products_enabled: string[] | null
+        }
+        Insert: {
+          access_token: string
+          application_id: string
+          consent_timestamp?: string
+          created_at?: string
+          id?: string
+          institution_name?: string | null
+          plaid_item_id: string
+          products_enabled?: string[] | null
+        }
+        Update: {
+          access_token?: string
+          application_id?: string
+          consent_timestamp?: string
+          created_at?: string
+          id?: string
+          institution_name?: string | null
+          plaid_item_id?: string
+          products_enabled?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plaid_connections_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "financing_applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_configs: {
         Row: {
@@ -809,6 +877,56 @@ export type Database = {
         }
         Relationships: []
       }
+      verified_financials: {
+        Row: {
+          application_id: string
+          created_at: string
+          data_freshness: string
+          employer_name: string | null
+          employment_verified: boolean | null
+          id: string
+          income_sources: Json | null
+          verified_annual_income: number | null
+          verified_assets_total: number | null
+          verified_liabilities_total: number | null
+          verified_monthly_income: number | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          data_freshness?: string
+          employer_name?: string | null
+          employment_verified?: boolean | null
+          id?: string
+          income_sources?: Json | null
+          verified_annual_income?: number | null
+          verified_assets_total?: number | null
+          verified_liabilities_total?: number | null
+          verified_monthly_income?: number | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          data_freshness?: string
+          employer_name?: string | null
+          employment_verified?: boolean | null
+          id?: string
+          income_sources?: Json | null
+          verified_annual_income?: number | null
+          verified_assets_total?: number | null
+          verified_liabilities_total?: number | null
+          verified_monthly_income?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verified_financials_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "financing_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -913,6 +1031,7 @@ export type Database = {
         | "countertop"
         | "cabinet"
         | "interior"
+      verification_method: "manual" | "plaid_verified"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1089,6 +1208,7 @@ export const Constants = {
         "cabinet",
         "interior",
       ],
+      verification_method: ["manual", "plaid_verified"],
     },
   },
 } as const
