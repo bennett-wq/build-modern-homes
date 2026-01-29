@@ -129,6 +129,12 @@ function mapStaticPricingToRow(
     effective_from: new Date().toISOString(),
     created_at: new Date().toISOString(),
     created_by: null,
+    // New audit trail fields from migration (nullable in static fallback)
+    quote_number: null,
+    quote_date: null,
+    base_cost: pricing.base_cost,
+    options_delta: pricing.options_adjustment,
+    shipping_charge: pricing.freight,
   };
 }
 
