@@ -111,18 +111,47 @@ export default function SecureBankConnect() {
     setStatus('loading');
     console.log('[SecureBankConnect] Fetching link token...');
     try {
-      const { data, error } = await supabase.functions.invoke('plaid-create-link-token', {
-        body: {},
-      });
+      const maxAttempts = 3;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const { data, error } = await supabase.functions.invoke('plaid-create-link-token', {
+            body: {},
+          });
 
-      if (error) throw error;
+          if (error) throw error;
 
-      const token = (data as { link_token?: string } | null)?.link_token;
-      if (!token) throw new Error('Missing link_token from server');
+          const token = (data as { link_token?: string } | null)?.link_token;
+          if (!token) throw new Error('Missing link_token from server');
 
-      console.log('[SecureBankConnect] Link token received');
-      setLinkToken(token);
-      setStatus('ready');
+          console.log('[SecureBankConnect] Link token received');
+          setLinkToken(token);
+          setStatus('ready');
+          return;
+        } catch (attemptErr) {
+          const message = attemptErr instanceof Error
+            ? attemptErr.message
+            : 'Failed to initialize bank connection';
+
+          const isLastAttempt = attempt === maxAttempts;
+          const looksLikeTransportIssue =
+            message.includes('Failed to send a request to the Edge Function') ||
+            message.toLowerCase().includes('network') ||
+            message.toLowerCase().includes('fetch');
+
+          console.warn('[SecureBankConnect] Link token attempt failed', {
+            attempt,
+            maxAttempts,
+            message,
+          });
+
+          if (!isLastAttempt && looksLikeTransportIssue) {
+            await new Promise((r) => setTimeout(r, 500 * attempt));
+            continue;
+          }
+
+          throw attemptErr;
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to initialize bank connection';
       console.error('[SecureBankConnect] Failed to fetch link token:', err);
