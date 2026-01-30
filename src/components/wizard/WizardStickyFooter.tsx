@@ -1,7 +1,8 @@
 // WizardStickyFooter - consistent, premium footer for all wizard steps
-// Fixed to viewport bottom, never requires scrolling to find Continue
+// Fixed to viewport bottom using Portal to escape transform contexts
 // Includes non-blocking inline feedback for selections (no toasts)
 import { ReactNode, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,7 +79,7 @@ export function WizardStickyFooter({
     }
   }, [pulseOnReady, canContinue]);
   
-  return (
+  const footerContent = (
     <div 
       className={cn(
         // Fixed positioning with premium styling
@@ -194,6 +195,10 @@ export function WizardStickyFooter({
       </div>
     </div>
   );
+  
+  // Use portal to escape any transform context (e.g., framer-motion)
+  // This ensures position: fixed works correctly relative to viewport
+  return createPortal(footerContent, document.body);
 }
 
 /** 
