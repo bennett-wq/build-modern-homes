@@ -69,8 +69,7 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
       { icon: DollarSign, label: 'Financing', value: 'FHA/VA/Conv.' },
     ],
     features: [
-      { text: 'Appraises like site-built homes', tooltip: 'CrossMod certification ensures your home is evaluated using comparable site-built properties, not manufactured home comps.' },
-      { text: 'Broader financing options', tooltip: 'Eligible for FHA, VA, USDA, and conventional mortgages with competitive rates and terms.' },
+      { text: 'HUD + CrossMod certified', tooltip: 'Meets federal HUD standards plus additional CrossMod architectural requirements.' },
       { text: 'Drywall throughout', tooltip: 'Full drywall interior finish standard, matching site-built home quality.' },
       { text: 'Architectural roof pitch', tooltip: 'Higher roof pitch (typically 5:12 or greater) creates traditional home aesthetics.' },
       { text: 'Covered entry porch', tooltip: 'Factory-integrated covered porch adds curb appeal and weather protection.' },
@@ -83,12 +82,12 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
           content: 'CrossMod® is a certification created by the Manufactured Housing Institute (MHI) that identifies factory-built homes meeting specific architectural and construction standards. These homes include features like higher roof pitches, garages, porches, and drywall interiors—features traditionally associated with site-built homes.',
         },
         {
-          heading: 'Why does it matter for financing?',
-          content: 'Because CrossMod homes meet enhanced standards, they qualify for the same mortgage products as site-built homes. This means access to FHA, VA, USDA, and conventional loans with competitive interest rates. Lenders and appraisers evaluate these homes using site-built comparables rather than manufactured home comps.',
+          heading: 'HUD + CrossMod certification',
+          content: 'CrossMod homes are built to federal HUD standards with additional architectural requirements. This dual certification ensures consistent quality while delivering the curb appeal of traditional construction. The result is a home that looks and feels like site-built construction.',
         },
         {
-          heading: 'The appraisal advantage',
-          content: 'Traditional manufactured homes are often appraised using other manufactured homes as comparables, which can limit value appreciation. CrossMod certification ensures appraisers use comparable site-built properties, typically resulting in better valuations and stronger equity building over time.',
+          heading: 'Financing options',
+          content: 'CrossMod homes are eligible for FHA, VA, USDA, and conventional mortgages. We recommend speaking with a lender to understand which programs best fit your situation, as eligibility depends on multiple factors including credit, income, and property location.',
         },
       ],
     },
@@ -102,12 +101,11 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
     highlights: [
       { icon: Clock, label: 'Build time', value: '~90 days' },
       { icon: BadgeCheck, label: 'Certification', value: 'State building code' },
-      { icon: Ruler, label: 'Ceiling height', value: "9' available" },
+      { icon: Ruler, label: 'Customization', value: 'More options' },
     ],
     features: [
       { text: 'State building code certified', tooltip: 'Built to IRC/IBC standards—the same codes governing site-built construction in your area.' },
       { text: 'More layout flexibility', tooltip: 'Additional floor plan modifications and custom configurations available beyond standard options.' },
-      { text: "9' ceiling option", tooltip: 'Upgrade to 9-foot ceilings for a more spacious, premium feel throughout the home.' },
       { text: 'Custom configurations', tooltip: 'Work with our team on specific modifications to meet your unique requirements.' },
       { text: 'Premium upgrade paths', tooltip: 'Access to additional upgrade packages and custom finishes not available on standard builds.' },
     ],
@@ -116,15 +114,15 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
       sections: [
         {
           heading: 'How is modular different from CrossMod?',
-          content: 'While both are factory-built, modular homes are certified under state building codes (IRC/IBC) rather than HUD standards. This means they\'re treated identically to site-built homes in every regulatory sense. The trade-off is that modular builds typically take slightly longer and may have different financing considerations.',
+          content: 'While both are factory-built, modular homes are certified under state building codes (IRC/IBC) rather than HUD standards. This means they\'re treated identically to site-built homes in every regulatory sense. The trade-off is that modular builds typically take slightly longer.',
         },
         {
           heading: 'Customization advantages',
           content: 'Modular construction offers more flexibility for modifications. Features like 9-foot ceilings, custom room configurations, and premium material upgrades are more readily available. If you have specific requirements that go beyond standard options, modular may be the better path.',
         },
         {
-          heading: 'Financing considerations',
-          content: 'Modular homes qualify for conventional mortgages and are appraised as site-built properties. However, some government-backed loan programs (FHA, VA) may have additional requirements. We recommend discussing your specific situation with your lender to understand all available options.',
+          heading: 'Financing options',
+          content: 'Modular homes qualify for conventional mortgages and many government-backed programs. We recommend speaking with a lender to understand which financing options best fit your situation, as requirements vary by program and location.',
         },
       ],
     },
@@ -383,7 +381,13 @@ export function StepBuildType({
                   {type === 'mod' && has9ftWalls && (
                     <div className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-                      <span className="text-sm text-foreground font-medium">9' ceilings available for this model</span>
+                      <span className="text-sm text-foreground font-medium">9' ceilings available</span>
+                    </div>
+                  )}
+                  {type === 'xmod' && (
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
+                      <span className="text-sm text-foreground font-medium">Faster build timeline</span>
                     </div>
                   )}
                 </div>
@@ -421,8 +425,8 @@ export function StepBuildType({
           <div>
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">Not sure which to choose?</span>{' '}
-              Most buyers select CrossMod for its broader financing options and appraisal advantages. 
-              Choose Modular if you need specific customizations like 9' ceilings or have flexibility with financing.
+              CrossMod offers a faster build timeline with HUD + CrossMod certification. 
+              Choose Modular if you want 9' ceilings or need additional customization flexibility.
             </p>
           </div>
         </div>
@@ -486,42 +490,63 @@ function LearnMoreModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-2xl md:w-full bg-card rounded-2xl shadow-2xl border border-border z-50 flex flex-col max-h-[90vh]"
+            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-lg md:w-full bg-card rounded-2xl shadow-2xl border border-border z-50 flex flex-col max-h-[85vh]"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <details.icon className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <Badge variant="secondary" className="mb-1">{details.badge}</Badge>
-                  <h3 className="text-lg font-semibold text-foreground">{details.learnMore.title}</h3>
-                </div>
-              </div>
+            <div className="relative p-6 pb-4 border-b border-border">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="rounded-full"
+                className="absolute right-4 top-4 rounded-full h-8 w-8"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </Button>
+              <div className="flex items-center gap-3 pr-10">
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  type === 'xmod' ? 'bg-accent/10' : 'bg-muted'
+                )}>
+                  <details.icon className={cn(
+                    "w-6 h-6",
+                    type === 'xmod' ? 'text-accent' : 'text-foreground'
+                  )} />
+                </div>
+                <div>
+                  <Badge 
+                    variant={type === 'xmod' ? 'default' : 'secondary'} 
+                    className="mb-1 text-xs"
+                  >
+                    {details.badge}
+                  </Badge>
+                  <h3 className="text-xl font-semibold text-foreground">{details.learnMore.title}</h3>
+                </div>
+              </div>
             </div>
             
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto">
               {details.learnMore.sections.map((section, i) => (
-                <div key={i}>
-                  <h4 className="font-semibold text-foreground mb-2">{section.heading}</h4>
-                  <p className="text-muted-foreground leading-relaxed">{section.content}</p>
+                <div 
+                  key={i} 
+                  className={cn(
+                    "p-6",
+                    i !== details.learnMore.sections.length - 1 && "border-b border-border"
+                  )}
+                >
+                  <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
+                    {section.heading}
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {section.content}
+                  </p>
                 </div>
               ))}
             </div>
             
             {/* Footer */}
-            <div className="p-6 border-t border-border">
-              <Button onClick={onClose} className="w-full">
+            <div className="p-4 border-t border-border bg-muted/30">
+              <Button onClick={onClose} className="w-full" size="lg">
                 Got it
               </Button>
             </div>
