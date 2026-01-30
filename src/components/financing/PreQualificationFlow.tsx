@@ -390,34 +390,67 @@ export function PreQualificationFlow({
              // Continue anyway - we'll use self-reported data
            }
 
-           // Run prequal engine with timeout using Promise.race
-           const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => {
-             setTimeout(() => resolve({ timedOut: true }), 30000); // 30s timeout
-           });
+            // Run prequal engine with retry logic and timeout
+            const runPrequalWithRetry = async () => {
+              const maxAttempts = 3;
+              for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                  const { data, error } = await supabase.functions.invoke('prequal-engine', {
+                    body: { application_id: appId },
+                  });
+                  if (error) throw error;
+                  return { data, error: null };
+                } catch (attemptErr) {
+                  const message = attemptErr instanceof Error
+                    ? attemptErr.message
+                    : 'Unknown error';
+                  const isLastAttempt = attempt === maxAttempts;
+                  const looksLikeTransportIssue =
+                    message.includes('Failed to send a request to the Edge Function') ||
+                    message.toLowerCase().includes('network') ||
+                    message.toLowerCase().includes('fetch');
 
-           const prequalPromise = supabase.functions.invoke('prequal-engine', {
-             body: { application_id: appId },
-           }).then(res => ({ ...res, timedOut: false }));
+                  console.warn('[PreQualificationFlow] Prequal engine attempt failed', {
+                    attempt,
+                    maxAttempts,
+                    message,
+                  });
 
-           const raceResult = await Promise.race([prequalPromise, timeoutPromise]);
+                  if (!isLastAttempt && looksLikeTransportIssue) {
+                    await new Promise((r) => setTimeout(r, 500 * attempt));
+                    continue;
+                  }
+                  return { data: null, error: attemptErr };
+                }
+              }
+              return { data: null, error: new Error('Max retries exceeded') };
+            };
 
-           if ('timedOut' in raceResult && raceResult.timedOut) {
-             console.log('[PreQualificationFlow] Prequal engine timed out after 30s');
-             setVerificationTimedOut(true);
-             setIsVerifyingFinancials(false);
-             setPreQualStatus('needs_review');
-             toast({
-               title: 'Verification taking longer than expected',
-               description: "We're still processing your application. We'll email your results shortly.",
-             });
-             onComplete?.(appId);
-             return;
-           }
+            const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => {
+              setTimeout(() => resolve({ timedOut: true }), 30000); // 30s timeout
+            });
 
-           const { data: prequalData, error: prequalError } = raceResult as any;
+            const prequalPromise = runPrequalWithRetry().then(res => ({ ...res, timedOut: false }));
 
-           if (prequalError) {
-             console.error('Prequal engine error:', prequalError);
+            const raceResult = await Promise.race([prequalPromise, timeoutPromise]);
+
+            if ('timedOut' in raceResult && raceResult.timedOut) {
+              console.log('[PreQualificationFlow] Prequal engine timed out after 30s');
+              setVerificationTimedOut(true);
+              setIsVerifyingFinancials(false);
+              setPreQualStatus('needs_review');
+              toast({
+                title: 'Verification taking longer than expected',
+                description: "We're still processing your application. We'll email your results shortly.",
+              });
+              onComplete?.(appId);
+              return;
+            }
+
+            const { data: prequalData, error: prequalError } = raceResult as any;
+
+            if (prequalError) {
+              console.error('Prequal engine error:', prequalError);
              setPreQualStatus('needs_review');
            } else if (prequalData) {
              // Map program results to UI-friendly format
