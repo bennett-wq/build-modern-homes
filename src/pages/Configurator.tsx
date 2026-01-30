@@ -29,6 +29,7 @@ import { StepServicePackage } from '@/components/configurator/steps/StepServiceP
 import { StepFloorPlan } from '@/components/configurator/steps/StepFloorPlan';
 import { Step3Design } from '@/components/wizard/Step3Design';
 import { StepSummary } from '@/components/configurator/steps/StepSummary';
+import { WizardFooterSpacer, WizardStickyFooter } from '@/components/wizard/WizardStickyFooter';
 import { getModelBySlug } from '@/data/pricing-config';
 
 const STEPS: Step[] = [
@@ -335,14 +336,42 @@ export default function Configurator() {
                     exit="exit"
                     transition={{ duration: 0.2 }}
                   >
-                    {currentStep === 4 && currentModel && (
-                      <StepBuildType
-                        model={currentModel}
-                        selectedBuildType={buildType}
-                        onSelectBuildType={setBuildType}
-                        onNext={nextStep}
-                        onBack={prevStep}
-                      />
+                    {currentStep === 4 && (
+                      currentModel ? (
+                        <StepBuildType
+                          model={currentModel}
+                          selectedBuildType={buildType}
+                          onSelectBuildType={setBuildType}
+                          onNext={nextStep}
+                          onBack={prevStep}
+                        />
+                      ) : (
+                        <div className="max-w-2xl mx-auto space-y-6">
+                          <div className="text-center">
+                            <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">
+                              Build Type
+                            </h2>
+                            <p className="text-muted-foreground">
+                              We couldn't load your model selection. Go back and pick a model to continue.
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl border border-border bg-card p-5">
+                            <p className="text-sm text-muted-foreground">
+                              This is a failsafe so nobody gets stranded if state is missing or a refresh happens mid-flow.
+                            </p>
+                          </div>
+
+                          <WizardFooterSpacer />
+                          <WizardStickyFooter
+                            onBack={() => goToStep(3)}
+                            onContinue={() => goToStep(3)}
+                            canContinue={true}
+                            continueLabel="Back to Model"
+                            showReassurance={false}
+                          />
+                        </div>
+                      )
                     )}
                     
                     {currentStep === 5 && (
