@@ -134,23 +134,40 @@ export default function AdminUsers() {
         body: { email: newUserEmail.trim(), role: newUserRole }
       });
 
+      const readFnErrorBody = async (): Promise<{ error?: string; code?: string } | null> => {
+        try {
+          const ctx = (fnError as any)?.context;
+          if (!ctx) return null;
+          if (typeof ctx.body === 'string') return JSON.parse(ctx.body);
+          if (ctx?.response?.text) {
+            const text = await ctx.response.text();
+            return text ? JSON.parse(text) : null;
+          }
+        } catch {
+          // ignore
+        }
+        return null;
+      };
+
+      const payload: any = (data && typeof data === 'object') ? data : null;
+
       // Handle edge function errors - the data contains the JSON body even on non-2xx
       // when using supabase.functions.invoke
       if (fnError) {
         console.error('Function error:', fnError);
-        
-        // For FunctionsHttpError, the response body is in `data` not the error
-        // Check data first for structured error responses
-        if (data?.code === 'USER_NOT_FOUND') {
+
+        const errorBody = (payload?.error || payload?.code) ? payload : await readFnErrorBody();
+
+        if (errorBody?.code === 'USER_NOT_FOUND') {
           setError(
             `"${newUserEmail}" hasn't signed up yet.\n\n` +
             `Ask them to create an account at /admin/login first, then try again.`
           );
           return;
         }
-        
-        if (data?.error) {
-          setError(data.error);
+
+        if (errorBody?.error) {
+          setError(errorBody.error);
           return;
         }
         
@@ -159,20 +176,20 @@ export default function AdminUsers() {
         return;
       }
 
-      if (data?.error) {
-        if (data.code === 'USER_NOT_FOUND') {
+      if (payload?.error) {
+        if (payload.code === 'USER_NOT_FOUND') {
           setError(
             `"${newUserEmail}" hasn't signed up yet.\n\n` +
             `Ask them to create an account at /admin/login first, then try again.`
           );
         } else {
-          setError(data.error);
+          setError(payload.error);
         }
         return;
       }
 
-      const action = data?.updated ? 'Updated' : 'Added';
-      const emailNote = data?.emailSent ? ' (welcome email sent)' : '';
+      const action = payload?.updated ? 'Updated' : 'Added';
+      const emailNote = payload?.emailSent ? ' (welcome email sent)' : '';
       setSuccessMessage(`${action} ${newUserEmail} as ${newUserRole}${emailNote}`);
       setNewUserEmail('');
       await loadUsers();
