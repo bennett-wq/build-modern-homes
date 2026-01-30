@@ -3,10 +3,11 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle } from 'lucide-react';
+import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle, Loader2 } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
-import { grandHavenLots } from '@/data/lots/grand-haven';
-import { stJamesBayLots } from '@/data/lots/st-james-bay';
+import { useLotsBySlug } from '@/hooks/useLots';
+import type { Lot as DbLot } from '@/types/database';
+import type { Lot as ComponentLot } from '@/data/lots/grand-haven';
 import { getModelBySlug } from '@/data/models';
 import { getPackageById, getGarageDoorById } from '@/data/packages';
 import { 
@@ -45,10 +46,36 @@ const stepTransition = {
   ease: 'easeOut' as const,
 };
 
+// Helper to map database lots to component format
+function mapDbLotToComponentLot(dbLot: DbLot, index: number): ComponentLot {
+  // Extract phase from notes (e.g., "Phase 1 - Available Now")
+  const phaseMatch = dbLot.notes?.match(/Phase (\d+)/i);
+  const phase = phaseMatch ? parseInt(phaseMatch[1], 10) : undefined;
+  
+  // Extract numeric lot number from label (e.g., "Lot 16" -> 16)
+  const lotNumMatch = dbLot.lot_number.match(/\d+/);
+  const numericId = lotNumMatch ? parseInt(lotNumMatch[0], 10) : index + 1;
+  
+  return {
+    id: numericId,
+    label: dbLot.lot_number,
+    status: dbLot.status as ComponentLot['status'],
+    polygon: dbLot.polygon_coordinates || [],
+    acreage: dbLot.acreage || undefined,
+    netAcreage: dbLot.net_acreage || undefined,
+    premium: dbLot.premium || 0,
+    notes: dbLot.notes || undefined,
+    phase,
+  };
+}
+
 export default function BuildWizard() {
   const { slug = 'grand-haven' } = useParams<{ slug: string }>();
   const isMobile = useIsMobile();
   const development = getDevelopmentBySlug(slug);
+  
+  // Fetch lots from database
+  const { lots: dbLots, isLoading: lotsLoading } = useLotsBySlug(slug);
   
   const {
     selection,
@@ -77,11 +104,10 @@ export default function BuildWizard() {
     }
   }, []);
 
+  // Map database lots to component format
   const lots = useMemo(() => {
-    if (slug === 'grand-haven') return grandHavenLots;
-    if (slug === 'st-james-bay') return stJamesBayLots;
-    return [];
-  }, [slug]);
+    return dbLots.map((dbLot, index) => mapDbLotToComponentLot(dbLot, index));
+  }, [dbLots]);
 
   const selectedLot = lots.find(l => l.id === selection.lotId) || null;
   const normalizedModelSlug = normalizeModelSlug(selection.modelSlug);
@@ -152,6 +178,17 @@ export default function BuildWizard() {
           <Button asChild variant="outline">
             <Link to="/developments">Browse Developments</Link>
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (lotsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-accent mx-auto mb-3" />
+          <p className="text-muted-foreground">Loading lots...</p>
         </div>
       </div>
     );
