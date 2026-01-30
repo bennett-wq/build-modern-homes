@@ -11,6 +11,7 @@ import { Resend } from 'resend'
 const allowedOrigins = [
   'https://build-modern-homes.lovable.app',
   'https://id-preview--b6311393-fa2b-46a4-a734-59db659ebfc9.lovable.app',
+  'https://b6311393-fa2b-46a4-a734-59db659ebfc9.lovableproject.com',
 ];
 
 function getCorsHeaders(req: Request) {
