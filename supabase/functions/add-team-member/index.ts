@@ -22,6 +22,28 @@ const corsHeaders = {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 254;
 
+// Find an auth user by email.
+// Note: listUsers is paginated; we must iterate or we can miss existing users.
+async function findAuthUserByEmail(adminClient: any, email: string) {
+  const normalized = email.trim().toLowerCase();
+  const perPage = 200;
+  const maxPages = 25; // safety bound
+
+  for (let page = 1; page <= maxPages; page++) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+    if (error) return { user: null as any, error };
+
+    const users = data?.users ?? [];
+    const found = users.find((u: any) => (u.email || '').toLowerCase() === normalized);
+    if (found) return { user: found, error: null };
+
+    // No more pages
+    if (users.length < perPage) break;
+  }
+
+  return { user: null as any, error: null };
+}
+
 // Generate welcome email HTML
 function generateWelcomeEmail(role: string, loginUrl: string): string {
   const isAdmin = role === 'admin';
@@ -186,9 +208,8 @@ Deno.serve(async (req) => {
 
     console.log(`Admin ${callerUser.email} adding ${trimmedEmail} as ${role}`)
 
-    // Look up the user by email using admin client
-    const { data: { users }, error: lookupError } = await adminClient.auth.admin.listUsers()
-    
+    // Look up the user by email using admin client (paginated)
+    const { user: targetUser, error: lookupError } = await findAuthUserByEmail(adminClient, trimmedEmail)
     if (lookupError) {
       console.error('User lookup error:', lookupError)
       return new Response(
@@ -196,8 +217,6 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    const targetUser = users.find(u => u.email?.toLowerCase() === trimmedEmail.toLowerCase())
 
     if (!targetUser) {
       return new Response(
