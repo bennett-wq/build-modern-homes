@@ -134,34 +134,28 @@ export default function AdminUsers() {
         body: { email: newUserEmail.trim(), role: newUserRole }
       });
 
-      // Handle edge function errors - parse the error response body
+      // Handle edge function errors - the data contains the JSON body even on non-2xx
+      // when using supabase.functions.invoke
       if (fnError) {
         console.error('Function error:', fnError);
         
-        // Try to parse error body from the FunctionsHttpError context
-        let errorBody: { error?: string; code?: string } | null = null;
-        try {
-          // The context contains the response, try to parse it
-          const context = (fnError as any).context;
-          if (context?.body) {
-            errorBody = JSON.parse(context.body);
-          } else if (context?.json) {
-            errorBody = await context.json();
-          }
-        } catch {
-          // Parsing failed, use generic message
-        }
-
-        if (errorBody?.code === 'USER_NOT_FOUND') {
+        // For FunctionsHttpError, the response body is in `data` not the error
+        // Check data first for structured error responses
+        if (data?.code === 'USER_NOT_FOUND') {
           setError(
             `"${newUserEmail}" hasn't signed up yet.\n\n` +
             `Ask them to create an account at /admin/login first, then try again.`
           );
-        } else if (errorBody?.error) {
-          setError(errorBody.error);
-        } else {
-          setError(fnError.message || 'Failed to add team member');
+          return;
         }
+        
+        if (data?.error) {
+          setError(data.error);
+          return;
+        }
+        
+        // Fallback to generic message
+        setError(fnError.message || 'Failed to add team member');
         return;
       }
 
