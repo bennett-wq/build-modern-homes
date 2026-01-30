@@ -5,27 +5,17 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 
-// Allowed origins for CORS - restrict to trusted domains
-const allowedOrigins = [
-  'https://build-modern-homes.lovable.app',
-  'https://id-preview--b6311393-fa2b-46a4-a734-59db659ebfc9.lovable.app',
-  'https://b6311393-fa2b-46a4-a734-59db659ebfc9.lovableproject.com',
-  'https://basemodhomes.com',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('origin') || '';
-  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
+// CORS
+// This function is protected by Authorization + role checks; keep CORS permissive so admin
+// access doesn't break across multiple domains / preview environments.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 Deno.serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -128,7 +118,6 @@ Deno.serve(async (req) => {
     )
 
   } catch (err) {
-    const corsHeaders = getCorsHeaders(req);
     console.error('Unexpected error:', err)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
