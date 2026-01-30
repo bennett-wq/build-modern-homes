@@ -4,11 +4,13 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
+import type { BuildType } from '@/data/pricing-config';
 
 export interface BuildSelection {
   developmentSlug: string;
   lotId: number | null;
   modelSlug: string | null;
+  buildType: BuildType | null;
   packageId: string | null;
   garageDoorId: string | null;
 }
@@ -28,6 +30,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
   const initialSelection = useMemo((): BuildSelection => {
     const lotParam = searchParams.get('lot');
     const modelParam = searchParams.get('model');
+    const buildTypeParam = searchParams.get('buildType');
     const packageParam = searchParams.get('package');
     const garageParam = searchParams.get('garage');
 
@@ -45,10 +48,12 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     // URL params take priority over localStorage
     // Normalize model slugs for backward compatibility (hawthorn → hawthorne)
     const rawModelSlug = modelParam || storedSelection.modelSlug || null;
+    const rawBuildType = buildTypeParam || storedSelection.buildType || null;
     return {
       developmentSlug,
       lotId: lotParam ? parseInt(lotParam, 10) : (storedSelection.lotId ?? null),
       modelSlug: normalizeModelSlug(rawModelSlug),
+      buildType: (rawBuildType === 'xmod' || rawBuildType === 'mod') ? rawBuildType : null,
       packageId: packageParam || storedSelection.packageId || null,
       garageDoorId: garageParam || storedSelection.garageDoorId || null,
     };
@@ -85,6 +90,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     const newParams = new URLSearchParams();
     if (selection.lotId !== null) newParams.set('lot', selection.lotId.toString());
     if (selection.modelSlug) newParams.set('model', selection.modelSlug);
+    if (selection.buildType) newParams.set('buildType', selection.buildType);
     if (selection.packageId) newParams.set('package', selection.packageId);
     if (selection.garageDoorId) newParams.set('garage', selection.garageDoorId);
 
@@ -99,7 +105,13 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
   const setModel = useCallback((modelSlug: string | null) => {
     // Always normalize model slugs (hawthorn → hawthorne)
     const normalized = normalizeModelSlug(modelSlug);
-    setSelectionState(prev => ({ ...prev, modelSlug: normalized }));
+    // Reset buildType when model changes (different models have different build types)
+    setSelectionState(prev => ({ ...prev, modelSlug: normalized, buildType: null }));
+    triggerSaveIndicator();
+  }, [triggerSaveIndicator]);
+
+  const setBuildType = useCallback((buildType: BuildType | null) => {
+    setSelectionState(prev => ({ ...prev, buildType }));
     triggerSaveIndicator();
   }, [triggerSaveIndicator]);
 
@@ -118,6 +130,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
       developmentSlug,
       lotId: null,
       modelSlug: null,
+      buildType: null,
       packageId: null,
       garageDoorId: null,
     });
@@ -130,6 +143,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     const params = new URLSearchParams();
     if (selection.lotId !== null) params.set('lot', selection.lotId.toString());
     if (selection.modelSlug) params.set('model', selection.modelSlug);
+    if (selection.buildType) params.set('buildType', selection.buildType);
     if (selection.packageId) params.set('package', selection.packageId);
     if (selection.garageDoorId) params.set('garage', selection.garageDoorId);
     const queryString = params.toString();
@@ -141,6 +155,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     params.set('development', selection.developmentSlug);
     if (selection.lotId !== null) params.set('lot', selection.lotId.toString());
     if (selection.modelSlug) params.set('model', selection.modelSlug);
+    if (selection.buildType) params.set('buildType', selection.buildType);
     if (selection.packageId) params.set('package', selection.packageId);
     if (selection.garageDoorId) params.set('garage', selection.garageDoorId);
     return `/contact?${params.toString()}`;
@@ -150,6 +165,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     return (
       selection.lotId !== null &&
       selection.modelSlug !== null &&
+      selection.buildType !== null &&
       selection.packageId !== null &&
       selection.garageDoorId !== null
     );
@@ -159,6 +175,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     selection,
     setLot,
     setModel,
+    setBuildType,
     setPackage,
     setGarageDoor,
     clearSelection,

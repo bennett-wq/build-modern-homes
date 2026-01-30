@@ -1,14 +1,15 @@
-// Build Wizard Page - Lot → Model → Design → Review flow
+// Build Wizard Page - Lot → Model → Build Type → Design → Review flow
 // Premium proptech-grade wizard with smooth transitions
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle, Loader2 } from 'lucide-react';
+import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle, Loader2, Layers } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { useLotsBySlug } from '@/hooks/useLots';
 import type { Lot as DbLot } from '@/types/database';
 import type { Lot as ComponentLot } from '@/data/lots/grand-haven';
 import { getModelBySlug } from '@/data/models';
+import { getModelBySlug as getModelConfigBySlug } from '@/data/pricing-config';
 import { getPackageById, getGarageDoorById } from '@/data/packages';
 import { 
   getHawthornePackageById, 
@@ -22,6 +23,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useConfiguratorPricing } from '@/hooks/useConfiguratorPricing';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
 import { Step2Model } from '@/components/wizard/Step2Model';
+import { StepBuildType } from '@/components/configurator/steps/StepBuildType';
 import { Step3Design } from '@/components/wizard/Step3Design';
 import { Step4Review } from '@/components/wizard/Step4Review';
 import { Button } from '@/components/ui/button';
@@ -30,8 +32,9 @@ import { cn } from '@/lib/utils';
 const STEPS = [
   { id: 1, name: 'Pick a Lot', shortName: 'Lot', icon: MapPin },
   { id: 2, name: 'Pick a Model', shortName: 'Model', icon: Home },
-  { id: 3, name: 'Design Exterior', shortName: 'Design', icon: Palette },
-  { id: 4, name: 'Review', shortName: 'Review', icon: ClipboardCheck },
+  { id: 3, name: 'Build Type', shortName: 'Type', icon: Layers },
+  { id: 4, name: 'Design Exterior', shortName: 'Design', icon: Palette },
+  { id: 5, name: 'Review', shortName: 'Review', icon: ClipboardCheck },
 ];
 
 // Prevent layout shift during step transitions
@@ -81,6 +84,7 @@ export default function BuildWizard() {
     selection,
     setLot,
     setModel,
+    setBuildType,
     setPackage,
     setGarageDoor,
     getShareableUrl,
@@ -93,10 +97,13 @@ export default function BuildWizard() {
 
   // Auto-advance to appropriate step based on URL params (only on mount)
   useEffect(() => {
-    if (selection.garageDoorId && selection.packageId && selection.modelSlug && selection.lotId) {
+    // Updated step logic for 5-step flow: Lot(1) → Model(2) → BuildType(3) → Design(4) → Review(5)
+    if (selection.garageDoorId && selection.packageId && selection.buildType && selection.modelSlug && selection.lotId) {
+      setCurrentStep(5);
+    } else if (selection.packageId && selection.buildType && selection.modelSlug && selection.lotId) {
       setCurrentStep(4);
-    } else if (selection.packageId && selection.modelSlug && selection.lotId) {
-      setCurrentStep(3);
+    } else if (selection.buildType && selection.modelSlug && selection.lotId) {
+      setCurrentStep(4);
     } else if (selection.modelSlug && selection.lotId) {
       setCurrentStep(3);
     } else if (selection.lotId) {
@@ -112,6 +119,7 @@ export default function BuildWizard() {
   const selectedLot = lots.find(l => l.id === selection.lotId) || null;
   const normalizedModelSlug = normalizeModelSlug(selection.modelSlug);
   const selectedModel = normalizedModelSlug ? getModelBySlug(normalizedModelSlug) || null : null;
+  const selectedModelConfig = normalizedModelSlug ? getModelConfigBySlug(normalizedModelSlug) : undefined;
   
   // Determine model type for package/garage resolution
   const isHawthorne = normalizedModelSlug === 'hawthorne';
@@ -140,7 +148,7 @@ export default function BuildWizard() {
   // BuildWizard is always in a BaseMod Community context with lot selection
   const pricing = useConfiguratorPricing({
     modelSlug: normalizedModelSlug,
-    buildType: 'xmod', // Default to XMOD for community wizard
+    buildType: selection.buildType || 'xmod', // Use selected build type or default to XMOD
     servicePackage: 'community_all_in', // Community builds include lot
     includeUtilityFees: true,
     includePermitsCosts: true,
@@ -336,9 +344,31 @@ export default function BuildWizard() {
             </motion.div>
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 3 && selectedModelConfig && (
             <motion.div
               key="step3"
+              variants={stepVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={stepTransition}
+              className="absolute inset-0 overflow-y-auto"
+            >
+              <div className="container mx-auto px-4 py-8">
+                <StepBuildType
+                  model={selectedModelConfig}
+                  selectedBuildType={selection.buildType}
+                  onSelectBuildType={setBuildType}
+                  onNext={() => setCurrentStep(4)}
+                  onBack={() => setCurrentStep(2)}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {currentStep === 4 && (
+            <motion.div
+              key="step4"
               variants={stepVariants}
               initial="initial"
               animate="animate"
@@ -351,8 +381,8 @@ export default function BuildWizard() {
                 selectedGarageDoorId={selection.garageDoorId}
                 onSelectPackage={setPackage}
                 onSelectGarageDoor={setGarageDoor}
-                onNext={() => setCurrentStep(4)}
-                onBack={() => setCurrentStep(2)}
+                onNext={() => setCurrentStep(5)}
+                onBack={() => setCurrentStep(3)}
                 isMobile={isMobile}
                 developmentSlug={slug}
                 lotId={selection.lotId}
@@ -361,9 +391,9 @@ export default function BuildWizard() {
             </motion.div>
           )}
 
-          {currentStep === 4 && (
+          {currentStep === 5 && (
             <motion.div
-              key="step4"
+              key="step5"
               variants={stepVariants}
               initial="initial"
               animate="animate"
@@ -379,7 +409,7 @@ export default function BuildWizard() {
                 garageDoor={selectedGarageDoor}
                 contactUrl={getContactUrl()}
                 shareableUrl={getShareableUrl()}
-                onBack={() => setCurrentStep(3)}
+                onBack={() => setCurrentStep(4)}
                 isMobile={isMobile}
                 buyerFacingBreakdown={pricing.breakdown}
                 pricingFlags={pricing.flags}
