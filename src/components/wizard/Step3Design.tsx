@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle, Maximize2 } from 'lucide-react';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { EXTERIOR_COPY, getPackageDescription, getGarageDescription } from '@/content/exteriorMicrocopy';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
@@ -54,6 +54,7 @@ import {
 } from '@/data/keeneland-exteriors';
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
+import { ExteriorPreviewModal } from '@/components/wizard/ExteriorPreviewModal';
 import { cn } from '@/lib/utils';
 
 interface Step3DesignProps {
@@ -124,6 +125,8 @@ export function Step3Design({
   const [activeTab, setActiveTab] = useState<string>('package');
   const [showFinancingModal, setShowFinancingModal] = useState(false);
   const [showAppraisalDrawer, setShowAppraisalDrawer] = useState(false);
+  const [showFullscreenPreview, setShowFullscreenPreview] = useState(false);
+  const [previewImageSrc, setPreviewImageSrc] = useState<string>('');
 
   // Auto-select first garage door if none selected when entering step
   useEffect(() => {
@@ -143,6 +146,25 @@ export function Step3Design({
       setTimeout(() => setActiveTab('garage'), 150);
     }
   }, [onSelectPackage, selectedGarageDoorId]);
+
+  // Get current preview image for fullscreen modal
+  const getCurrentPreviewImage = useCallback((): string => {
+    if (isKeeneland) {
+      return getKeenelandExteriorImage(selectedPackageId, selectedGarageDoorId);
+    } else if (isAspen) {
+      return getAspenPackageImage(selectedPackageId);
+    } else if (isBelmont) {
+      return getBelmontPackageImage(selectedPackageId);
+    } else if (isHawthorne) {
+      return getHawthorneExteriorImage(selectedPackageId, selectedGarageDoorId);
+    }
+    return '/images/models/placeholders/hero-placeholder.svg';
+  }, [isKeeneland, isAspen, isBelmont, isHawthorne, selectedPackageId, selectedGarageDoorId]);
+
+  const handleOpenFullscreen = useCallback(() => {
+    setPreviewImageSrc(getCurrentPreviewImage());
+    setShowFullscreenPreview(true);
+  }, [getCurrentPreviewImage]);
 
   return (
     <div className="h-full flex flex-col">
@@ -196,7 +218,7 @@ export function Step3Design({
       )}>
         {/* Live Preview - large hero container for immersive design experience */}
         <div className={cn(
-          'bg-gradient-to-b from-muted/30 to-muted/10 flex items-center justify-center p-2 sm:p-4',
+          'bg-gradient-to-b from-muted/30 to-muted/10 flex items-center justify-center p-2 sm:p-4 relative',
           isMobile ? 'min-h-[45vh] shrink-0' : 'flex-1 min-h-0'
         )}>
           {isKeeneland ? (
@@ -219,6 +241,17 @@ export function Step3Design({
               garageDoor={selectedDoor as GarageDoor}
             />
           )}
+          
+          {/* Fullscreen expand button */}
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={handleOpenFullscreen}
+            className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm hover:bg-background shadow-md z-10"
+            aria-label="View fullscreen"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Selection Panel - ensure proper scroll on mobile */}
@@ -446,6 +479,15 @@ export function Step3Design({
       <AppraisalInfoDrawer
         open={showAppraisalDrawer}
         onOpenChange={setShowAppraisalDrawer}
+      />
+
+      {/* Fullscreen Preview Modal */}
+      <ExteriorPreviewModal
+        open={showFullscreenPreview}
+        onOpenChange={setShowFullscreenPreview}
+        imageSrc={previewImageSrc}
+        packageName={selectedPackage?.name}
+        garageName={selectedDoor?.name}
       />
     </div>
   );
