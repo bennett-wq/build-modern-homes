@@ -9,9 +9,29 @@ const allowedOrigins = [
   'null',
 ];
 
+function logCorsEvent(req: Request, eventType: 'request' | 'preflight' | 'mismatch', extra?: Record<string, unknown>) {
+  const origin = req.headers.get('origin') || '(none)';
+  const isAllowed = allowedOrigins.includes(origin) || origin === '(none)';
+  console.log(JSON.stringify({
+    cors_event: eventType,
+    function: 'plaid-create-link-token',
+    origin,
+    origin_allowed: isAllowed,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+    ...extra,
+  }));
+}
+
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') || '';
-  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  const isAllowed = allowedOrigins.includes(origin);
+  
+  if (origin && !isAllowed) {
+    logCorsEvent(req, 'mismatch', { expected_origins: allowedOrigins });
+  }
+  
+  const allowedOrigin = isAllowed ? origin : allowedOrigins[0];
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -31,8 +51,11 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
   if (req.method === "OPTIONS") {
+    logCorsEvent(req, 'preflight');
     return new Response("ok", { headers: corsHeaders });
   }
+  
+  logCorsEvent(req, 'request');
 
   try {
     const PLAID_CLIENT_ID = Deno.env.get("PLAID_CLIENT_ID");
