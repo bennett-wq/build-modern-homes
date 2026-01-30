@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, ChevronDown, ChevronUp, Check, Copy, Home, MapPin, 
+  ChevronDown, ChevronUp, Check, Copy, Home, MapPin, 
   Search, Building2, Phone, Mail, AlertCircle, Download, Eye, Info, Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { useToast } from '@/hooks/use-toast';
 import { type ModelConfig, type BuildIntent, type BuildType, exteriorConfig } from '@/data/pricing-config';
 import type { PriceBreakdown, ExteriorSelection } from '@/hooks/usePricingEngine';
@@ -140,7 +141,7 @@ export function StepSummary({
   const hasLegacyExterior = selectedSiding || selectedShingle || selectedDoor || exteriorSelection?.blackFasciaPackage;
   
   return (
-    <div className="space-y-8 pb-24">
+    <div className="space-y-8">
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
@@ -428,35 +429,24 @@ export function StepSummary({
         </motion.div>
       </div>
       
-      {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
-            <Button variant="outline" onClick={onBack}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Button
-                variant="outline"
-                onClick={handleCopyLink}
-                className="hidden sm:flex"
-              >
-                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                {copied ? 'Copied!' : 'Share'}
-              </Button>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-accent to-accent/90 hover:from-accent/90 hover:to-accent/80 text-accent-foreground shadow-lg min-w-[140px] sm:min-w-[180px]"
-                onClick={() => setLeadFormOpen(true)}
-              >
-                <Phone className="mr-2 h-4 w-4" />
-                Get Your Quote
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <WizardFooterSpacer />
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={() => setLeadFormOpen(true)}
+        canContinue={true}
+        continueLabel="Get Your Quote"
+        showReassurance={false}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopyLink}
+          className="hidden sm:flex"
+        >
+          {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+          {copied ? 'Copied!' : 'Share'}
+        </Button>
+      </WizardStickyFooter>
       
       {/* Lead Form Dialog */}
       <LeadFormDialog
