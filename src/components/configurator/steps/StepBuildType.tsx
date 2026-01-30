@@ -70,7 +70,6 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
     ],
     features: [
       { text: 'HUD + CrossMod certified', tooltip: 'Meets federal HUD standards plus additional CrossMod architectural requirements.' },
-      { text: 'Drywall throughout', tooltip: 'Full drywall interior finish standard, matching site-built home quality.' },
       { text: 'Architectural roof pitch', tooltip: 'Higher roof pitch (typically 5:12 or greater) creates traditional home aesthetics.' },
       { text: 'Covered entry porch', tooltip: 'Factory-integrated covered porch adds curb appeal and weather protection.' },
     ],
@@ -381,7 +380,7 @@ export function StepBuildType({
                   {type === 'mod' && (
                     <div className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-                      <span className="text-sm text-foreground font-medium">9' walls are standard</span>
+                      <span className="text-sm text-foreground font-medium">9' walls available</span>
                     </div>
                   )}
                   {type === 'xmod' && (
