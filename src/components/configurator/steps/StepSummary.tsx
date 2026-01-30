@@ -25,6 +25,7 @@ import { type ModelConfig, type BuildIntent, type BuildType, exteriorConfig } fr
 import type { PriceBreakdown, ExteriorSelection } from '@/hooks/usePricingEngine';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
 import { cn } from '@/lib/utils';
+import { jsPDF } from 'jspdf';
 import { 
   calculatePriceBreakdown as calcCanonicalPricing,
   formatPrice as formatCanonicalPrice,
@@ -120,6 +121,142 @@ export function StepSummary({
       description: 'Share this link to save your build configuration.',
     });
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  // Generate and download PDF summary
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    let yPos = 20;
+    
+    // Helper function to add text with word wrap
+    const addText = (text: string, x: number, y: number, maxWidth: number, fontSize = 10) => {
+      doc.setFontSize(fontSize);
+      const lines = doc.splitTextToSize(text, maxWidth);
+      doc.text(lines, x, y);
+      return y + (lines.length * fontSize * 0.4);
+    };
+    
+    // Header
+    doc.setFillColor(24, 24, 27);
+    doc.rect(0, 0, pageWidth, 45, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Build Summary', margin, 25);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated ${new Date().toLocaleDateString()}`, margin, 35);
+    
+    yPos = 60;
+    doc.setTextColor(0, 0, 0);
+    
+    // Model Information Section
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Your Home', margin, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Model: ${model?.name || 'Not selected'}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Build Type: ${buildType?.toUpperCase() || 'Not selected'}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Square Feet: ${model?.sqft?.toLocaleString() || '—'}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Beds / Baths: ${model?.beds ?? '—'} / ${model?.baths ?? '—'}`, margin, yPos);
+    yPos += 15;
+    
+    // Exterior Design Section
+    if (packageId || garageDoorId) {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Exterior Design', margin, yPos);
+      yPos += 10;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      if (exteriorInfo.packageName) {
+        doc.text(`Exterior Package: ${exteriorInfo.packageName}`, margin, yPos);
+        yPos += 6;
+      }
+      if (exteriorInfo.garageName) {
+        doc.text(`Garage Style: ${exteriorInfo.garageName}${exteriorInfo.isUpgradeGarage ? ' (Upgrade)' : ''}`, margin, yPos);
+        yPos += 6;
+      }
+      yPos += 10;
+    }
+    
+    // Selected Options Section
+    if (canonicalPricing && canonicalPricing.options.items.length > 0) {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Selected Add-ons', margin, yPos);
+      yPos += 10;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      canonicalPricing.options.items.forEach((item) => {
+        doc.text(`• ${item.label}: +${formatCanonicalPrice(item.retailAmount)}`, margin, yPos);
+        yPos += 6;
+      });
+      yPos += 10;
+    }
+    
+    // Pricing Summary Section
+    if (canonicalPricing) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(margin - 5, yPos - 5, pageWidth - (margin * 2) + 10, 50, 'F');
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Estimated Pricing', margin, yPos + 5);
+      yPos += 15;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Base Home Price: ${formatCanonicalPrice(canonicalPricing.home.retailHomeTotal)}`, margin, yPos);
+      yPos += 6;
+      
+      if (canonicalPricing.options.retailTotal > 0) {
+        doc.text(`Options & Upgrades: +${formatCanonicalPrice(canonicalPricing.options.retailTotal)}`, margin, yPos);
+        yPos += 6;
+      }
+      
+      if (servicePackage !== 'supply_only' && canonicalPricing.sitework) {
+        doc.text(`Site Work Allowance: ${formatCanonicalPrice(canonicalPricing.sitework.retailTotal)}`, margin, yPos);
+        yPos += 6;
+      }
+      
+      yPos += 5;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total Estimate: ${formatCanonicalPrice(canonicalPricing.totals.displayedTotal)}`, margin, yPos);
+      yPos += 20;
+    }
+    
+    // Disclaimer
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    const disclaimer = 'This is a preliminary estimate only. Final pricing will be confirmed through a formal quote after site review. Excludes land, financing costs, taxes, and unusual site conditions.';
+    yPos = addText(disclaimer, margin, yPos + 10, pageWidth - (margin * 2), 8);
+    
+    // Footer
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(8);
+    doc.text('BaseMod Homes | basemod.com', margin, doc.internal.pageSize.getHeight() - 15);
+    
+    // Save the PDF
+    const fileName = `${model?.name || 'build'}-summary-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+    
+    toast({
+      title: 'PDF Downloaded!',
+      description: 'Your build summary has been saved.',
+    });
   };
   
   // Get legacy exterior selections (with null guards)
@@ -414,7 +551,7 @@ export function StepSummary({
                   </>
                 )}
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleDownloadPDF}>
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF
               </Button>
