@@ -4,11 +4,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, Info, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Check, Info, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { type ModelConfig, type BuildType } from '@/data/pricing-config';
+import { WizardFooterSpacer, WizardStickyFooter } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
 
 interface StepBuildTypeProps {
@@ -74,6 +74,8 @@ export function StepBuildType({
   
   // If only one build type, auto-select and show message
   const hasOnlyOne = model.buildTypes.length === 1;
+  const onlyType = hasOnlyOne ? model.buildTypes[0] : null;
+  const effectiveSelection = selectedBuildType ?? onlyType;
   
   // Check for 9' walls option
   const has9ftWalls = model.floorPlanOptions.some(
@@ -81,8 +83,14 @@ export function StepBuildType({
   );
   
   if (hasOnlyOne) {
-    const onlyType = model.buildTypes[0];
-    const info = buildTypeInfo[onlyType];
+    const info = buildTypeInfo[onlyType!];
+    const handleContinue = () => {
+      // Failsafe: ensure store selection is set even if upstream auto-select didn't run yet
+      if (!selectedBuildType) {
+        onSelectBuildType(onlyType!);
+      }
+      onNext();
+    };
     
     return (
       <div className="space-y-8 max-w-2xl mx-auto">
@@ -118,29 +126,28 @@ export function StepBuildType({
             <span>The {model.name} is only available in {info.title} configuration.</span>
           </div>
         </motion.div>
-        
-        {/* Navigation */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex items-center justify-between pt-4"
+
+        <WizardFooterSpacer />
+        <WizardStickyFooter
+          onBack={onBack}
+          onContinue={handleContinue}
+          canContinue={true}
+          continueLabel="Continue"
+          pulseOnReady={effectiveSelection ?? undefined}
         >
-          <Button variant="outline" onClick={onBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <Button size="lg" onClick={onNext}>
-            Continue
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </motion.div>
+          {effectiveSelection && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Check className="w-4 h-4 text-accent" />
+              <span className="truncate">{buildTypeInfo[effectiveSelection].title}</span>
+            </div>
+          )}
+        </WizardStickyFooter>
       </div>
     );
   }
   
   return (
-    <div className="space-y-8 pb-24">
+    <div className="space-y-8">
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
@@ -241,36 +248,23 @@ export function StepBuildType({
         })}
       </div>
       
-      {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
-            <Button variant="outline" onClick={onBack}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <div className="flex items-center gap-3">
-              {selectedBuildType && (
-                <span className="text-sm text-muted-foreground hidden sm:flex items-center gap-2">
-                  <Check className="w-4 h-4 text-accent" />
-                  {buildTypeInfo[selectedBuildType].title}
-                </span>
-              )}
-              <Button
-                size="lg"
-                onClick={onNext}
-                disabled={!selectedBuildType}
-                className={cn(
-                  isPulsing && selectedBuildType && "animate-[pulse-attention_0.6s_ease-in-out_2]"
-                )}
-              >
-                Continue
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
+      <WizardFooterSpacer />
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={onNext}
+        canContinue={!!selectedBuildType}
+        continueLabel="Continue"
+        pulseOnReady={selectedBuildType}
+      >
+        {selectedBuildType ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Check className="w-4 h-4 text-accent" />
+            <span className="truncate">{buildTypeInfo[selectedBuildType].title}</span>
           </div>
-        </div>
-      </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">Select a build type to continue</span>
+        )}
+      </WizardStickyFooter>
     </div>
   );
 }
