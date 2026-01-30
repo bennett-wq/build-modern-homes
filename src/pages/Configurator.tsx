@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -86,18 +86,68 @@ export default function Configurator() {
     hasSelections,
   } = useConfiguratorStore();
   
+  // Parse URL search params for shareable links
+  const [searchParams] = useSearchParams();
+  
   // Initialize direct flow on mount
   useEffect(() => {
     initDirectFlow();
   }, [initDirectFlow]);
   
+  // Hydrate store from URL params (shareable link support)
+  useEffect(() => {
+    const urlModel = searchParams.get('model');
+    const urlType = searchParams.get('type') as 'xmod' | 'mod' | null;
+    const urlPackage = searchParams.get('package');
+    const urlGarage = searchParams.get('garage');
+    const urlZip = searchParams.get('zip');
+    
+    // If URL has a model param, hydrate the store
+    if (urlModel && urlModel !== modelSlug) {
+      setModel(null, urlModel);
+    }
+    
+    // Hydrate build type if provided
+    if (urlType && (urlType === 'xmod' || urlType === 'mod') && urlType !== buildType) {
+      setBuildType(urlType);
+    }
+    
+    // Hydrate exterior package
+    if (urlPackage && urlPackage !== exteriorPackageId) {
+      setExteriorPackage(urlPackage);
+    }
+    
+    // Hydrate garage door
+    if (urlGarage && urlGarage !== garageDoorId) {
+      setGarageDoor(urlGarage);
+    }
+    
+    // Hydrate zip code
+    if (urlZip && urlZip !== location.zipCode) {
+      setLocation({ zipCode: urlZip });
+    }
+    
+    // If URL has selections, skip to appropriate step
+    if (urlModel) {
+      if (urlType && urlPackage) {
+        goToStep(8); // Go to summary if fully configured
+      } else if (urlType) {
+        goToStep(5); // Go to service package if build type selected
+      } else {
+        goToStep(4); // Go to build type if model selected
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  
   // Resume prompt state (simplified - store handles persistence)
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [pendingResumeState, setPendingResumeState] = useState<{ modelSlug: string | null; currentStep: number } | null>(null);
   
-  // Check for saved state on mount
+  // Check for saved state on mount (only if not coming from URL params)
   useEffect(() => {
-    if (hasSelections() && currentStep === 1) {
+    const urlModel = searchParams.get('model');
+    // Don't show resume prompt if URL params are being used
+    if (!urlModel && hasSelections() && currentStep === 1) {
       setPendingResumeState({ modelSlug, currentStep: 3 }); // Resume at model step
       setShowResumePrompt(true);
     }
