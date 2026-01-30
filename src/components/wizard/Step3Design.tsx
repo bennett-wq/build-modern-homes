@@ -194,10 +194,10 @@ export function Step3Design({
         'flex-1 overflow-hidden min-h-0',
         isMobile ? 'flex flex-col' : 'flex'
       )}>
-        {/* Live Preview - full-bleed hero container */}
+        {/* Live Preview - large hero container for immersive design experience */}
         <div className={cn(
-          'bg-gradient-to-b from-muted/30 to-muted/10 flex items-center justify-center p-3 sm:p-4',
-          isMobile ? 'h-56 shrink-0' : 'flex-1 min-h-0'
+          'bg-gradient-to-b from-muted/30 to-muted/10 flex items-center justify-center p-2 sm:p-4',
+          isMobile ? 'min-h-[45vh] shrink-0' : 'flex-1 min-h-0'
         )}>
           {isKeeneland ? (
             <KeenelandPhotoPreview 
