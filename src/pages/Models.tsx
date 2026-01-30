@@ -168,12 +168,13 @@ export default function Models() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="aspect-square bg-muted rounded-xl flex items-center justify-center border border-border order-1 lg:order-2"
+            className="aspect-square bg-card rounded-xl overflow-hidden border border-border order-1 lg:order-2"
           >
-            <div className="text-center text-muted-foreground">
-              <HomeIcon size={64} className="mx-auto mb-4 opacity-30" />
-              <p className="text-sm">Factory-Built Construction Diagram</p>
-            </div>
+            <img 
+              src="/images/factory-built-diagram.png" 
+              alt="Factory-built construction process showing factory assembly, transport, and site installation"
+              className="w-full h-full object-contain p-4"
+            />
           </motion.div>
         </div>
       </Section>
