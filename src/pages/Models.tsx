@@ -123,7 +123,7 @@ export default function Models() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {modelsData.models.map((model, index) => (
-              <ModelCard key={model.slug} model={model} index={index} pricingEngine={pricingEngine} />
+              <ModelCard key={model.slug} model={model} index={index} />
             ))}
           </div>
         )}
@@ -223,19 +223,11 @@ export default function Models() {
 interface ModelCardProps {
   model: Model;
   index: number;
-  pricingEngine: ReturnType<typeof useUnifiedPricingEngine>;
 }
 
-function ModelCard({ model, index, pricingEngine }: ModelCardProps) {
+function ModelCard({ model, index }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  // Get "Starting from" price from unified engine
-  const startingPrice = useMemo(() => {
-    return pricingEngine.getStartingFromPrice(model.slug);
-  }, [pricingEngine, model.slug]);
-  
-  const hasValidPrice = startingPrice.totals.displayedTotal > 0;
   
   // Build fallback chain: heroImage -> /slug/hero.webp -> /slug/hero.png -> placeholder
   const fallbackChain = useMemo(
@@ -316,22 +308,6 @@ function ModelCard({ model, index, pricingEngine }: ModelCardProps) {
             </span>
           </div>
           
-          {/* Starting from price - Database driven */}
-          {hasValidPrice && (
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground">
-                Starting from{" "}
-                <span className="font-semibold text-foreground">
-                  {pricingEngine.formatPrice(startingPrice.totals.displayedTotal)}
-                </span>
-              </p>
-              {startingPrice.freightPending && (
-                <p className="text-xs text-muted-foreground/70 mt-0.5">
-                  *Freight pending final quote
-                </p>
-              )}
-            </div>
-          )}
 
           {/* CTAs - Get Quote primary, View Details secondary */}
           <div className="flex gap-2">
