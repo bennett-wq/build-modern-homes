@@ -5,10 +5,11 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowLeft, FileText, Info, Loader2, X } from 'lucide-react';
+import { FileText, Info, Loader2, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { FloorPlanImageViewer } from '@/components/FloorPlanImageViewer';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { type ModelConfig, type BuildType, getAvailableFloorPlanOptions } from '@/data/pricing-config';
 import { useFilteredUpgradeOptions } from '@/hooks/useUpgradeOptions';
 import { useModels } from '@/hooks/useModels';
@@ -81,7 +82,7 @@ export function StepFloorPlan({
   const hasOptions = availableOptions.length > 0;
   
   return (
-    <div className="space-y-8 pb-24">
+    <div className="space-y-8">
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
@@ -231,26 +232,16 @@ export function StepFloorPlan({
         </motion.div>
       </div>
       
-      {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-3 max-w-5xl mx-auto">
-            <Button variant="outline" onClick={onBack}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <div className="flex flex-col items-end gap-0.5">
-              <Button size="lg" onClick={onNext}>
-                Continue to Exterior
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <span className="text-[10px] text-muted-foreground/70">
-                Options are optional
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <WizardFooterSpacer />
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={onNext}
+        canContinue={true}
+        continueLabel="Continue to Exterior"
+        showReassurance={false}
+      >
+        <span className="text-sm text-muted-foreground">Options are optional</span>
+      </WizardStickyFooter>
       
       {/* Floor Plan Viewer - image-based with zoom/pan */}
       <FloorPlanImageViewer

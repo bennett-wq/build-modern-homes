@@ -12,10 +12,8 @@ import {
   Check, 
   AlertCircle,
   Star,
-  ArrowLeft,
-  ArrowRight,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
 import type { ServicePackageType } from '@/lib/pricing-mode-utils';
 
@@ -124,7 +122,7 @@ export function StepServicePackage({
   };
 
   return (
-    <div className="space-y-8 pb-24">
+    <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
@@ -266,36 +264,21 @@ export function StepServicePackage({
         </motion.div>
       )}
 
-      {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
-            <Button variant="outline" onClick={onBack}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <div className="flex items-center gap-3">
-              {selectedPackage && (
-                <span className="text-sm text-muted-foreground hidden sm:flex items-center gap-2">
-                  <Check className="w-4 h-4 text-accent" />
-                  {SERVICE_PACKAGES.find(p => p.id === selectedPackage)?.shortName}
-                </span>
-              )}
-              <Button 
-                size="lg"
-                onClick={handleContinue}
-                disabled={!selectedPackage}
-                className={cn(
-                  isPulsing && selectedPackage && "animate-[pulse-attention_0.6s_ease-in-out_2]"
-                )}
-              >
-                Continue
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
+      <WizardFooterSpacer />
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={handleContinue}
+        canContinue={!!selectedPackage}
+        continueLabel="Continue"
+        pulseOnReady={selectedPackage}
+      >
+        {selectedPackage && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Check className="w-4 h-4 text-accent" />
+            <span className="truncate">{SERVICE_PACKAGES.find(p => p.id === selectedPackage)?.shortName}</span>
           </div>
-        </div>
-      </div>
+        )}
+      </WizardStickyFooter>
     </div>
   );
 }
