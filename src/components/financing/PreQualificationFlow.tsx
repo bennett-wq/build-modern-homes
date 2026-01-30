@@ -749,76 +749,139 @@ export function PreQualificationFlow({
         </div>
 
         {verificationMethod === 'plaid_verified' && (
-          <div className="space-y-3">
-            {/* Connection status card */}
-            <div className="rounded-xl border border-border bg-muted/20 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Bank verification</p>
-                  <p className="text-xs text-muted-foreground">
-                    {plaidInstitutionName
-                      ? `Connected to ${plaidInstitutionName}`
-                      : 'Connect your bank to continue.'}
+          <motion.div 
+            className="space-y-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Premium connection card */}
+            <div className={cn(
+              'rounded-2xl border-2 p-5 transition-all duration-300',
+              plaidPublicToken 
+                ? 'border-emerald-500/50 bg-gradient-to-br from-emerald-50/50 to-emerald-100/30 dark:from-emerald-950/30 dark:to-emerald-900/20' 
+                : 'border-blue-500/30 bg-gradient-to-br from-blue-50/50 to-blue-100/30 dark:from-blue-950/30 dark:to-blue-900/20'
+            )}>
+              {plaidPublicToken ? (
+                // Connected state
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-emerald-500/20">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-emerald-700 dark:text-emerald-300">Bank Connected!</p>
+                      <p className="text-sm text-emerald-600/80 dark:text-emerald-400/80">
+                        {plaidInstitutionName || 'Your bank account is linked'}
+                      </p>
+                    </div>
+                    <Sparkles className="h-5 w-5 text-emerald-500 animate-pulse" />
+                  </div>
+                  <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">
+                    We're verifying your income and assets. This typically takes under 30 seconds.
                   </p>
                 </div>
-                {plaidPublicToken ? (
-                  <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Connected</span>
+              ) : isBankConnecting ? (
+                // Connecting state
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-blue-500/20">
+                      <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold">Connecting securely...</p>
+                      <p className="text-sm text-muted-foreground">
+                        Complete sign-in in the secure window
+                      </p>
+                    </div>
                   </div>
-                ) : isBankConnecting ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Connecting...</span>
+                  <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>256-bit encrypted connection</span>
                   </div>
-                ) : (
+                </div>
+              ) : (
+                // Not connected state - premium CTA
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-xl bg-blue-500/20">
+                      <Landmark className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold">Verify your finances instantly</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Securely connect your bank to get pre-qualified in under 2 minutes
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* What we verify */}
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      <span>Income</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="h-3.5 w-3.5" />
+                      <span>Assets</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" />
+                      <span>Read-only</span>
+                    </div>
+                  </div>
+                  
                   <Button
                     type="button"
-                    size="sm"
                     onClick={openBankConnect}
+                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg shadow-blue-500/25 font-semibold"
                   >
-                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                    Connect
+                    <Landmark className="h-4 w-4 mr-2" />
+                    Connect Your Bank
+                    <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                )}
-              </div>
+                  
+                  {/* Trust signals */}
+                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Shield className="h-3 w-3 text-emerald-500" />
+                      <span>Bank-level security</span>
+                    </div>
+                    <span>•</span>
+                    <span>Powered by Plaid</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Popup blocked fallback */}
             {bankConnectError === 'popup_blocked' && (
-              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                      Pop-up blocked
+                    <p className="font-medium text-amber-800 dark:text-amber-200">
+                      Pop-up was blocked
                     </p>
-                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                      Your browser blocked the secure connection window.
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      Your browser blocked the secure connection window. You can open it in this tab instead.
                     </p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="mt-2"
+                      className="mt-3"
                       onClick={openBankConnectInTab}
                     >
-                      Open in this tab instead
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Open in this tab
                     </Button>
                   </div>
                 </div>
               </div>
             )}
-
-            {/* Security notice */}
-            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-              <Shield className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-              <p>
-                Bank connection opens in a secure window. Your credentials are encrypted
-                and never shared with us.
-              </p>
-            </div>
-          </div>
+          </motion.div>
         )}
 
         {verificationMethod === 'manual' && (
