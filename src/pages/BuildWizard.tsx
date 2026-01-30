@@ -121,6 +121,13 @@ export default function BuildWizard() {
   const selectedModel = normalizedModelSlug ? getModelBySlug(normalizedModelSlug) || null : null;
   const selectedModelConfig = normalizedModelSlug ? getModelConfigBySlug(normalizedModelSlug) : undefined;
   
+  // Auto-select build type when model only supports one option
+  useEffect(() => {
+    if (selectedModelConfig && selectedModelConfig.buildTypes.length === 1 && !selection.buildType) {
+      setBuildType(selectedModelConfig.buildTypes[0]);
+    }
+  }, [selectedModelConfig, selection.buildType, setBuildType]);
+  
   // Determine model type for package/garage resolution
   const isHawthorne = normalizedModelSlug === 'hawthorne';
   const isAspen = normalizedModelSlug === 'aspen';
