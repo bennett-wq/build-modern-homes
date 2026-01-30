@@ -1,12 +1,25 @@
 // ============================================================================
-// Step 4: Choose Build Type (XMOD vs MOD)
+// Step: Choose Build Type (CrossMod vs Modular)
+// Premium educational experience for understanding construction methods
 // ============================================================================
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Check, Info, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Check, 
+  Info, 
+  Sparkles, 
+  Building2, 
+  Factory, 
+  Clock, 
+  BadgeCheck, 
+  DollarSign,
+  Ruler,
+  ChevronRight,
+  X
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { type ModelConfig, type BuildType } from '@/data/pricing-config';
 import { WizardFooterSpacer, WizardStickyFooter } from '@/components/wizard/WizardStickyFooter';
 import { cn } from '@/lib/utils';
@@ -19,33 +32,102 @@ interface StepBuildTypeProps {
   onBack: () => void;
 }
 
-const buildTypeInfo: Record<BuildType, {
+interface BuildTypeDetail {
   title: string;
-  subtitle: string;
+  badge: string;
+  tagline: string;
   description: string;
-  features: string[];
-}> = {
+  icon: typeof Factory;
+  highlights: {
+    icon: typeof Clock;
+    label: string;
+    value: string;
+  }[];
+  features: {
+    text: string;
+    tooltip?: string;
+  }[];
+  learnMore: {
+    title: string;
+    sections: {
+      heading: string;
+      content: string;
+    }[];
+  };
+}
+
+const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
   xmod: {
-    title: 'Factory-Built (XMOD)',
-    subtitle: 'Factory standardized',
-    description: 'Factory-built to program standards with standardized specifications.',
-    features: [
-      'Factory certification path',
-      'Standardized floor plan',
-      'Financing eligibility varies by lender',
-      'Faster delivery timeline',
+    title: 'CrossMod®',
+    badge: 'CROSSMOD',
+    tagline: 'Site-built curb appeal, factory efficiency',
+    description: 'CrossMod homes combine factory precision with architectural features traditionally found in site-built homes. They meet HUD standards plus additional requirements that make them virtually indistinguishable from conventional construction.',
+    icon: Building2,
+    highlights: [
+      { icon: Clock, label: 'Build time', value: '~78 days' },
+      { icon: BadgeCheck, label: 'Certification', value: 'HUD + CrossMod' },
+      { icon: DollarSign, label: 'Financing', value: 'FHA/VA/Conv.' },
     ],
+    features: [
+      { text: 'Appraises like site-built homes', tooltip: 'CrossMod certification ensures your home is evaluated using comparable site-built properties, not manufactured home comps.' },
+      { text: 'Broader financing options', tooltip: 'Eligible for FHA, VA, USDA, and conventional mortgages with competitive rates and terms.' },
+      { text: 'Drywall throughout', tooltip: 'Full drywall interior finish standard, matching site-built home quality.' },
+      { text: 'Architectural roof pitch', tooltip: 'Higher roof pitch (typically 5:12 or greater) creates traditional home aesthetics.' },
+      { text: 'Covered entry porch', tooltip: 'Factory-integrated covered porch adds curb appeal and weather protection.' },
+    ],
+    learnMore: {
+      title: 'Understanding CrossMod®',
+      sections: [
+        {
+          heading: 'What makes CrossMod different?',
+          content: 'CrossMod® is a certification created by the Manufactured Housing Institute (MHI) that identifies factory-built homes meeting specific architectural and construction standards. These homes include features like higher roof pitches, garages, porches, and drywall interiors—features traditionally associated with site-built homes.',
+        },
+        {
+          heading: 'Why does it matter for financing?',
+          content: 'Because CrossMod homes meet enhanced standards, they qualify for the same mortgage products as site-built homes. This means access to FHA, VA, USDA, and conventional loans with competitive interest rates. Lenders and appraisers evaluate these homes using site-built comparables rather than manufactured home comps.',
+        },
+        {
+          heading: 'The appraisal advantage',
+          content: 'Traditional manufactured homes are often appraised using other manufactured homes as comparables, which can limit value appreciation. CrossMod certification ensures appraisers use comparable site-built properties, typically resulting in better valuations and stronger equity building over time.',
+        },
+      ],
+    },
   },
   mod: {
-    title: 'Modular (MOD)',
-    subtitle: 'More flexibility',
-    description: 'Modular construction with additional customization options available.',
-    features: [
-      'More layout flexibility',
-      "9' walls option (where applicable)",
-      'Custom configurations possible',
-      'State-modular certification',
+    title: 'Modular',
+    badge: 'MODULAR',
+    tagline: 'Maximum flexibility, state-code certified',
+    description: 'Modular homes are built to the same state and local building codes as site-built homes. This construction method offers more customization options and is ideal for buyers who want specific modifications or premium upgrades.',
+    icon: Factory,
+    highlights: [
+      { icon: Clock, label: 'Build time', value: '~90 days' },
+      { icon: BadgeCheck, label: 'Certification', value: 'State building code' },
+      { icon: Ruler, label: 'Ceiling height', value: "9' available" },
     ],
+    features: [
+      { text: 'State building code certified', tooltip: 'Built to IRC/IBC standards—the same codes governing site-built construction in your area.' },
+      { text: 'More layout flexibility', tooltip: 'Additional floor plan modifications and custom configurations available beyond standard options.' },
+      { text: "9' ceiling option", tooltip: 'Upgrade to 9-foot ceilings for a more spacious, premium feel throughout the home.' },
+      { text: 'Custom configurations', tooltip: 'Work with our team on specific modifications to meet your unique requirements.' },
+      { text: 'Premium upgrade paths', tooltip: 'Access to additional upgrade packages and custom finishes not available on standard builds.' },
+    ],
+    learnMore: {
+      title: 'Understanding Modular Construction',
+      sections: [
+        {
+          heading: 'How is modular different from CrossMod?',
+          content: 'While both are factory-built, modular homes are certified under state building codes (IRC/IBC) rather than HUD standards. This means they\'re treated identically to site-built homes in every regulatory sense. The trade-off is that modular builds typically take slightly longer and may have different financing considerations.',
+        },
+        {
+          heading: 'Customization advantages',
+          content: 'Modular construction offers more flexibility for modifications. Features like 9-foot ceilings, custom room configurations, and premium material upgrades are more readily available. If you have specific requirements that go beyond standard options, modular may be the better path.',
+        },
+        {
+          heading: 'Financing considerations',
+          content: 'Modular homes qualify for conventional mortgages and are appraised as site-built properties. However, some government-backed loan programs (FHA, VA) may have additional requirements. We recommend discussing your specific situation with your lender to understand all available options.',
+        },
+      ],
+    },
   },
 };
 
@@ -56,38 +138,24 @@ export function StepBuildType({
   onNext,
   onBack,
 }: StepBuildTypeProps) {
-  const [isPulsing, setIsPulsing] = useState(false);
+  const [expandedInfo, setExpandedInfo] = useState<BuildType | null>(null);
   const isFirstRender = useRef(true);
-  
-  // Trigger pulse when selection changes (skip initial render)
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (selectedBuildType) {
-      setIsPulsing(true);
-      const timer = setTimeout(() => setIsPulsing(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedBuildType]);
-  
-  // If only one build type, auto-select and show message
-  const hasOnlyOne = model.buildTypes.length === 1;
-  const onlyType = hasOnlyOne ? model.buildTypes[0] : null;
-  const effectiveSelection = selectedBuildType ?? onlyType;
   
   // Check for 9' walls option
   const has9ftWalls = model.floorPlanOptions.some(
     opt => opt.id === '9ft-walls' && opt.available && opt.buildTypes?.includes('mod')
   );
   
-  if (hasOnlyOne) {
-    const info = buildTypeInfo[onlyType!];
+  // If only one build type, show simplified view
+  const hasOnlyOne = model.buildTypes.length === 1;
+  const onlyType = hasOnlyOne ? model.buildTypes[0] : null;
+  const effectiveSelection = selectedBuildType ?? onlyType;
+  
+  if (hasOnlyOne && onlyType) {
+    const details = buildTypeDetails[onlyType];
     const handleContinue = () => {
-      // Failsafe: ensure store selection is set even if upstream auto-select didn't run yet
       if (!selectedBuildType) {
-        onSelectBuildType(onlyType!);
+        onSelectBuildType(onlyType);
       }
       onNext();
     };
@@ -95,36 +163,73 @@ export function StepBuildType({
     return (
       <div className="space-y-8 max-w-2xl mx-auto">
         <div className="text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4"
+          >
+            <BadgeCheck className="w-4 h-4" />
+            <span>Build type confirmed</span>
+          </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-2xl md:text-3xl font-semibold text-foreground mb-3"
+            className="text-2xl md:text-3xl font-semibold text-foreground mb-2"
           >
-            Build Type
+            {details.title} Construction
           </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-muted-foreground"
+          >
+            {details.tagline}
+          </motion.p>
         </div>
         
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-accent/5 border border-accent/20 rounded-xl p-6"
+          transition={{ delay: 0.15 }}
+          className="bg-card border border-border rounded-2xl p-6 md:p-8"
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-              <Check className="w-5 h-5 text-accent-foreground" />
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <details.icon className="w-6 h-6 text-accent" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">{info.title}</h3>
-              <p className="text-sm text-muted-foreground">{info.subtitle}</p>
+              <p className="text-muted-foreground leading-relaxed">{details.description}</p>
             </div>
           </div>
           
-          <p className="text-muted-foreground mb-4">{info.description}</p>
-          
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Info className="w-4 h-4" />
-            <span>The {model.name} is only available in {info.title} configuration.</span>
+          {/* Highlights */}
+          <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-muted/50 rounded-xl">
+            {details.highlights.map((highlight, i) => (
+              <div key={i} className="text-center">
+                <highlight.icon className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground mb-0.5">{highlight.label}</p>
+                <p className="text-sm font-semibold text-foreground">{highlight.value}</p>
+              </div>
+            ))}
           </div>
+          
+          <div className="flex items-center gap-2 p-3 bg-accent/5 border border-accent/20 rounded-lg">
+            <Info className="w-4 h-4 text-accent flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              The <span className="font-medium text-foreground">{model.name}</span> is available exclusively in {details.title} configuration.
+            </p>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpandedInfo(onlyType)}
+            className="mt-4 text-accent hover:text-accent"
+          >
+            Learn more about {details.title}
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
         </motion.div>
 
         <WizardFooterSpacer />
@@ -135,118 +240,193 @@ export function StepBuildType({
           continueLabel="Continue"
           pulseOnReady={effectiveSelection ?? undefined}
         >
-          {effectiveSelection && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-accent" />
-              <span className="truncate">{buildTypeInfo[effectiveSelection].title}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Check className="w-4 h-4 text-accent" />
+            <span className="truncate">{details.title}</span>
+          </div>
         </WizardStickyFooter>
+        
+        {/* Learn More Modal */}
+        <LearnMoreModal
+          type={expandedInfo}
+          onClose={() => setExpandedInfo(null)}
+        />
       </div>
     );
   }
   
   return (
     <div className="space-y-8">
-      <div className="text-center max-w-xl mx-auto">
+      {/* Header */}
+      <div className="text-center max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-sm font-medium mb-4"
+        >
+          <Factory className="w-4 h-4" />
+          <span>Construction method</span>
+        </motion.div>
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-2xl md:text-3xl font-semibold text-foreground mb-3"
         >
-          Choose Build Type
+          How should we build your {model.name}?
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-muted-foreground"
+          className="text-muted-foreground max-w-xl mx-auto"
         >
-          Both options deliver quality factory-built construction with different features.
-        </motion.p>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-muted-foreground/70 text-xs mt-2"
-        >
-          Your estimate is shown in the pricing panel on the right.
+          Both options deliver exceptional quality through precision factory construction. 
+          Your choice affects financing options, customization flexibility, and certification type.
         </motion.p>
       </div>
       
-      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      {/* Build Type Cards */}
+      <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
         {model.buildTypes.map((type, index) => {
-          const info = buildTypeInfo[type];
+          const details = buildTypeDetails[type];
           const isSelected = selectedBuildType === type;
-          
-          // No auto-advance - let users click Continue to feel in control
-          const handleSelect = () => {
-            onSelectBuildType(type);
-          };
+          const Icon = details.icon;
           
           return (
-            <motion.button
+            <motion.div
               key={type}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              onClick={handleSelect}
-              className={cn(
-                'relative p-6 rounded-xl border-2 text-left transition-all duration-200',
-                'hover:border-accent/50 hover:shadow-md',
-                isSelected
-                  ? 'border-accent bg-accent/5 shadow-md'
-                  : 'border-border bg-card',
-              )}
+              className="relative"
             >
-              {/* Selected indicator */}
-              {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-4 right-4 w-6 h-6 rounded-full bg-accent flex items-center justify-center"
-                >
-                  <Check className="w-4 h-4 text-accent-foreground" />
-                </motion.div>
-              )}
-              
-              <div className="mb-4">
-                <Badge variant={type === 'xmod' ? 'default' : 'secondary'} className="mb-2">
-                  {type.toUpperCase()}
-                </Badge>
-                <h3 className="text-xl font-semibold text-foreground">{info.title}</h3>
-                <p className="text-sm text-muted-foreground">{info.subtitle}</p>
-              </div>
-              
-              <p className="text-muted-foreground text-sm mb-4">{info.description}</p>
-              
-              {/* Features */}
-              <ul className="space-y-2">
-                {info.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </li>
-                ))}
-                {type === 'mod' && has9ftWalls && (
-                  <li className="flex items-start gap-2 text-sm">
-                    <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-foreground font-medium">9' walls available</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Upgrade to 9-foot ceilings for a more spacious feel. Additional cost applies.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </li>
+              <button
+                onClick={() => onSelectBuildType(type)}
+                className={cn(
+                  'w-full text-left rounded-2xl border-2 transition-all duration-300',
+                  'hover:shadow-lg hover:border-accent/40',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  isSelected
+                    ? 'border-accent bg-accent/5 shadow-lg'
+                    : 'border-border bg-card hover:bg-card/80',
                 )}
-              </ul>
-            </motion.button>
+              >
+                {/* Card Header */}
+                <div className="p-6 pb-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        'w-12 h-12 rounded-xl flex items-center justify-center transition-colors',
+                        isSelected ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
+                      )}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <Badge 
+                          variant={isSelected ? 'default' : 'secondary'} 
+                          className="mb-1"
+                        >
+                          {details.badge}
+                        </Badge>
+                        <h3 className="text-xl font-semibold text-foreground">{details.title}</h3>
+                      </div>
+                    </div>
+                    
+                    {/* Selection indicator */}
+                    <div className={cn(
+                      'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all',
+                      isSelected 
+                        ? 'border-accent bg-accent' 
+                        : 'border-muted-foreground/30 bg-transparent'
+                    )}>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                        >
+                          <Check className="w-4 h-4 text-accent-foreground" />
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm font-medium text-accent mb-2">{details.tagline}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {details.description}
+                  </p>
+                </div>
+                
+                {/* Highlights Bar */}
+                <div className="px-6 py-4 bg-muted/30 border-t border-border/50">
+                  <div className="grid grid-cols-3 gap-3">
+                    {details.highlights.map((highlight, i) => (
+                      <div key={i} className="text-center">
+                        <highlight.icon className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{highlight.label}</p>
+                        <p className="text-xs font-semibold text-foreground">{highlight.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Features */}
+                <div className="p-6 pt-4 space-y-2">
+                  {details.features.slice(0, 4).map((feature, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Check className={cn(
+                        'w-4 h-4 mt-0.5 flex-shrink-0 transition-colors',
+                        isSelected ? 'text-accent' : 'text-muted-foreground'
+                      )} />
+                      <span className="text-sm text-muted-foreground">{feature.text}</span>
+                    </div>
+                  ))}
+                  {type === 'mod' && has9ftWalls && (
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
+                      <span className="text-sm text-foreground font-medium">9' ceilings available for this model</span>
+                    </div>
+                  )}
+                </div>
+              </button>
+              
+              {/* Learn More Button - outside main button to prevent nested interactive */}
+              <div className="px-6 pb-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedInfo(type);
+                  }}
+                  className="text-accent hover:text-accent -ml-2"
+                >
+                  Learn more
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </motion.div>
           );
         })}
       </div>
+      
+      {/* Educational callout */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="max-w-2xl mx-auto"
+      >
+        <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl border border-border">
+          <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Not sure which to choose?</span>{' '}
+              Most buyers select CrossMod for its broader financing options and appraisal advantages. 
+              Choose Modular if you need specific customizations like 9' ceilings or have flexibility with financing.
+            </p>
+          </div>
+        </div>
+      </motion.div>
       
       <WizardFooterSpacer />
       <WizardStickyFooter
@@ -259,13 +439,96 @@ export function StepBuildType({
         {selectedBuildType ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Check className="w-4 h-4 text-accent" />
-            <span className="truncate">{buildTypeInfo[selectedBuildType].title}</span>
+            <span className="truncate">{buildTypeDetails[selectedBuildType].title}</span>
           </div>
         ) : (
           <span className="text-sm text-muted-foreground">Select a build type to continue</span>
         )}
       </WizardStickyFooter>
+      
+      {/* Learn More Modal */}
+      <LearnMoreModal
+        type={expandedInfo}
+        onClose={() => setExpandedInfo(null)}
+      />
     </div>
+  );
+}
+
+// Learn More Modal Component
+function LearnMoreModal({ 
+  type, 
+  onClose 
+}: { 
+  type: BuildType | null; 
+  onClose: () => void;
+}) {
+  if (!type) return null;
+  
+  const details = buildTypeDetails[type];
+  
+  return (
+    <AnimatePresence>
+      {type && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', duration: 0.4 }}
+            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-2xl md:w-full bg-card rounded-2xl shadow-2xl border border-border z-50 flex flex-col max-h-[90vh]"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <details.icon className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <Badge variant="secondary" className="mb-1">{details.badge}</Badge>
+                  <h3 className="text-lg font-semibold text-foreground">{details.learnMore.title}</h3>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {details.learnMore.sections.map((section, i) => (
+                <div key={i}>
+                  <h4 className="font-semibold text-foreground mb-2">{section.heading}</h4>
+                  <p className="text-muted-foreground leading-relaxed">{section.content}</p>
+                </div>
+              ))}
+            </div>
+            
+            {/* Footer */}
+            <div className="p-6 border-t border-border">
+              <Button onClick={onClose} className="w-full">
+                Got it
+              </Button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
