@@ -105,8 +105,8 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
     ],
     features: [
       { text: 'State building code certified', tooltip: 'Built to IRC/IBC standards—the same codes governing site-built construction in your area.' },
+      { text: '9\' walls standard', tooltip: 'Taller 9-foot ceiling heights come standard on modular builds for a more spacious feel.' },
       { text: 'More layout flexibility', tooltip: 'Additional floor plan modifications and custom configurations available beyond standard options.' },
-      { text: 'Custom configurations', tooltip: 'Work with our team on specific modifications to meet your unique requirements.' },
       { text: 'Premium upgrade paths', tooltip: 'Access to additional upgrade packages and custom finishes not available on standard builds.' },
     ],
     learnMore: {
