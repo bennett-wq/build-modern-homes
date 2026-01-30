@@ -1,194 +1,180 @@
 
-## Immediate stabilization (site-wide scrolling + “everything feels broken” prevention)
 
-### 0.1 Reproduce and pinpoint the scroll lock source (fast, deterministic)
-- Add a temporary **Scroll Diagnostics** utility (dev-only) that can be toggled to print:
-  - `document.documentElement/body` computed `overflow`, `position`, `height`
-  - Radix/vaul attributes (e.g. `data-state`, `data-scroll-locked`, etc.)
-  - whether any `Dialog/Sheet/Drawer` portals are still mounted while “closed”
-- Use it to verify: is scroll locked because
-  1) `html/body { overflow: hidden }` is stuck, or  
-  2) pages are structurally “non-scrollable” due to `overflow-hidden` + fixed-height layouts (e.g. wizard pages).
+## Buyer Financial Summary - Lender-Ready Deliverable
 
-### 0.2 Add a global “scroll lock failsafe”
-Even if a library gets into a bad state, the app should recover.
-- Implement a **RouteChangeScrollUnlock** component (mounted once near the router) that on every route change:
-  - clears `document.body.style.overflow`, `position`, `top`, `width`
-  - clears `document.documentElement.style.overflow`
-  - removes known lock attributes/classes if present
-- Add an additional “on modal close” cleanup hook for the key overlays (FinancingModal → PreQualificationFlow → InfoDrawer).
+### Overview
+After completing Plaid bank verification, buyers will be able to download a professional "Financial Summary" PDF and copy a text summary to share with lenders for MH Advantage, CHOICEHome, or other manufactured housing loan programs.
 
-### 0.3 Fix structural non-scroll cases (especially wizard-style pages)
-Audit pages that intentionally use `overflow-hidden` to create “app-like” steps (e.g. BuildWizard) and ensure they have:
-- Exactly one scroll container that is actually scrollable (e.g. `main` or a step panel)
-- Proper flexbox constraints (`min-h-0` on flex children) so nested `overflow-auto` works on mobile
-- Sticky footer spacing (`WizardFooterSpacer`) applied consistently so content is not trapped behind the footer
+### What Lenders Need (Based on Fannie Mae/Freddie Mac Guidelines)
+For MH Advantage and CHOICEHome loans, lenders require:
+- **Income verification** (verified via Plaid bank transactions/deposits)
+- **Asset documentation** (bank account balances from Plaid)
+- **Debt-to-Income ratios** (calculated from verified income and liabilities)
+- **Employment information** (detected from payroll transactions)
+- **Credit assessment** (self-reported, lender will pull actual credit)
 
-**Acceptance criteria**
-- You can scroll normally on marketing pages, models, developments.
-- On wizard pages: the intended content region scrolls reliably; nothing feels “frozen”.
+### What We Can Provide from Verified Data
+| Data Point | Source | Lender Value |
+|------------|--------|--------------|
+| Verified Annual Income | Plaid transactions | Primary qualification metric |
+| Verified Monthly Income | Calculated | DTI calculations |
+| Total Assets | Plaid account balances | Reserves verification |
+| Total Liabilities | Plaid credit/loan accounts | Back-end DTI |
+| Net Worth | Calculated | Overall financial health |
+| Front-End DTI | Calculated | Housing expense ratio (target: <31%) |
+| Back-End DTI | Calculated | Total debt ratio (target: <43%) |
+| Employment Verified | Plaid payroll detection | Income stability |
+| Eligible Programs | Engine calculation | Loan program matching |
 
----
+### Implementation Plan
 
-## Mobile “full site audit” plan (ruthless and structured)
+#### 1. Create Buyer Financial Summary Component
+Create a new `src/components/financing/BuyerFinancialSummary.tsx` component that:
+- Accepts the application ID and verified financial data
+- Generates a professional, lender-ready PDF using jsPDF
+- Provides a "Copy to Clipboard" text summary option
 
-### 1.1 Audit scope (the routes that must be perfect)
-We will test each on iOS-sized and Android-sized viewports (and also tablet):
-1) Home (`/`)
-2) Models list + detail (`/models`, `/models/:modelId`)
-3) Developments list + detail (`/developments`, `/developments/:slug`)
-4) Community build wizard (`/developments/:slug/build`) — “lot picking experience”
-5) Direct quote configurator (`/build`) — “Step 7 → 8” issue
-6) Financing funnel entry points (wherever “Get Pre-Qualified” is visible)
-7) Secure bank connection host (`/secure-bank-connect`)
+#### 2. PDF Report Sections
+The buyer-facing PDF will include:
 
-### 1.2 Audit method (how we won’t miss things)
-For each route we will validate:
-- Scroll: page scroll + inner scroll areas (lists, drawers, panels)
-- Touch: tap targets, accidental dismiss, drag conflicts, pinch/zoom conflicts on site plan
-- Keyboard: inputs don’t hide CTAs; focus doesn’t trap the user
-- Sticky UI: headers/footers don’t cover actionable controls
-- Loading states: skeletons/spinners, clear “what’s happening” copy, no dead-ends
-- Accessibility basics: focus visible, logical tab order, “role=listbox” interactions don’t break touch
+**Header**
+- "Financial Summary" title with BaseMod Financial branding
+- Buyer name and date generated
+- "Bank Verified" or "Self-Reported" badge
 
-**Deliverable**
-- A short “Mobile audit report” list of issues + severity + fix priority, then we implement fixes in priority order.
+**Buyer Information**
+- Full name, email, phone
+- Intended use (Primary/Second Home/Investment)
+- Purchase timeframe
 
----
+**Loan Overview**
+- Purchase price
+- Down payment (amount and percentage)
+- Loan amount requested
+- Estimated monthly payment (PITI breakdown)
 
-## Fix 1: “Can’t proceed from Step 7 to 8” (Configurator /build)
+**Verified Financial Profile** (highlighted section)
+- Verified Annual Income (with Plaid verification badge)
+- Verified Monthly Income
+- Total Assets (from connected accounts)
+- Total Liabilities
+- Net Worth (Assets - Liabilities)
 
-### Likely causes we will confirm
-1) **Proceed gating**: Step 7 uses `Step3Design` with `canProceed = selectedPackageId && selectedGarageDoorId`.  
-   If certain models don’t support garage selection (or default isn’t set), mobile users can get stuck.
-2) **Scroll / footer overlap**: On mobile the selection panel might not scroll due to missing `min-h-0`, so the user can’t reach the controls needed to satisfy `canProceed`.
+**DTI Analysis** (visual boxes like admin PDF)
+- Front-End DTI with health indicator (green/yellow/red)
+- Back-End DTI with health indicator
+- Target thresholds for MH Advantage (31%/43%)
 
-### Planned fixes
-- Make Step 7 “always completable”:
-  - If a model requires garage selection, auto-select a default garage choice the moment a package is selected (or on step entry).
-  - If a model does not require garage selection, update `canProceed` to only require package.
-  - Add clear inline validation messaging (“Select a package to continue”, “Select a garage style to continue”) with auto-scroll to the missing section.
-- Ensure nested scroll works:
-  - Add `min-h-0` to the right containers in `Step3Design` so `TabsContent overflow-auto` is actually scrollable.
-  - Ensure `WizardFooterSpacer` is present and effective on mobile to avoid content being hidden behind the sticky footer.
+**Eligible Loan Programs**
+- List of programs buyer qualifies for
+- Best match highlighted
+- Brief description of each program
 
-**Acceptance criteria**
-- On mobile, Step 7 always allows the user to reach and use required controls and proceed to Step 8.
+**Footer/Disclaimer**
+- "This summary is based on verified bank data and is provided for informational purposes"
+- "Final loan approval subject to lender underwriting"
+- Generation date and application reference
 
----
+#### 3. Update PreQualificationFlow Step 3
+Add download/share buttons to the results screen after verification completes:
 
-## Fix 2: Communities “lot picking” on mobile (Development build wizard)
+```text
+[Results Screen after verification]
+   |
+   v
++----------------------------------+
+| Download Financial Summary (PDF) |  <-- Primary CTA
++----------------------------------+
++----------------------------------+
+| Copy Summary to Clipboard        |  <-- Secondary option
++----------------------------------+
+```
 
-### Likely causes we will confirm
-- Gesture conflicts between:
-  - Site plan viewer container using `touch-none`/`select-none` patterns
-  - Custom bottom sheet using `touchAction: pan-y`
-  - ScrollArea usage in lot list
+The buttons will only appear when:
+- User completed Plaid bank verification
+- Prequal results have been calculated
+- Verified financial data exists
 
-### Planned fixes
-- Normalize gesture behavior:
-  - Ensure the site plan supports the intended mobile gestures (pan/zoom if desired) without blocking basic page interactions.
-  - Ensure the mobile lot list sheet:
-    - scrolls reliably (use a single scroll container, `min-h-0`, `overflow-auto`, and iOS momentum scrolling where appropriate)
-    - doesn’t accidentally close when trying to scroll
-- UX upgrades:
-  - Make “Browse lots” and selection confirmation feel crisp:
-    - Clear “Selected” state
-    - Immediate “All-in” feedback
-    - A single obvious path to continue
-  - Reduce cognitive load with tighter filtering and “Available Now” default focus.
+#### 4. Text Summary for Clipboard
+Generate a clean, professional text summary for easy sharing:
 
-**Acceptance criteria**
-- Lot selection on mobile is fast, obvious, and never fights scrolling/dragging.
-- The user can always continue without UI getting in the way.
+```
+BASEMOB FINANCIAL - BUYER SUMMARY
+=================================
+Name: [Buyer Name]
+Generated: [Date]
+Status: BANK VERIFIED
 
----
+LOAN DETAILS
+Purchase Price: $XXX,XXX
+Down Payment: $XX,XXX (X%)
+Loan Amount: $XXX,XXX
 
-## Fix 3: Plaid reliability + “AHA” results experience
+VERIFIED FINANCIALS (Plaid)
+Annual Income: $XXX,XXX
+Total Assets: $XX,XXX
+Total Liabilities: $XX,XXX
+Front-End DTI: XX.X%
+Back-End DTI: XX.X%
 
-### 3.1 Stop the infinite “Analyzing…” and timeouts
-We’ll address both frontend UX and backend execution time.
+ELIGIBLE PROGRAMS
+- MH Advantage (Best Match)
+- CHOICEHome
+- Conventional
 
-**Frontend**
-- Implement a staged analysis UI (a real progress narrative):
-  1) “Securing your connection”
-  2) “Verifying income & assets”
-  3) “Calculating affordability & DTI”
-  4) “Matching best programs”
-- Add a **hard UX timeout** (e.g. 25–35s):
-  - If still pending: show “We’re still verifying — you’re not stuck.”
-  - Offer a safe fallback:
-    - “Continue — we’ll email results” (application remains submitted)
-    - “Retry verification” (re-invoke)
-    - “Switch to manual verification” (so the user can still finish)
-- Ensure the secure connect window reports meaningful failure reasons back to the wizard (not just “cancelled”).
+Reference: [App ID]
+```
 
-**Backend**
-- Optimize the pre-qualification function for latency:
-  - Add timeouts (AbortController) around Plaid API calls
-  - Parallelize independent Plaid calls where possible
-  - If Plaid is slow/unavailable, fall back to self-reported data quickly and mark `confidence_level` lower
-- Consider splitting responsibilities if needed:
-  - `plaid-exchange-token`: exchange token + store access token
-  - `prequal-engine`: compute decision primarily from stored verified_financials (fast path)
-  - This reduces “single call does everything” runtime risk.
+### Technical Details
 
-### 3.2 Deliver the “massive AHA” moment (results screen)
-Design the results as a fintech-grade dashboard:
-- “Verified snapshot” card:
-  - Verified income used
-  - Assets + liabilities
-  - Verification method + timestamp
-- DTI visualization:
-  - Front-end and back-end DTI with color-coded thresholds
-- “Best match” program:
-  - one top recommendation with why it fits
-  - secondary eligible programs (if any)
-- Clear next steps CTAs:
-  - “Schedule a 10-minute call”
-  - “Download your summary”
-  - “Continue building your quote”
-- Tone: confident, transparent, and fast.
+**New Files:**
+- `src/components/financing/BuyerFinancialSummary.tsx` - PDF generation and clipboard logic
 
-**Acceptance criteria**
-- Verification never feels like it’s “hanging”; users always have clarity and control.
-- Results are instantly understandable and feel premium (the “AHA” moment).
+**Modified Files:**
+- `src/components/financing/PreQualificationFlow.tsx` - Add download/share buttons to Step 3 results
 
----
+**Data Flow:**
+1. User completes Plaid verification
+2. `prequal-engine` calculates DTI and eligible programs
+3. Results stored in `financing_applications` and `verified_financials` tables
+4. Step 3 renders with download buttons when `prequalResults` has verified data
+5. User clicks download -> PDF generated client-side with jsPDF
+6. User clicks copy -> Text summary copied to clipboard
 
-## End-to-end test plan (what we will verify before calling it fixed)
+**PDF Design:**
+- Match the admin BorrowerProfile PDF style (professional, color-coded DTI boxes)
+- Use emerald/green for healthy metrics, amber for borderline, red for high DTI
+- Include "Verified" badges prominently
+- Professional footer with disclaimers
 
-### Desktop (Editor preview + normal tab)
-- Site scroll works on `/`, `/models`, `/developments`, `/build`
-- Financing drawer opens/closes without breaking scroll
-- Secure bank connect opens, connects, returns reliably
-- Prequal “Analyzing” never dead-ends; always resolves or offers a graceful fallback
+### User Experience Flow
 
-### Mobile (multiple sizes)
-- Configurator Step 7 → Step 8 is unblocked
-- Community lot selection is smooth and scrollable
-- Sticky footer does not hide primary actions
-- Inputs and keyboard do not break navigation
+```text
+[Step 2: Bank Verification]
+        |
+        v
+[Secure Bank Connect Page]
+        |
+   [Success!]
+        |
+        v
+[Step 3: Results Dashboard]
+        |
+   Shows: Verified income, DTI ratios, eligible programs
+        |
+        v
+[New Section: "Share with Your Lender"]
+   |                           |
+   v                           v
+[Download PDF]         [Copy Summary]
+   |                           |
+   v                           v
+Professional PDF      Text on clipboard
+saved to device       ready to paste
+```
 
-### Automated sanity checks (optional but recommended)
-- Add a small Playwright suite for:
-  - scrollability assertions (page can scroll, not locked)
-  - step progression (Configurator step transitions)
-  - lot selection (tap lot → continue enabled)
+### Value Proposition
+- **For Buyers**: Professional document to share with lenders, speeding up the loan process
+- **For Lenders**: Pre-verified financial data reduces document requests
+- **For BaseMod**: Positions platform as a true fintech partner in the home buying journey
 
----
-
-## Execution order (to minimize regressions)
-1) Restore/guarantee global scrolling (failsafe + structural fixes)
-2) Fix Step 7 → 8 gating + mobile scroll containers
-3) Fix community lot picking gestures/scroll
-4) Plaid timeout reliability improvements (backend + UX)
-5) “AHA” results polish + instrumentation
-
----
-
-## Deliverables you’ll get
-- Scroll restored across the site (no more “everything is frozen”)
-- A written mobile audit + implemented fixes for the highest-impact issues
-- Step 7 → 8 and community lot picking working flawlessly on mobile
-- Plaid flow that feels fast, trustworthy, and culminates in a premium “AHA” decision experience
