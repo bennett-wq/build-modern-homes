@@ -3,14 +3,11 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle, Loader2 } from 'lucide-react';
+import { Check, ChevronLeft, Home, MapPin, Palette, ClipboardCheck, CheckCircle } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
-import { grandHavenLots, type Lot as StaticLot } from '@/data/lots/grand-haven';
+import { grandHavenLots } from '@/data/lots/grand-haven';
 import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { getModelBySlug } from '@/data/models';
-import { useDevelopments } from '@/hooks/useDevelopments';
-import { useLots } from '@/hooks/useLots';
-import type { Lot as DatabaseLot } from '@/types/database';
 import { getPackageById, getGarageDoorById } from '@/data/packages';
 import { 
   getHawthornePackageById, 
@@ -48,46 +45,10 @@ const stepTransition = {
   ease: 'easeOut' as const,
 };
 
-// Helper function to map database lots to static lot format
-function mapDatabaseLotToStaticLot(dbLot: DatabaseLot, index: number): StaticLot {
-  // Parse phase from notes if available
-  let phase: number | undefined;
-  let availability: string | undefined;
-  if (dbLot.notes) {
-    if (dbLot.notes.includes('Phase 1')) phase = 1;
-    else if (dbLot.notes.includes('Phase 2')) phase = 2;
-    else if (dbLot.notes.includes('Phase 3')) phase = 3;
-    
-    if (dbLot.notes.includes('Available Now')) availability = 'Now';
-    else if (dbLot.notes.includes('Fall 2026')) availability = 'Fall 2026';
-    else if (dbLot.notes.includes('Spring 2027')) availability = 'Spring 2027';
-  }
-
-  return {
-    id: index + 1, // Create sequential numeric IDs for UI compatibility
-    label: dbLot.lot_number,
-    status: dbLot.status as StaticLot['status'],
-    polygon: dbLot.polygon_coordinates || [],
-    acreage: dbLot.acreage ?? undefined,
-    netAcreage: dbLot.net_acreage ?? undefined,
-    premium: dbLot.premium ?? undefined,
-    notes: dbLot.notes ?? undefined,
-    phase,
-    availability,
-  };
-}
-
 export default function BuildWizard() {
   const { slug = 'grand-haven' } = useParams<{ slug: string }>();
   const isMobile = useIsMobile();
   const development = getDevelopmentBySlug(slug);
-  
-  // Get development from database to get UUID for lot lookup
-  const { getDevelopmentBySlug: getDbDevelopment } = useDevelopments();
-  const dbDevelopment = getDbDevelopment(slug);
-  
-  // Fetch lots from database using development UUID
-  const { lots: databaseLots, isLoading: lotsLoading } = useLots(dbDevelopment?.id || '');
   
   const {
     selection,
@@ -116,17 +77,11 @@ export default function BuildWizard() {
     }
   }, []);
 
-  // Map lots: prefer database lots, fall back to static for known developments
-  const lots = useMemo((): StaticLot[] => {
-    // If we have database lots, use them
-    if (databaseLots && databaseLots.length > 0) {
-      return databaseLots.map(mapDatabaseLotToStaticLot);
-    }
-    // Fall back to static data for developments that haven't migrated yet
+  const lots = useMemo(() => {
     if (slug === 'grand-haven') return grandHavenLots;
     if (slug === 'st-james-bay') return stJamesBayLots;
     return [];
-  }, [slug, databaseLots]);
+  }, [slug]);
 
   const selectedLot = lots.find(l => l.id === selection.lotId) || null;
   const normalizedModelSlug = normalizeModelSlug(selection.modelSlug);
@@ -197,19 +152,6 @@ export default function BuildWizard() {
           <Button asChild variant="outline">
             <Link to="/developments">Browse Developments</Link>
           </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading state while lots are being fetched
-  if (lotsLoading && lots.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-accent mx-auto mb-4" />
-          <h2 className="text-lg font-medium text-foreground">Loading available lots...</h2>
-          <p className="text-sm text-muted-foreground mt-1">{development.name}</p>
         </div>
       </div>
     );
