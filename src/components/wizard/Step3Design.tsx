@@ -145,60 +145,13 @@ export function Step3Design({
   }, [onSelectPackage, selectedGarageDoorId]);
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border bg-card shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
-              {EXTERIOR_COPY.step.title}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {isArbCommunity ? EXTERIOR_COPY.step.arbSubtitle : EXTERIOR_COPY.step.subtitle}
-            </p>
-            {EXTERIOR_COPY.step.helper && (
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                {EXTERIOR_COPY.step.helper}
-              </p>
-            )}
-            {isArbCommunity && development?.arbGuidelinesUrl && (
-              <a 
-                href={development.arbGuidelinesUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-accent hover:underline mt-1 inline-block"
-              >
-                View ARB Guidelines →
-              </a>
-            )}
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onBack}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Back
-          </Button>
-        </div>
-        {/* Trust & Financing compact strip */}
-        <TrustFinancingStrip 
-          onOpenFinancing={() => setShowFinancingModal(true)}
-          onOpenAppraisal={() => setShowAppraisalDrawer(true)}
-        />
-      </div>
-
-      {/* Content */}
-      <div className={cn(
-        'flex-1 overflow-hidden min-h-0',
-        isMobile ? 'flex flex-col' : 'flex'
-      )}>
-        {/* Live Preview - large hero container for immersive design experience */}
-        <div className={cn(
-          'bg-gradient-to-b from-muted/30 to-muted/10 flex items-center justify-center p-2 sm:p-4',
-          isMobile ? 'min-h-[45vh] shrink-0' : 'flex-1 min-h-0'
-        )}>
+    <div className="h-full flex flex-col relative">
+      {/* HERO-FIRST IMMERSIVE LAYOUT */}
+      
+      {/* Full-bleed Hero Preview - the house is the star */}
+      <div className="flex-1 relative min-h-0 bg-gradient-to-b from-muted/20 to-muted/5">
+        {/* Hero Image Container - fills available space */}
+        <div className="absolute inset-0 flex items-center justify-center p-4">
           {isKeeneland ? (
             <KeenelandPhotoPreview 
               packageId={selectedPackageId} 
@@ -220,21 +173,54 @@ export function Step3Design({
             />
           )}
         </div>
-
-        {/* Selection Panel - ensure proper scroll on mobile */}
-        <div className={cn(
-          'bg-background border-l border-border overflow-hidden flex flex-col min-h-0',
-          isMobile ? 'flex-1' : 'w-96 shrink-0'
-        )}>
-          <Tabs 
-            value={activeTab} 
-            onValueChange={setActiveTab} 
-            className="h-full flex flex-col"
-          >
-            <TabsList className="grid grid-cols-2 mx-4 mt-4 shrink-0">
+        
+        {/* Floating header overlay */}
+        <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/95 via-background/80 to-transparent pb-8">
+          <div className="px-4 sm:px-6 pt-4 pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+                  {EXTERIOR_COPY.step.title}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {isArbCommunity ? EXTERIOR_COPY.step.arbSubtitle : EXTERIOR_COPY.step.subtitle}
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onBack}
+                className="text-muted-foreground hover:text-foreground bg-background/50 backdrop-blur-sm"
+              >
+                <ArrowLeft className="mr-1.5 h-4 w-4" />
+                Back
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* "Live Preview" indicator badge */}
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-background/80 backdrop-blur-sm rounded-full border border-border shadow-sm">
+            <Eye className="h-3.5 w-3.5 text-accent" />
+            <span className="text-xs font-medium text-foreground">Live Preview</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Bottom Selection Panel - compact and overlay-style */}
+      <div className="shrink-0 bg-background border-t border-border shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.1)]">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="flex flex-col"
+        >
+          {/* Compact tabs header */}
+          <div className="flex items-center justify-between px-4 pt-3 pb-2">
+            <TabsList className="grid grid-cols-2 w-auto">
               <TabsTrigger 
                 value="package" 
-                className="flex items-center gap-2 data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 px-4 data-[state=active]:shadow-sm"
               >
                 <Palette className="h-4 w-4" />
                 <span>{EXTERIOR_COPY.tabs.package.label}</span>
@@ -244,7 +230,7 @@ export function Step3Design({
               </TabsTrigger>
               <TabsTrigger 
                 value="garage" 
-                className="flex items-center gap-2 data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 px-4 data-[state=active]:shadow-sm"
               >
                 <DoorOpen className="h-4 w-4" />
                 <span>{EXTERIOR_COPY.tabs.garage.label}</span>
@@ -253,128 +239,135 @@ export function Step3Design({
                 )}
               </TabsTrigger>
             </TabsList>
+            
+            {/* Trust badges - compact */}
+            <div className="hidden sm:flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowFinancingModal(true)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1" />
+                Financing
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowAppraisalDrawer(true)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 mr-1" />
+                Appraisals
+              </Button>
+            </div>
+          </div>
 
-            <TabsContent value="package" className="flex-1 overflow-auto p-4 mt-0 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-              {/* Package tab helper + swatch legend */}
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-muted-foreground">{EXTERIOR_COPY.tabs.package.helper}</p>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="inline-flex items-center gap-1 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors">
-                        <span>{EXTERIOR_COPY.swatches.legend}</span>
-                        <HelpCircle className="h-3 w-3" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[240px]">
-                      <p className="font-medium text-xs mb-1">{EXTERIOR_COPY.swatches.tooltipTitle}</p>
-                      <p className="text-xs text-muted-foreground">{EXTERIOR_COPY.swatches.tooltipBody}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="grid gap-3">
-                {isKeeneland ? (
-                  keenelandPackages.map((pkg) => (
-                    <KeenelandPackageCard
-                      key={pkg.id}
-                      package_={pkg}
-                      isSelected={pkg.id === selectedPackageId}
-                      onSelect={() => handleSelectPackage(pkg.id)}
-                    />
-                  ))
-                ) : isAspen ? (
-                  aspenPackages.map((pkg) => (
-                    <AspenPackageCard
-                      key={pkg.id}
-                      package_={pkg}
-                      isSelected={pkg.id === selectedPackageId}
-                      onSelect={() => handleSelectPackage(pkg.id)}
-                    />
-                  ))
-                ) : isBelmont ? (
-                  belmontPackages.map((pkg) => (
-                    <BelmontPackageCard
-                      key={pkg.id}
-                      package_={pkg}
-                      isSelected={pkg.id === selectedPackageId}
-                      onSelect={() => handleSelectPackage(pkg.id)}
-                    />
-                  ))
-                ) : isHawthorne ? (
-                  hawthornePackages.map((pkg) => (
-                    <HawthornePackageCard
-                      key={pkg.id}
-                      package_={pkg}
-                      isSelected={pkg.id === selectedPackageId}
-                      onSelect={() => handleSelectPackage(pkg.id)}
-                    />
-                  ))
-                ) : (
-                  exteriorPackages.map((pkg) => (
-                    <PackageCard
-                      key={pkg.id}
-                      package_={pkg}
-                      isSelected={pkg.id === selectedPackageId}
-                      onSelect={() => handleSelectPackage(pkg.id)}
-                    />
-                  ))
-                )}
-              </div>
-              {/* Safe bottom padding for sticky footer */}
-              <WizardFooterSpacer />
-            </TabsContent>
+          {/* Horizontal scrolling package selector */}
+          <TabsContent value="package" className="mt-0 px-4 pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex overflow-x-auto gap-3 pb-2 -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {isKeeneland ? (
+                keenelandPackages.map((pkg) => (
+                  <CompactPackageCard
+                    key={pkg.id}
+                    name={pkg.name}
+                    swatches={pkg.swatches}
+                    isSelected={pkg.id === selectedPackageId}
+                    onSelect={() => handleSelectPackage(pkg.id)}
+                  />
+                ))
+              ) : isAspen ? (
+                aspenPackages.map((pkg) => (
+                  <CompactPackageCard
+                    key={pkg.id}
+                    name={pkg.name}
+                    swatches={[pkg.primaryColor, pkg.secondaryColor, pkg.accentColor]}
+                    isSelected={pkg.id === selectedPackageId}
+                    onSelect={() => handleSelectPackage(pkg.id)}
+                  />
+                ))
+              ) : isBelmont ? (
+                belmontPackages.map((pkg) => (
+                  <CompactPackageCard
+                    key={pkg.id}
+                    name={pkg.name}
+                    swatches={pkg.swatches}
+                    isSelected={pkg.id === selectedPackageId}
+                    onSelect={() => handleSelectPackage(pkg.id)}
+                  />
+                ))
+              ) : isHawthorne ? (
+                hawthornePackages.map((pkg) => (
+                  <CompactPackageCard
+                    key={pkg.id}
+                    name={pkg.name}
+                    swatches={[pkg.primaryColor, pkg.secondaryColor, pkg.accentColor]}
+                    isSelected={pkg.id === selectedPackageId}
+                    onSelect={() => handleSelectPackage(pkg.id)}
+                  />
+                ))
+              ) : (
+                exteriorPackages.map((pkg) => (
+                  <CompactPackageCard
+                    key={pkg.id}
+                    name={pkg.name}
+                    swatches={[pkg.sidingColor, pkg.trimColor, pkg.roofColor]}
+                    isSelected={pkg.id === selectedPackageId}
+                    onSelect={() => handleSelectPackage(pkg.id)}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
 
-            <TabsContent value="garage" className="flex-1 overflow-auto p-4 mt-0 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-              {/* Garage tab helper */}
-              <p className="text-xs text-muted-foreground mb-3">{EXTERIOR_COPY.tabs.garage.helper}</p>
-              <div className="grid gap-3">
-                {isKeeneland ? (
-                  keenelandGarages.map((door) => (
-                    <KeenelandGarageCard
-                      key={door.id}
-                      door={door}
-                      isSelected={door.id === selectedGarageDoorId}
-                      isAvailable={!selectedPackageId || hasKeenelandVariant(selectedPackageId, door.id)}
-                      onSelect={() => onSelectGarageDoor(door.id)}
-                    />
-                  ))
-                ) : isAspen ? (
-                  // Aspen doesn't have photo-based garage variants - use standard doors
-                  garageDoors.map((door) => (
-                    <GarageDoorCard
-                      key={door.id}
-                      door={door}
-                      isSelected={door.id === selectedGarageDoorId}
-                      onSelect={() => onSelectGarageDoor(door.id)}
-                    />
-                  ))
-                ) : isHawthorne ? (
-                  hawthorneGarages.map((door) => (
-                    <HawthorneGarageCard
-                      key={door.id}
-                      door={door}
-                      isSelected={door.id === selectedGarageDoorId}
-                      isAvailable={!selectedPackageId || hasVariantImage(selectedPackageId, door.id)}
-                      onSelect={() => onSelectGarageDoor(door.id)}
-                    />
-                  ))
-                ) : (
-                  garageDoors.map((door) => (
-                    <GarageDoorCard
-                      key={door.id}
-                      door={door}
-                      isSelected={door.id === selectedGarageDoorId}
-                      onSelect={() => onSelectGarageDoor(door.id)}
-                    />
-                  ))
-                )}
-              </div>
-              {/* Safe bottom padding for sticky footer */}
-              <WizardFooterSpacer />
-            </TabsContent>
-          </Tabs>
-        </div>
+          {/* Horizontal scrolling garage selector */}
+          <TabsContent value="garage" className="mt-0 px-4 pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex overflow-x-auto gap-3 pb-2 -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {isKeeneland ? (
+                keenelandGarages.map((door) => (
+                  <CompactGarageCard
+                    key={door.id}
+                    name={door.name}
+                    color={door.swatches?.[0] || '#666666'}
+                    isSelected={door.id === selectedGarageDoorId}
+                    onSelect={() => onSelectGarageDoor(door.id)}
+                  />
+                ))
+              ) : isAspen ? (
+                garageDoors.map((door) => (
+                  <CompactGarageCard
+                    key={door.id}
+                    name={door.name}
+                    color={door.color}
+                    isSelected={door.id === selectedGarageDoorId}
+                    onSelect={() => onSelectGarageDoor(door.id)}
+                  />
+                ))
+              ) : isHawthorne ? (
+                hawthorneGarages.map((door) => (
+                  <CompactGarageCard
+                    key={door.id}
+                    name={door.name}
+                    color={door.color}
+                    isSelected={door.id === selectedGarageDoorId}
+                    isUpgrade={door.isUpgrade}
+                    onSelect={() => onSelectGarageDoor(door.id)}
+                  />
+                ))
+              ) : (
+                garageDoors.map((door) => (
+                  <CompactGarageCard
+                    key={door.id}
+                    name={door.name}
+                    color={door.color}
+                    isSelected={door.id === selectedGarageDoorId}
+                    onSelect={() => onSelectGarageDoor(door.id)}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Sticky Footer */}
@@ -489,9 +482,103 @@ function TrustFinancingStrip({ onOpenFinancing, onOpenAppraisal }: TrustFinancin
   );
 }
 
+// Compact package card for horizontal scroll layout
+interface CompactPackageCardProps {
+  name: string;
+  swatches: string[];
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function CompactPackageCard({ name, swatches, isSelected, onSelect }: CompactPackageCardProps) {
+  return (
+    <motion.button
+      onClick={onSelect}
+      whileTap={{ scale: 0.97 }}
+      className={cn(
+        'flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[100px]',
+        isSelected 
+          ? 'border-accent bg-accent/5 shadow-md' 
+          : 'border-border bg-background hover:border-accent/50 hover:bg-muted/50'
+      )}
+    >
+      {/* Swatch stack */}
+      <div className="flex gap-1">
+        {swatches.slice(0, 3).map((color, i) => (
+          <div 
+            key={i}
+            className="w-6 h-6 rounded-md border border-border/50 shadow-sm"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+      </div>
+      <span className="text-xs font-medium text-foreground text-center leading-tight whitespace-nowrap">
+        {name}
+      </span>
+      {isSelected && (
+        <motion.div 
+          initial={{ scale: 0 }} 
+          animate={{ scale: 1 }}
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent flex items-center justify-center"
+        >
+          <Check className="w-3 h-3 text-accent-foreground" />
+        </motion.div>
+      )}
+    </motion.button>
+  );
+}
+
+// Compact garage card for horizontal scroll layout
+interface CompactGarageCardProps {
+  name: string;
+  color: string;
+  isSelected: boolean;
+  isUpgrade?: boolean;
+  onSelect: () => void;
+}
+
+function CompactGarageCard({ name, color, isSelected, isUpgrade, onSelect }: CompactGarageCardProps) {
+  return (
+    <motion.button
+      onClick={onSelect}
+      whileTap={{ scale: 0.97 }}
+      className={cn(
+        'relative flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[100px]',
+        isSelected 
+          ? 'border-accent bg-accent/5 shadow-md' 
+          : 'border-border bg-background hover:border-accent/50 hover:bg-muted/50'
+      )}
+    >
+      <div 
+        className="w-10 h-10 rounded-lg border border-border/50 shadow-sm"
+        style={{ backgroundColor: color }}
+      />
+      <span className="text-xs font-medium text-foreground text-center leading-tight whitespace-nowrap">
+        {name}
+      </span>
+      {isUpgrade && (
+        <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+          Upgrade
+        </Badge>
+      )}
+      {isSelected && (
+        <motion.div 
+          initial={{ scale: 0 }} 
+          animate={{ scale: 1 }}
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent flex items-center justify-center"
+        >
+          <Check className="w-3 h-3 text-accent-foreground" />
+        </motion.div>
+      )}
+    </motion.button>
+  );
+}
+
 // In-memory image cache - persists across re-renders
 const imageCache = new Map<string, 'loading' | 'loaded' | 'failed'>();
 const failedImages = new Set<string>();
+
+// In-memory image cache - persists across re-renders
 
 // Preload an image and update cache
 function preloadImage(src: string): Promise<boolean> {
