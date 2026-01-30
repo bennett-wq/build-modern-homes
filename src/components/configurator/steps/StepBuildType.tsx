@@ -105,8 +105,8 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
     ],
     features: [
       { text: 'State building code certified', tooltip: 'Built to IRC/IBC standards—the same codes governing site-built construction in your area.' },
-      { text: '9\' walls standard', tooltip: 'Taller 9-foot ceiling heights come standard on modular builds for a more spacious feel.' },
       { text: 'More layout flexibility', tooltip: 'Additional floor plan modifications and custom configurations available beyond standard options.' },
+      { text: 'Custom configurations', tooltip: 'Work with our team on specific modifications to meet your unique requirements.' },
       { text: 'Premium upgrade paths', tooltip: 'Access to additional upgrade packages and custom finishes not available on standard builds.' },
     ],
     learnMore: {
@@ -378,10 +378,10 @@ export function StepBuildType({
                       <span className="text-sm text-muted-foreground">{feature.text}</span>
                     </div>
                   ))}
-                  {type === 'mod' && has9ftWalls && (
+                  {type === 'mod' && (
                     <div className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-                      <span className="text-sm text-foreground font-medium">9' ceilings available</span>
+                      <span className="text-sm text-foreground font-medium">9' walls are standard</span>
                     </div>
                   )}
                   {type === 'xmod' && (
