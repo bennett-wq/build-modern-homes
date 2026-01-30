@@ -26,7 +26,10 @@ import {
   AlertCircle,
   TrendingUp,
   Award,
-  Clock
+  Clock,
+  Download,
+  Copy,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -43,6 +46,7 @@ import { InfoDrawer } from '@/components/ui/info-drawer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { VerificationProgress } from './VerificationProgress';
+import { downloadBuyerPDF, copyBuyerSummaryToClipboard } from './BuyerFinancialSummary';
 
 interface PreQualificationFlowProps {
   open: boolean;
@@ -1292,11 +1296,87 @@ export function PreQualificationFlow({
           </motion.div>
         )}
 
+        {/* Share with Lender Section - Show when verified data exists */}
+        {hasVerifiedResults && verificationMethod === 'plaid_verified' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="text-left space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              <p className="font-semibold text-sm">Share with Your Lender</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Download your verified financial summary to share with lenders for faster pre-approval.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                onClick={() => {
+                  downloadBuyerPDF({
+                    contactName: formData.contactName,
+                    contactEmail: formData.contactEmail,
+                    contactPhone: formData.contactPhone || undefined,
+                    intendedUse: formData.intendedUse,
+                    purchaseTimeframe: formData.purchaseTimeframe,
+                    purchasePrice: purchasePrice,
+                    downPaymentAmount: purchasePrice * (formData.downPaymentPercent / 100),
+                    downPaymentPercent: formData.downPaymentPercent,
+                    loanAmount: purchasePrice * (1 - formData.downPaymentPercent / 100),
+                    monthlyPayment: prequalResults?.monthlyPayment || null,
+                    verifiedIncome: prequalResults?.verifiedIncome || null,
+                    frontEndDti: prequalResults?.frontEndDti || null,
+                    backEndDti: prequalResults?.dtiRatio || null,
+                    eligiblePrograms: prequalResults?.eligiblePrograms || [],
+                    applicationId: applicationId || undefined,
+                    isVerified: true,
+                  });
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => {
+                  copyBuyerSummaryToClipboard({
+                    contactName: formData.contactName,
+                    contactEmail: formData.contactEmail,
+                    contactPhone: formData.contactPhone || undefined,
+                    intendedUse: formData.intendedUse,
+                    purchaseTimeframe: formData.purchaseTimeframe,
+                    purchasePrice: purchasePrice,
+                    downPaymentAmount: purchasePrice * (formData.downPaymentPercent / 100),
+                    downPaymentPercent: formData.downPaymentPercent,
+                    loanAmount: purchasePrice * (1 - formData.downPaymentPercent / 100),
+                    monthlyPayment: prequalResults?.monthlyPayment || null,
+                    verifiedIncome: prequalResults?.verifiedIncome || null,
+                    frontEndDti: prequalResults?.frontEndDti || null,
+                    backEndDti: prequalResults?.dtiRatio || null,
+                    eligiblePrograms: prequalResults?.eligiblePrograms || [],
+                    applicationId: applicationId || undefined,
+                    isVerified: true,
+                  });
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Summary
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Next Steps */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.6 }}
           className="text-left space-y-3"
         >
           <p className="font-semibold text-sm">What's next?</p>
