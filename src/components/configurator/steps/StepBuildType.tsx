@@ -467,16 +467,15 @@ function LearnMoreModal({
   type: BuildType | null; 
   onClose: () => void;
 }) {
-  if (!type) return null;
-  
-  const details = buildTypeDetails[type];
+  const details = type ? buildTypeDetails[type] : null;
   
   return (
     <AnimatePresence>
-      {type && (
+      {type && details && (
         <>
           {/* Backdrop */}
           <motion.div
+            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -484,73 +483,76 @@ function LearnMoreModal({
             className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
           />
           
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', duration: 0.4 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-lg md:w-full bg-card rounded-2xl shadow-2xl border border-border z-50 flex flex-col max-h-[85vh]"
-          >
-            {/* Header */}
-            <div className="relative p-6 pb-4 border-b border-border">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="absolute right-4 top-4 rounded-full h-8 w-8"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-              <div className="flex items-center gap-3 pr-10">
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
-                  type === 'xmod' ? 'bg-accent/10' : 'bg-muted'
-                )}>
-                  <details.icon className={cn(
-                    "w-6 h-6",
-                    type === 'xmod' ? 'text-accent' : 'text-foreground'
-                  )} />
-                </div>
-                <div>
-                  <Badge 
-                    variant={type === 'xmod' ? 'default' : 'secondary'} 
-                    className="mb-1 text-xs"
-                  >
-                    {details.badge}
-                  </Badge>
-                  <h3 className="text-xl font-semibold text-foreground">{details.learnMore.title}</h3>
+          {/* Modal Container - centered */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              key="modal"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="w-full max-w-lg bg-card rounded-2xl shadow-2xl border border-border flex flex-col max-h-[85vh] pointer-events-auto"
+            >
+              {/* Header */}
+              <div className="relative p-6 pb-4 border-b border-border flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="absolute right-4 top-4 rounded-full h-8 w-8"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center gap-3 pr-10">
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+                    type === 'xmod' ? 'bg-accent/10' : 'bg-muted'
+                  )}>
+                    <details.icon className={cn(
+                      "w-6 h-6",
+                      type === 'xmod' ? 'text-accent' : 'text-foreground'
+                    )} />
+                  </div>
+                  <div>
+                    <Badge 
+                      variant={type === 'xmod' ? 'default' : 'secondary'} 
+                      className="mb-1 text-xs"
+                    >
+                      {details.badge}
+                    </Badge>
+                    <h3 className="text-xl font-semibold text-foreground">{details.learnMore.title}</h3>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto">
-              {details.learnMore.sections.map((section, i) => (
-                <div 
-                  key={i} 
-                  className={cn(
-                    "p-6",
-                    i !== details.learnMore.sections.length - 1 && "border-b border-border"
-                  )}
-                >
-                  <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
-                    {section.heading}
-                  </h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {section.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-            
-            {/* Footer */}
-            <div className="p-4 border-t border-border bg-muted/30">
-              <Button onClick={onClose} className="w-full" size="lg">
-                Got it
-              </Button>
-            </div>
-          </motion.div>
+              
+              {/* Content - scrollable */}
+              <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {details.learnMore.sections.map((section, i) => (
+                  <div 
+                    key={i} 
+                    className={cn(
+                      "p-6",
+                      i !== details.learnMore.sections.length - 1 && "border-b border-border"
+                    )}
+                  >
+                    <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
+                      {section.heading}
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {section.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Footer */}
+              <div className="p-4 border-t border-border bg-muted/30 flex-shrink-0">
+                <Button onClick={onClose} className="w-full" size="lg">
+                  Got it
+                </Button>
+              </div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>
