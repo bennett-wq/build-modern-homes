@@ -1,4 +1,4 @@
-import { test, expect } from '../playwright-fixture';
+import { test, expect } from '@playwright/test';
 
 test.describe('Wizard Mobile Footer Regression', () => {
   test.use({ viewport: { width: 390, height: 844 } }); // iPhone 14 Pro
