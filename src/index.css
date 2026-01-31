@@ -152,6 +152,27 @@
     box-shadow: var(--shadow-elegant);
   }
 
+  /* Premium background patterns */
+  .bg-subtle-grid {
+    background-image: 
+      linear-gradient(to right, hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .bg-gradient-radial {
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--accent) / 0.08), transparent);
+  }
+
+  /* Prose constraints for readable text */
+  .prose-constrain {
+    max-width: 42rem;
+  }
+
+  .prose-constrain-lg {
+    max-width: 48rem;
+  }
+
   /* Premium focus states */
   .focus-ring {
     @apply outline-none ring-2 ring-ring/20 ring-offset-2 ring-offset-background transition-shadow duration-200;

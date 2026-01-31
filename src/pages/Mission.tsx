@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
 import { Layout } from "@/components/layout/Layout";
 import { SEO } from "@/components/SEO";
+import { Section, CalloutCard, Container } from "@/components/marketing";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { brandMessaging } from "@/content/brandMessaging";
 
 export default function Mission() {
@@ -10,102 +13,105 @@ export default function Mission() {
         title={brandMessaging.meta.mission.title} 
         description={brandMessaging.meta.mission.description} 
       />
+      
       {/* Hero Section */}
-      <section className="relative py-24 lg:py-32 bg-secondary">
-        <div className="container mx-auto px-4 lg:px-8">
+      <section className="relative py-20 sm:py-24 lg:py-32 bg-secondary/40">
+        <div className="absolute inset-0 bg-gradient-radial opacity-50" />
+        <Container className="relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <span className="inline-block text-accent font-medium text-sm uppercase tracking-wider mb-4">
+            <Badge 
+              variant="secondary" 
+              className="mb-6 text-xs font-medium tracking-wider uppercase px-3 py-1.5 bg-background"
+            >
               Our Mission
-            </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
+            </Badge>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground leading-[1.05]">
               {brandMessaging.mission.pageTitle}
             </h1>
           </motion.div>
-        </div>
+        </Container>
       </section>
 
       {/* Opening */}
-      <section className="py-20 lg:py-28 bg-background">
-        <div className="container mx-auto px-4 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl mx-auto"
-          >
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed whitespace-pre-line">
-              {brandMessaging.mission.opening}
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <Section>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="prose-constrain-lg mx-auto"
+        >
+          <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed whitespace-pre-line">
+            {brandMessaging.mission.opening}
+          </p>
+        </motion.div>
+      </Section>
 
       {/* Promise */}
-      <section className="py-20 lg:py-28 bg-secondary/50">
-        <div className="container mx-auto px-4 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl mx-auto text-center"
-          >
-            <p className="text-xl md:text-2xl font-medium text-foreground leading-relaxed">
-              {brandMessaging.mission.promise}
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <Section background="muted" spacing="default">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl mx-auto"
+        >
+          <CalloutCard variant="quote">
+            {brandMessaging.mission.promise}
+          </CalloutCard>
+        </motion.div>
+      </Section>
 
       {/* Belief */}
-      <section className="py-20 lg:py-28 bg-background">
-        <div className="container mx-auto px-4 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl mx-auto"
-          >
-            <h2 className="text-2xl font-semibold text-foreground mb-6">
-              What we believe
-            </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              {brandMessaging.mission.belief}
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <Section>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="prose-constrain-lg mx-auto"
+        >
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-6">
+            What we believe
+          </h2>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            {brandMessaging.mission.belief}
+          </p>
+        </motion.div>
+      </Section>
+
+      <Container className="py-0">
+        <Separator className="max-w-2xl mx-auto" />
+      </Container>
 
       {/* Method */}
-      <section className="py-20 lg:py-28 bg-secondary/30">
-        <div className="container mx-auto px-4 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl mx-auto"
-          >
-            <h2 className="text-2xl font-semibold text-foreground mb-6">
-              How we do it
-            </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+      <Section>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="prose-constrain-lg mx-auto"
+        >
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-6">
+            How we do it
+          </h2>
+          <CalloutCard variant="bordered">
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
               {brandMessaging.mission.method}
             </p>
-          </motion.div>
-        </div>
-      </section>
+          </CalloutCard>
+        </motion.div>
+      </Section>
 
       {/* Closing */}
-      <section className="py-24 lg:py-32 bg-primary">
-        <div className="container mx-auto px-4 lg:px-8">
+      <section className="py-20 sm:py-24 lg:py-32 bg-primary">
+        <Container>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -113,11 +119,11 @@ export default function Mission() {
             transition={{ duration: 0.6 }}
             className="max-w-2xl mx-auto text-center"
           >
-            <p className="text-2xl md:text-3xl font-semibold text-primary-foreground">
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-primary-foreground tracking-tight">
               {brandMessaging.mission.closing}
             </p>
           </motion.div>
-        </div>
+        </Container>
       </section>
     </Layout>
   );
