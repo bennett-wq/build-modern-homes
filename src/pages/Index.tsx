@@ -110,7 +110,7 @@ const Index = () => {
 
               <p className="text-sm text-accent font-medium mb-8 max-w-md flex items-center">
                 <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                150+ families. 3 communities. And we're just getting started.
+                78-day builds. All-in pricing. The path to ownership—rebuilt.
               </p>
 
               {/* CTA Row */}
