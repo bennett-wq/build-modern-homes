@@ -1,10 +1,15 @@
 import { motion } from "framer-motion";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { brandMessaging } from "@/content/brandMessaging";
 
 export default function Mission() {
   return (
     <Layout>
+      <SEO 
+        title={brandMessaging.meta.mission.title} 
+        description={brandMessaging.meta.mission.description} 
+      />
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">
