@@ -11,6 +11,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { brandMessaging } from "@/content/brandMessaging";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -111,13 +112,19 @@ export default function Pricing() {
               Transparent Pricing
             </span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
-              Understanding Your Investment
+              {brandMessaging.pricing.headline}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              BaseMod package pricing includes everything you need—home, lot, 
-              site-built components, and site work. No hidden costs, just clear 
-              estimates to help you plan.
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8">
+              {brandMessaging.pricing.subhead}
             </p>
+            <ul className="space-y-3">
+              {brandMessaging.pricing.bullets.map((bullet, index) => (
+                <li key={index} className="flex items-start gap-3 text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
+                  {bullet}
+                </li>
+              ))}
+            </ul>
           </motion.div>
         </div>
       </section>
