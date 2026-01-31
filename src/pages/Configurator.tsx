@@ -31,6 +31,7 @@ import { Step3Design } from '@/components/wizard/Step3Design';
 import { StepSummary } from '@/components/configurator/steps/StepSummary';
 import { WizardFooterSpacer, WizardStickyFooter } from '@/components/wizard/WizardStickyFooter';
 import { getModelBySlug } from '@/data/pricing-config';
+import { brandMessaging } from '@/content/brandMessaging';
 
 const STEPS: Step[] = [
   { id: 1, name: 'Build Intent', shortName: 'Intent' },
@@ -345,7 +346,7 @@ export default function Configurator() {
               </div>
               <div className="text-center flex-1 hidden sm:block">
                 <h1 className="text-lg font-semibold text-foreground">Get Your BaseMod Price</h1>
-                <p className="text-xs text-muted-foreground">Design your home and see a real estimate in minutes.</p>
+                <p className="text-xs text-muted-foreground">{brandMessaging.build.headerSubline}</p>
               </div>
               <div className="w-24" /> {/* Spacer for centering */}
             </div>
