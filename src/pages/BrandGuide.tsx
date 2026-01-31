@@ -61,7 +61,7 @@ const BrandGuide = () => {
 
     // Brand Overview
     addText("Brand Overview", 16, "bold");
-    addText("BaseMod delivers modern modular homes with site-built curb appeal, transparent pricing, and a faster path to closing. Our visual identity reflects premium, architectural quality with a clean, modern aesthetic.", 11, "normal", [80, 80, 80]);
+    addText("Beautiful modular homes with real installed estimates and a clearer path to ownership—designed for real life.", 11, "normal", [80, 80, 80]);
     y += 8;
 
     // Logo Section
@@ -118,12 +118,12 @@ const BrandGuide = () => {
 
     // Key Messages
     addText("Key Brand Messages", 16, "bold");
-    addText("Tagline: 'Design your home. See your installed price. Move faster.'", 11, "bold", [80, 80, 80]);
+    addText("Tagline: 'Make home possible again.'", 11, "bold", [80, 80, 80]);
     y += 4;
     addText("Core Value Props:", 11, "bold", [80, 80, 80]);
-    addText("• Faster by design — Factory-built precision while site work happens in parallel", 10, "normal", [100, 100, 100]);
-    addText("• Neighborhood-friendly — Garages, porches, and rooflines that appraise like site-built", 10, "normal", [100, 100, 100]);
-    addText("• Transparent pricing — Real-time estimates as you design", 10, "normal", [100, 100, 100]);
+    addText("• Truth in pricing — Clear estimates to help you plan, no mystery math", 10, "normal", [100, 100, 100]);
+    addText("• Speed with standards — Faster doesn't mean flimsy. It means organized.", 10, "normal", [100, 100, 100]);
+    addText("• Pride belongs to everyone — Great design shouldn't be reserved for custom-home budgets", 10, "normal", [100, 100, 100]);
     y += 8;
 
     // Timeline
@@ -246,7 +246,7 @@ const BrandGuide = () => {
                 <p className="text-sm text-muted-foreground">System UI / Sans-serif, 600 weight</p>
               </div>
               <div>
-                <p className="text-lg">Body Regular — BaseMod delivers modern modular homes with site-built curb appeal.</p>
+                <p className="text-lg">Body Regular — Beautiful modular homes designed for real life.</p>
                 <p className="text-sm text-muted-foreground mt-1">System UI / Sans-serif, 400 weight</p>
               </div>
             </div>
@@ -258,14 +258,14 @@ const BrandGuide = () => {
             <div className="space-y-4">
               <div>
                 <p className="font-semibold text-lg mb-2">Tagline</p>
-                <p className="text-xl text-muted-foreground">"Design your home. See your installed price. Move faster."</p>
+                <p className="text-xl text-muted-foreground">"Make home possible again."</p>
               </div>
               <div>
                 <p className="font-semibold mb-2">Value Propositions</p>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li>• <strong>Faster by design</strong> — Factory-built precision while site work happens in parallel</li>
-                  <li>• <strong>Neighborhood-friendly</strong> — Garages, porches, and rooflines that appraise like site-built</li>
-                  <li>• <strong>Transparent pricing</strong> — Real-time estimates as you design</li>
+                  <li>• <strong>Truth in pricing</strong> — Clear estimates to help you plan, no mystery math</li>
+                  <li>• <strong>Speed with standards</strong> — Faster doesn't mean flimsy. It means organized.</li>
+                  <li>• <strong>Pride belongs to everyone</strong> — Great design shouldn't be reserved for custom-home budgets</li>
                 </ul>
               </div>
             </div>
