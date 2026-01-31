@@ -2,9 +2,11 @@
 // Buyer-Facing Pricing Display Component
 // Shows retail prices without exposing cost-plus markup data
 // Integrated with BaseMod Financial for monthly payment estimates
+// Enhanced mobile drawer with financing CTAs and integrated navigation
 // ============================================================================
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronDown, 
@@ -20,6 +22,8 @@ import {
   MapPin,
   Calculator,
   Sparkles,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +36,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import {
   Tooltip,
   TooltipContent,
@@ -72,6 +81,15 @@ export interface BuyerPricingDisplayProps {
   showFinancing?: boolean;
   /** Quote ID for pre-qualification flow */
   quoteId?: string;
+  // Mobile navigation integration (steps 4-8)
+  onBack?: () => void;
+  onContinue?: () => void;
+  canContinue?: boolean;
+  backLabel?: string;
+  continueLabel?: string;
+  showNavigation?: boolean;
+  /** Trigger pulse animation on Continue button */
+  pulseOnReady?: string | number | boolean | null;
 }
 
 // ============================================================================
@@ -270,6 +288,14 @@ export function BuyerPricingDisplay({
   onSwitchToInstalled,
   showFinancing = true,
   quoteId,
+  // Mobile navigation props
+  onBack,
+  onContinue,
+  canContinue = true,
+  backLabel = 'Back',
+  continueLabel = 'Continue',
+  showNavigation = false,
+  pulseOnReady,
 }: BuyerPricingDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showFinancingCalculator, setShowFinancingCalculator] = useState(false);
@@ -318,11 +344,20 @@ export function BuyerPricingDisplay({
 
   if (variant === 'mobile') {
     return (
-      <MobilePricingBar 
+      <MobilePricingDrawer 
         breakdown={breakdown} 
         flags={flags}
         onAction={onAction}
         actionLabel={actionLabel}
+        onBack={onBack}
+        onContinue={onContinue}
+        canContinue={canContinue}
+        backLabel={backLabel}
+        continueLabel={continueLabel}
+        showNavigation={showNavigation}
+        pulseOnReady={pulseOnReady}
+        showFinancing={showFinancing}
+        quoteId={quoteId}
       />
     );
   }
@@ -679,64 +714,347 @@ function CompactPricingCard({
 }
 
 /**
- * Mobile fixed bottom bar variant
+ * Enhanced Mobile Pricing Drawer with financing CTAs and navigation
+ * Uses vaul Drawer for smooth bottom sheet UX
  */
-function MobilePricingBar({
+function MobilePricingDrawer({
   breakdown,
   flags,
   onAction,
   actionLabel,
+  onBack,
+  onContinue,
+  canContinue = true,
+  backLabel = 'Back',
+  continueLabel = 'Continue',
+  showNavigation = false,
+  pulseOnReady,
+  showFinancing = true,
+  quoteId,
 }: {
   breakdown: BuyerFacingBreakdown;
   flags: BuyerPricingFlags;
   onAction?: () => void;
   actionLabel?: string;
+  onBack?: () => void;
+  onContinue?: () => void;
+  canContinue?: boolean;
+  backLabel?: string;
+  continueLabel?: string;
+  showNavigation?: boolean;
+  pulseOnReady?: string | number | boolean | null;
+  showFinancing?: boolean;
+  quoteId?: string;
 }) {
-  return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 shadow-lg z-50">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Starting from</span>
-            <PreliminaryBadge />
+  const [isOpen, setIsOpen] = useState(false);
+  const [showFinancingCalculator, setShowFinancingCalculator] = useState(false);
+  const [showPreQualFlow, setShowPreQualFlow] = useState(false);
+  const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(false);
+
+  // Pulse animation effect for Continue button
+  useState(() => {
+    if (pulseOnReady !== null && pulseOnReady !== undefined && canContinue) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => setIsPulsing(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  });
+
+  const drawerContent = (
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      {/* Collapsed Trigger Bar - Always visible */}
+      <DrawerTrigger asChild>
+        <button className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.12)] pb-[env(safe-area-inset-bottom)]">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              {/* Left side: Price info */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-xs text-muted-foreground">
+                    {getPricingModeHeadline(flags.pricingMode)}
+                  </span>
+                  <PreliminaryBadge />
+                </div>
+                {flags.hasPricing ? (
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={breakdown.startingFromPrice}
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-lg font-semibold text-foreground"
+                    >
+                      {formatPrice(breakdown.startingFromPrice)}
+                    </motion.p>
+                  </AnimatePresence>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Select a model</p>
+                )}
+              </div>
+
+              {/* Center: Monthly payment estimate */}
+              {flags.hasPricing && showFinancing && (
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Est. monthly</p>
+                    <MonthlyPaymentBadge 
+                      purchasePrice={breakdown.startingFromPrice} 
+                      variant="compact"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Right side: Expand indicator */}
+              <div className="flex items-center gap-2 ml-3">
+                <ChevronUp className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </div>
+
+            {/* Warning flags inline */}
+            {flags.freightPending && (
+              <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" />
+                Freight TBD
+              </p>
+            )}
           </div>
-          {flags.hasPricing ? (
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={breakdown.startingFromPrice}
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 5 }}
-                transition={{ duration: 0.15 }}
-                className="text-xl font-semibold text-foreground"
-              >
-                {formatPrice(breakdown.startingFromPrice)}
-              </motion.p>
-            </AnimatePresence>
-          ) : (
-            <p className="text-sm text-muted-foreground">Select a model</p>
-          )}
-          {flags.freightPending && (
-            <span className="text-xs text-amber-600 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              Freight TBD
-            </span>
-          )}
+        </button>
+      </DrawerTrigger>
+
+      {/* Expanded Drawer Content */}
+      <DrawerContent className="max-h-[85vh] pb-[env(safe-area-inset-bottom)]">
+        <div className="overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="px-5 py-4 space-y-5">
+            {/* Header Price Section */}
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <span className="text-sm text-muted-foreground">
+                  {getPricingModeHeadline(flags.pricingMode)}
+                </span>
+                <PreliminaryBadge />
+              </div>
+              {flags.hasPricing && (
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={breakdown.startingFromPrice}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-3xl font-semibold text-foreground"
+                  >
+                    {formatPrice(breakdown.startingFromPrice)}
+                  </motion.p>
+                </AnimatePresence>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                {getPricingModeDisplayLabel(flags.pricingMode)}
+              </p>
+            </div>
+
+            {/* BaseMod Financial Section */}
+            {flags.hasPricing && showFinancing && (
+              <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/20 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="font-medium text-foreground text-sm">BaseMod Financial</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">6.875% APR</span>
+                </div>
+                
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Est. Monthly Payment</p>
+                    <MonthlyPaymentBadge 
+                      purchasePrice={breakdown.startingFromPrice} 
+                      variant="default"
+                    />
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground">
+                          <Info className="w-4 h-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs max-w-48">
+                          Estimated payment based on 30-year term, 20% down, 6.875% APR. 
+                          Includes taxes & insurance estimates.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      setIsOpen(false);
+                      setShowFinancingCalculator(true);
+                    }}
+                  >
+                    <Calculator className="w-4 h-4 mr-1.5" />
+                    Explore Payments
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    onClick={() => {
+                      setIsOpen(false);
+                      setShowPreQualFlow(true);
+                    }}
+                  >
+                    <Shield className="w-4 h-4 mr-1.5" />
+                    Get Pre-Qualified
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Collapsible Price Breakdown */}
+            {flags.hasPricing && (
+              <Collapsible open={isBreakdownExpanded} onOpenChange={setIsBreakdownExpanded}>
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center justify-between py-3 text-sm text-muted-foreground hover:text-foreground transition-colors border-t border-border">
+                    <span>View price breakdown</span>
+                    {isBreakdownExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-3 pb-3">
+                    {/* Lot Premium */}
+                    {breakdown.lotPremium > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {breakdown.lotNumber ? `Lot ${breakdown.lotNumber}` : 'Lot Premium'}
+                        </span>
+                        <span className="font-medium">{formatPrice(breakdown.lotPremium)}</span>
+                      </div>
+                    )}
+                    
+                    {/* Home Package */}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{breakdown.labels.homePackage}</span>
+                      <span className="font-medium">{formatPrice(breakdown.homePackagePrice)}</span>
+                    </div>
+                    
+                    {/* Install Package */}
+                    {breakdown.installPackagePrice > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{breakdown.labels.installPackage}</span>
+                        <span className="font-medium">{formatPrice(breakdown.installPackagePrice)}</span>
+                      </div>
+                    )}
+                    
+                    {/* Options */}
+                    {breakdown.optionDetails.length > 0 && (
+                      <div className="pt-2 border-t border-border space-y-1">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Add-ons</p>
+                        {breakdown.optionDetails.map((opt, i) => (
+                          <div key={i} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground truncate mr-2">{opt.name}</span>
+                            <span className="flex-shrink-0">+{formatPrice(opt.price)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* What's Included */}
+            <div className="border-t border-border pt-3">
+              <WhatsIncludedModal />
+            </div>
+
+            {/* Disclaimers */}
+            <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
+              <p>Estimates exclude land unless selected.</p>
+              <p>Final pricing confirmed via formal written quote.</p>
+            </div>
+          </div>
         </div>
-        
-        {onAction && actionLabel && (
-          <Button onClick={onAction} size="sm">
-            {actionLabel}
-          </Button>
+
+        {/* Navigation Footer inside drawer */}
+        {showNavigation && onContinue && (
+          <div className="border-t border-border px-5 py-4 bg-card">
+            <div className="flex items-center justify-between gap-3">
+              {onBack ? (
+                <Button variant="outline" onClick={() => { setIsOpen(false); onBack(); }}>
+                  <ArrowLeft className="w-4 h-4 mr-1.5" />
+                  {backLabel}
+                </Button>
+              ) : (
+                <div />
+              )}
+              <Button
+                onClick={() => { setIsOpen(false); onContinue(); }}
+                disabled={!canContinue}
+                size="lg"
+                className={`min-w-[140px] ${isPulsing ? 'animate-[pulse-attention_0.6s_ease-in-out_2]' : ''}`}
+              >
+                {continueLabel}
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </div>
+          </div>
         )}
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
+  );
+
+  return (
+    <>
+      {createPortal(drawerContent, document.body)}
+      
+      {/* Financing Calculator Modal */}
+      <Dialog open={showFinancingCalculator} onOpenChange={setShowFinancingCalculator}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-primary" />
+              Payment Calculator
+            </DialogTitle>
+            <DialogDescription>
+              Estimate your monthly payment with different down payment amounts and terms.
+            </DialogDescription>
+          </DialogHeader>
+          <FinancingCalculator 
+            purchasePrice={breakdown.startingFromPrice}
+            onGetPreQualified={() => {
+              setShowFinancingCalculator(false);
+              setShowPreQualFlow(true);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Pre-Qualification Flow */}
+      <PreQualificationFlow 
+        open={showPreQualFlow}
+        onOpenChange={setShowPreQualFlow}
+        purchasePrice={breakdown.startingFromPrice}
+        quoteId={quoteId}
+        onComplete={() => setShowPreQualFlow(false)}
+      />
+    </>
   );
 }
+
+// Legacy alias for backwards compatibility
+const MobilePricingBar = MobilePricingDrawer;
 
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
 export default BuyerPricingDisplay;
-export { CompactPricingCard, MobilePricingBar, WhatsIncludedModal, PreliminaryBadge };
+export { CompactPricingCard, MobilePricingBar, MobilePricingDrawer, WhatsIncludedModal, PreliminaryBadge };

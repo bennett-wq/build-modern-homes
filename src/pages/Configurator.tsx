@@ -555,14 +555,15 @@ export default function Configurator() {
           )}
         </main>
         
-        {/* Mobile Pricing Bar - Only show on steps 4+ */}
-        {/* Step 4 forces supply_only display for MOD/XMOD comparison */}
+        {/* Mobile Pricing Drawer - Only show on steps 4+ */}
+        {/* Enhanced with financing CTAs and integrated navigation */}
         {isMobile && showPricingRail && (
           <BuyerPricingDisplay
             breakdown={displayPricing.breakdown}
             flags={pricingFlags}
             variant="mobile"
             showPlaceholder={false}
+            showFinancing={true}
             onSwitchToInstalled={
               // Same logic as desktop: no upsell on Step 4, only on Step 5+ if supply_only selected
               isStep4 
@@ -570,6 +571,25 @@ export default function Configurator() {
                 : (servicePackage === 'supply_only' 
                     ? () => setServicePackage('delivered_installed')
                     : undefined)
+            }
+            // Navigation integration for mobile
+            showNavigation={true}
+            onBack={prevStep}
+            onContinue={nextStep}
+            canContinue={
+              currentStep === 4 ? !!buildType :
+              currentStep === 5 ? !!servicePackage :
+              currentStep === 6 ? true : // Floor plan options are optional
+              currentStep === 7 ? !!exteriorPackageId :
+              true // Step 8 (summary) - always can proceed
+            }
+            backLabel="Back"
+            continueLabel={currentStep === 8 ? "Get Quote" : "Continue"}
+            pulseOnReady={
+              currentStep === 4 ? buildType :
+              currentStep === 5 ? servicePackage :
+              currentStep === 7 ? exteriorPackageId :
+              null
             }
           />
         )}
