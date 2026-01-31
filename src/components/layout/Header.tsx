@@ -10,6 +10,7 @@ import { hasInProgressBuild, getLatestQuoteId } from "@/hooks/useConfiguratorSta
 const navItems = [
   { label: "Homes", href: "/models" },
   { label: "Communities", href: "/communities" },
+  { label: "Our Mission", href: "/mission" },
   { label: "How It Works", href: "/how-it-works" },
 ];
 

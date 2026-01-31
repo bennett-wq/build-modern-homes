@@ -345,7 +345,7 @@ export default function Configurator() {
               </div>
               <div className="text-center flex-1 hidden sm:block">
                 <h1 className="text-lg font-semibold text-foreground">Get Your BaseMod Price</h1>
-                <p className="text-xs text-muted-foreground">Design your home and see a real estimate in minutes.</p>
+                <p className="text-xs text-muted-foreground">Configure your home. See your real price. Take the first step toward something that's actually yours.</p>
               </div>
               <div className="w-24" /> {/* Spacer for centering */}
             </div>
