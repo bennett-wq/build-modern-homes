@@ -20,6 +20,7 @@ import type { BuildIntent } from '@/data/pricing-config';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import { UnifiedMobileFooter, UnifiedMobileFooterSpacer } from '@/components/wizard/UnifiedMobileFooter';
 import { ResumePrompt } from '@/components/configurator/ResumePrompt';
 import { StepIntent } from '@/components/configurator/steps/StepIntent';
 import { StepLocation } from '@/components/configurator/steps/StepLocation';
@@ -370,7 +371,9 @@ export default function Configurator() {
             // Two-column layout for steps 4+
             <div className={isMobile ? '' : 'grid lg:grid-cols-[1fr_360px] gap-8'}>
               {/* Step Content */}
-              <div className={isMobile ? 'pb-24' : ''}>
+              <div className={isMobile ? '' : ''}>
+                {/* Mobile: Spacer for UnifiedMobileFooter */}
+                {isMobile && <UnifiedMobileFooterSpacer showPricing={true} showFinancingCTA={true} className="order-last" />}
                 
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -555,25 +558,14 @@ export default function Configurator() {
           )}
         </main>
         
-        {/* Mobile Pricing Drawer - Only show on steps 4+ */}
-        {/* Enhanced with financing CTAs and integrated navigation */}
-        {isMobile && showPricingRail && (
-          <BuyerPricingDisplay
+        {/* Mobile Footer - Always-visible CTAs for steps 4+ */}
+        {/* Uses UnifiedMobileFooter for Tier-1 mobile UX */}
+        {isMobile && showPricingRail && currentStep !== 8 && (
+          <UnifiedMobileFooter
             breakdown={displayPricing.breakdown}
             flags={pricingFlags}
-            variant="mobile"
-            showPlaceholder={false}
-            showFinancing={true}
-            onSwitchToInstalled={
-              // Same logic as desktop: no upsell on Step 4, only on Step 5+ if supply_only selected
-              isStep4 
-                ? undefined 
-                : (servicePackage === 'supply_only' 
-                    ? () => setServicePackage('delivered_installed')
-                    : undefined)
-            }
-            // Navigation integration for mobile
-            showNavigation={true}
+            showPricing={true}
+            showFinancingCTA={true}
             onBack={prevStep}
             onContinue={nextStep}
             canContinue={
@@ -581,10 +573,10 @@ export default function Configurator() {
               currentStep === 5 ? !!servicePackage :
               currentStep === 6 ? true : // Floor plan options are optional
               currentStep === 7 ? !!exteriorPackageId :
-              true // Step 8 (summary) - always can proceed
+              true
             }
             backLabel="Back"
-            continueLabel={currentStep === 8 ? "Get Quote" : "Continue"}
+            continueLabel="Continue"
             pulseOnReady={
               currentStep === 4 ? buildType :
               currentStep === 5 ? servicePackage :
