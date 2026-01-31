@@ -69,8 +69,6 @@ interface Step3DesignProps {
   developmentSlug?: string;
   lotId?: number | null;
   modelSlug?: string | null;
-  /** Hide built-in navigation (when parent handles it, e.g., mobile with UnifiedMobileFooter) */
-  hideNavigation?: boolean;
 }
 
 export function Step3Design({
@@ -84,7 +82,6 @@ export function Step3Design({
   developmentSlug,
   lotId,
   modelSlug,
-  hideNavigation = false,
 }: Step3DesignProps) {
   const normalizedModel = normalizeModelSlug(modelSlug);
   const usePhotoPreview = isPhotoBasedModel(modelSlug);
@@ -414,60 +411,58 @@ export function Step3Design({
       </div>
 
       {/* Sticky Footer */}
-      {!hideNavigation && (
-        <WizardStickyFooter
-          onBack={onBack}
-          onContinue={onNext}
-          canContinue={!!canProceed}
-          continueLabel="Review Your Build"
-          pulseOnReady={`${selectedPackageId}-${selectedGarageDoorId}`}
-        >
-          {/* Selection summary */}
-          {(selectedPackage || selectedDoor) && (
-            <div className="flex items-center gap-3">
-              {selectedPackage && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                  <div 
-                    className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                    style={{ 
-                      backgroundColor: 'swatches' in selectedPackage 
-                        ? selectedPackage.swatches[0] 
-                        : 'primaryColor' in selectedPackage 
-                          ? selectedPackage.primaryColor 
-                          : selectedPackage.sidingColor 
-                    }}
-                  />
-                  <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
-                    {selectedPackage.name}
-                  </span>
-                </div>
-              )}
-              {selectedDoor && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                  <div 
-                    className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                    style={{ 
-                      backgroundColor: 'color' in selectedDoor 
-                        ? selectedDoor.color 
-                        : 'swatches' in selectedDoor && selectedDoor.swatches 
-                          ? selectedDoor.swatches[0] 
-                          : '#666666'
-                    }}
-                  />
-                  <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
-                    {selectedDoor.name}
-                  </span>
-                  {'isUpgrade' in selectedDoor && selectedDoor.isUpgrade && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                      Upgrade
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </WizardStickyFooter>
-      )}
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={onNext}
+        canContinue={!!canProceed}
+        continueLabel="Review Your Build"
+        pulseOnReady={`${selectedPackageId}-${selectedGarageDoorId}`}
+      >
+        {/* Selection summary */}
+        {(selectedPackage || selectedDoor) && (
+          <div className="flex items-center gap-3">
+            {selectedPackage && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                <div 
+                  className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                  style={{ 
+                    backgroundColor: 'swatches' in selectedPackage 
+                      ? selectedPackage.swatches[0] 
+                      : 'primaryColor' in selectedPackage 
+                        ? selectedPackage.primaryColor 
+                        : selectedPackage.sidingColor 
+                  }}
+                />
+                <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                  {selectedPackage.name}
+                </span>
+              </div>
+            )}
+            {selectedDoor && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                <div 
+                  className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                  style={{ 
+                    backgroundColor: 'color' in selectedDoor 
+                      ? selectedDoor.color 
+                      : 'swatches' in selectedDoor && selectedDoor.swatches 
+                        ? selectedDoor.swatches[0] 
+                        : '#666666'
+                  }}
+                />
+                <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                  {selectedDoor.name}
+                </span>
+                {'isUpgrade' in selectedDoor && selectedDoor.isUpgrade && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    Upgrade
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </WizardStickyFooter>
 
       {/* Financing Modal */}
       <FinancingModal
@@ -721,10 +716,10 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col items-center justify-center"
+      className="w-full h-full flex flex-col"
     >
-      {/* Full-bleed hero container with explicit aspect ratio */}
-      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
+      {/* Full-bleed hero container */}
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Image fills the container */}
         <img
           src={displayedSrc}
@@ -831,9 +826,9 @@ function AspenPhotoPreview({ packageId }: AspenPhotoPreviewProps) {
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col items-center justify-center"
+      className="w-full h-full flex flex-col"
     >
-      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
@@ -1353,9 +1348,9 @@ function BelmontPhotoPreview({ packageId }: BelmontPhotoPreviewProps) {
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col items-center justify-center"
+      className="w-full h-full flex flex-col"
     >
-      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
@@ -1555,9 +1550,9 @@ function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewPro
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col items-center justify-center"
+      className="w-full h-full flex flex-col"
     >
-      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img

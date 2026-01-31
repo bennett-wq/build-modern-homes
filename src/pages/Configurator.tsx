@@ -20,7 +20,6 @@ import type { BuildIntent } from '@/data/pricing-config';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
-import { UnifiedMobileFooter, UnifiedMobileFooterSpacer } from '@/components/wizard/UnifiedMobileFooter';
 import { ResumePrompt } from '@/components/configurator/ResumePrompt';
 import { StepIntent } from '@/components/configurator/steps/StepIntent';
 import { StepLocation } from '@/components/configurator/steps/StepLocation';
@@ -32,7 +31,6 @@ import { Step3Design } from '@/components/wizard/Step3Design';
 import { StepSummary } from '@/components/configurator/steps/StepSummary';
 import { WizardFooterSpacer, WizardStickyFooter } from '@/components/wizard/WizardStickyFooter';
 import { getModelBySlug } from '@/data/pricing-config';
-import { brandMessaging } from '@/content/brandMessaging';
 
 const STEPS: Step[] = [
   { id: 1, name: 'Build Intent', shortName: 'Intent' },
@@ -331,32 +329,38 @@ export default function Configurator() {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2" asChild>
+                <Button variant="ghost" size="sm" asChild>
                   <Link to="/">
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Exit
                   </Link>
                 </Button>
-                <Link to="/" className="hidden sm:flex items-center gap-2">
+                <Link to="/" className="flex items-center gap-2">
                   <Home className="w-5 h-5 text-accent" />
                   <span className="font-semibold text-foreground">BaseMod</span>
                 </Link>
               </div>
-              <div className="text-center flex-1 px-4">
-                <h1 className="text-base sm:text-xl font-semibold text-foreground tracking-tight">Get Your BaseMod Price</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto hidden sm:block">{brandMessaging.build.headerSubline}</p>
+              <div className="text-center flex-1 hidden sm:block">
+                <h1 className="text-lg font-semibold text-foreground">Get Your BaseMod Price</h1>
+                <p className="text-xs text-muted-foreground">Design your home and see a real estimate in minutes.</p>
               </div>
-              <div className="w-16 sm:w-24" /> {/* Spacer for centering */}
+              <div className="w-24" /> {/* Spacer for centering */}
             </div>
             
-            <StepIndicator
-              steps={STEPS}
-              currentStep={currentStep}
-              onStepClick={goToStep}
-            />
+            <div className="space-y-2">
+              <StepIndicator
+                steps={STEPS}
+                currentStep={currentStep}
+                onStepClick={goToStep}
+              />
+              {/* Step progress text */}
+              <p className="text-center text-xs text-muted-foreground/70">
+                Step {currentStep} of {STEPS.length}
+              </p>
+            </div>
           </div>
         </header>
         
@@ -371,9 +375,7 @@ export default function Configurator() {
             // Two-column layout for steps 4+
             <div className={isMobile ? '' : 'grid lg:grid-cols-[1fr_360px] gap-8'}>
               {/* Step Content */}
-              <div className={isMobile ? '' : ''}>
-                {/* Mobile: Spacer for UnifiedMobileFooter */}
-                {isMobile && <UnifiedMobileFooterSpacer showPricing={true} showFinancingCTA={true} className="order-last" />}
+              <div className={isMobile ? 'pb-24' : ''}>
                 
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -558,30 +560,21 @@ export default function Configurator() {
           )}
         </main>
         
-        {/* Mobile Footer - Always-visible CTAs for steps 4+ */}
-        {/* Uses UnifiedMobileFooter for Tier-1 mobile UX */}
-        {isMobile && showPricingRail && currentStep !== 8 && (
-          <UnifiedMobileFooter
+        {/* Mobile Pricing Bar - Only show on steps 4+ */}
+        {/* Step 4 forces supply_only display for MOD/XMOD comparison */}
+        {isMobile && showPricingRail && (
+          <BuyerPricingDisplay
             breakdown={displayPricing.breakdown}
             flags={pricingFlags}
-            showPricing={true}
-            showFinancingCTA={true}
-            onBack={prevStep}
-            onContinue={nextStep}
-            canContinue={
-              currentStep === 4 ? !!buildType :
-              currentStep === 5 ? !!servicePackage :
-              currentStep === 6 ? true : // Floor plan options are optional
-              currentStep === 7 ? !!exteriorPackageId :
-              true
-            }
-            backLabel="Back"
-            continueLabel="Continue"
-            pulseOnReady={
-              currentStep === 4 ? buildType :
-              currentStep === 5 ? servicePackage :
-              currentStep === 7 ? exteriorPackageId :
-              null
+            variant="mobile"
+            showPlaceholder={false}
+            onSwitchToInstalled={
+              // Same logic as desktop: no upsell on Step 4, only on Step 5+ if supply_only selected
+              isStep4 
+                ? undefined 
+                : (servicePackage === 'supply_only' 
+                    ? () => setServicePackage('delivered_installed')
+                    : undefined)
             }
           />
         )}

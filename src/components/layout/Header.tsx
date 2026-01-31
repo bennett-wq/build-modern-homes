@@ -40,8 +40,8 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-[72px]">
+      <div className="container mx-auto px-4 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <span className="text-xl lg:text-2xl font-semibold tracking-tight text-foreground">
@@ -50,7 +50,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-10">
+          <nav className="hidden lg:flex items-center gap-8">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -91,11 +91,7 @@ export function Header() {
 
           {/* Primary CTA - Get a Quote */}
           <div className="hidden lg:block">
-            <Button 
-              onClick={handleGetQuote} 
-              size="lg"
-              className="h-11 px-6 text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all"
-            >
+            <Button onClick={handleGetQuote} size="lg">
               Get a Quote
             </Button>
           </div>
@@ -121,14 +117,14 @@ export function Header() {
             transition={{ duration: 0.3 }}
             className="lg:hidden bg-background border-b border-border"
           >
-            <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col gap-2">
+            <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   to={item.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "py-3 px-4 text-base font-medium transition-colors rounded-lg",
+                    "py-3 px-4 text-base font-medium transition-colors rounded-md",
                     location.pathname === item.href
                       ? "bg-secondary text-foreground"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -143,7 +139,7 @@ export function Header() {
                 <Link
                   to="/build"
                   onClick={() => setIsOpen(false)}
-                  className="py-3 px-4 text-base font-medium text-accent hover:bg-accent/10 rounded-lg flex items-center gap-2"
+                  className="py-3 px-4 text-base font-medium text-accent hover:bg-accent/10 rounded-md flex items-center gap-2"
                 >
                   <RotateCcw className="h-4 w-4" />
                   Resume Quote
@@ -155,19 +151,15 @@ export function Header() {
                 <Link
                   to={`/quote/${latestQuoteId}`}
                   onClick={() => setIsOpen(false)}
-                  className="py-3 px-4 text-base font-medium text-muted-foreground hover:bg-secondary hover:text-foreground rounded-lg flex items-center gap-2"
+                  className="py-3 px-4 text-base font-medium text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
                   View Saved Quote
                 </Link>
               )}
               
-              <div className="pt-3 mt-2 border-t border-border">
-                <Button 
-                  onClick={handleGetQuote} 
-                  className="w-full h-12 text-base font-medium rounded-lg" 
-                  size="lg"
-                >
+              <div className="pt-2 mt-2 border-t border-border">
+                <Button onClick={handleGetQuote} className="w-full" size="lg">
                   Get a Quote
                 </Button>
               </div>

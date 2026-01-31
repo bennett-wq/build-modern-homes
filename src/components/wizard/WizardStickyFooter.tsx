@@ -87,8 +87,6 @@ export function WizardStickyFooter({
         // Subtle shadow and backdrop blur for depth
         'bg-card/95 backdrop-blur-md border-t border-border',
         'shadow-[0_-4px_20px_rgba(0,0,0,0.08)]',
-        // Safe area padding for devices with home indicators
-        'pb-[env(safe-area-inset-bottom)]',
         className
       )}
     >

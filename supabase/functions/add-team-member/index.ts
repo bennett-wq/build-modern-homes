@@ -7,42 +7,26 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { Resend } from 'resend'
 
-// CORS
-// NOTE: This function authenticates/authorizes via the Authorization header and role checks.
-// We keep CORS permissive to avoid brittle allowlists across multiple domains (www/non-www,
-// preview environments, etc.).
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Allowed origins for CORS - restrict to trusted domains
+const allowedOrigins = [
+  'https://build-modern-homes.lovable.app',
+  'https://id-preview--b6311393-fa2b-46a4-a734-59db659ebfc9.lovable.app',
+  'https://b6311393-fa2b-46a4-a734-59db659ebfc9.lovableproject.com',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 // Email validation regex (RFC 5321 compliant)
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 254;
-
-// Find an auth user by email.
-// Note: listUsers is paginated; we must iterate or we can miss existing users.
-async function findAuthUserByEmail(adminClient: any, email: string) {
-  const normalized = email.trim().toLowerCase();
-  const perPage = 200;
-  const maxPages = 25; // safety bound
-
-  for (let page = 1; page <= maxPages; page++) {
-    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
-    if (error) return { user: null as any, error };
-
-    const users = data?.users ?? [];
-    const found = users.find((u: any) => (u.email || '').toLowerCase() === normalized);
-    if (found) return { user: found, error: null };
-
-    // No more pages
-    if (users.length < perPage) break;
-  }
-
-  return { user: null as any, error: null };
-}
 
 // Generate welcome email HTML
 function generateWelcomeEmail(role: string, loginUrl: string): string {
@@ -118,6 +102,8 @@ function generateWelcomeEmail(role: string, loginUrl: string): string {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -208,8 +194,9 @@ Deno.serve(async (req) => {
 
     console.log(`Admin ${callerUser.email} adding ${trimmedEmail} as ${role}`)
 
-    // Look up the user by email using admin client (paginated)
-    const { user: targetUser, error: lookupError } = await findAuthUserByEmail(adminClient, trimmedEmail)
+    // Look up the user by email using admin client
+    const { data: { users }, error: lookupError } = await adminClient.auth.admin.listUsers()
+    
     if (lookupError) {
       console.error('User lookup error:', lookupError)
       return new Response(
@@ -217,6 +204,8 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    const targetUser = users.find(u => u.email?.toLowerCase() === trimmedEmail.toLowerCase())
 
     if (!targetUser) {
       return new Response(
@@ -322,6 +311,7 @@ Deno.serve(async (req) => {
     )
 
   } catch (err) {
+    const corsHeaders = getCorsHeaders(req);
     console.error('Unexpected error:', err)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),

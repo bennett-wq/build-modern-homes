@@ -10,7 +10,6 @@ export interface Step {
   id: number;
   name: string;
   shortName: string;
-  icon?: React.ComponentType<{ className?: string }>;
 }
 
 interface StepIndicatorProps {
@@ -113,14 +112,22 @@ export function StepIndicator({
         })}
       </ol>
       
-      {/* Mobile - Progress bars only (step text shown in parent) */}
+      {/* Mobile */}
       <div className="md:hidden">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-foreground">
+            Step {currentStep} of {steps.length}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {steps.find(s => s.id === currentStep)?.name}
+          </span>
+        </div>
         <div className="flex gap-1">
           {steps.map((step) => (
             <div
               key={step.id}
               className={cn(
-                'h-1.5 flex-1 rounded-full transition-colors duration-200',
+                'h-1 flex-1 rounded-full transition-colors duration-200',
                 step.id <= currentStep ? 'bg-accent' : 'bg-border',
               )}
             />

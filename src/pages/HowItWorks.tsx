@@ -74,8 +74,8 @@ const benefits = [
     description: "Controlled environment ensures precision and minimizes weather delays.",
   },
   {
-    title: "Honest Pricing",
-    description: "Clear installed estimates so you can plan confidently and avoid surprises.",
+    title: "Transparent Pricing",
+    description: "Know your costs upfront with itemized, buyer-facing quotes.",
   },
   {
     title: "Modern Designs",

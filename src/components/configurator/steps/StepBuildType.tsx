@@ -30,8 +30,6 @@ interface StepBuildTypeProps {
   onSelectBuildType: (type: BuildType) => void;
   onNext: () => void;
   onBack: () => void;
-  /** Hide built-in navigation (when parent handles it, e.g., mobile with UnifiedMobileFooter) */
-  hideNavigation?: boolean;
 }
 
 interface BuildTypeDetail {
@@ -72,6 +70,7 @@ const buildTypeDetails: Record<BuildType, BuildTypeDetail> = {
     ],
     features: [
       { text: 'HUD + CrossMod certified', tooltip: 'Meets federal HUD standards plus additional CrossMod architectural requirements.' },
+      { text: 'Drywall throughout', tooltip: 'Full drywall interior finish standard, matching site-built home quality.' },
       { text: 'Architectural roof pitch', tooltip: 'Higher roof pitch (typically 5:12 or greater) creates traditional home aesthetics.' },
       { text: 'Covered entry porch', tooltip: 'Factory-integrated covered porch adds curb appeal and weather protection.' },
     ],
@@ -136,7 +135,6 @@ export function StepBuildType({
   onSelectBuildType,
   onNext,
   onBack,
-  hideNavigation = false,
 }: StepBuildTypeProps) {
   const [expandedInfo, setExpandedInfo] = useState<BuildType | null>(null);
   const isFirstRender = useRef(true);
@@ -233,20 +231,18 @@ export function StepBuildType({
         </motion.div>
 
         <WizardFooterSpacer />
-        {!hideNavigation && (
-          <WizardStickyFooter
-            onBack={onBack}
-            onContinue={handleContinue}
-            canContinue={true}
-            continueLabel="Continue"
-            pulseOnReady={effectiveSelection ?? undefined}
-          >
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-accent" />
-              <span className="truncate">{details.title}</span>
-            </div>
-          </WizardStickyFooter>
-        )}
+        <WizardStickyFooter
+          onBack={onBack}
+          onContinue={handleContinue}
+          canContinue={true}
+          continueLabel="Continue"
+          pulseOnReady={effectiveSelection ?? undefined}
+        >
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Check className="w-4 h-4 text-accent" />
+            <span className="truncate">{details.title}</span>
+          </div>
+        </WizardStickyFooter>
         
         {/* Learn More Modal */}
         <LearnMoreModal
@@ -382,10 +378,10 @@ export function StepBuildType({
                       <span className="text-sm text-muted-foreground">{feature.text}</span>
                     </div>
                   ))}
-                  {type === 'mod' && (
+                  {type === 'mod' && has9ftWalls && (
                     <div className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-                      <span className="text-sm text-foreground font-medium">9' walls available</span>
+                      <span className="text-sm text-foreground font-medium">9' ceilings available</span>
                     </div>
                   )}
                   {type === 'xmod' && (
@@ -437,24 +433,22 @@ export function StepBuildType({
       </motion.div>
       
       <WizardFooterSpacer />
-      {!hideNavigation && (
-        <WizardStickyFooter
-          onBack={onBack}
-          onContinue={onNext}
-          canContinue={!!selectedBuildType}
-          continueLabel="Continue"
-          pulseOnReady={selectedBuildType}
-        >
-          {selectedBuildType ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-accent" />
-              <span className="truncate">{buildTypeDetails[selectedBuildType].title}</span>
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">Select a build type to continue</span>
-          )}
-        </WizardStickyFooter>
-      )}
+      <WizardStickyFooter
+        onBack={onBack}
+        onContinue={onNext}
+        canContinue={!!selectedBuildType}
+        continueLabel="Continue"
+        pulseOnReady={selectedBuildType}
+      >
+        {selectedBuildType ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Check className="w-4 h-4 text-accent" />
+            <span className="truncate">{buildTypeDetails[selectedBuildType].title}</span>
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">Select a build type to continue</span>
+        )}
+      </WizardStickyFooter>
       
       {/* Learn More Modal */}
       <LearnMoreModal
@@ -473,15 +467,16 @@ function LearnMoreModal({
   type: BuildType | null; 
   onClose: () => void;
 }) {
-  const details = type ? buildTypeDetails[type] : null;
+  if (!type) return null;
+  
+  const details = buildTypeDetails[type];
   
   return (
     <AnimatePresence>
-      {type && details && (
+      {type && (
         <>
           {/* Backdrop */}
           <motion.div
-            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -489,76 +484,73 @@ function LearnMoreModal({
             className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
           />
           
-          {/* Modal Container - centered */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-            <motion.div
-              key="modal"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', duration: 0.4 }}
-              className="w-full max-w-lg bg-card rounded-2xl shadow-2xl border border-border flex flex-col max-h-[85vh] pointer-events-auto"
-            >
-              {/* Header */}
-              <div className="relative p-6 pb-4 border-b border-border flex-shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="absolute right-4 top-4 rounded-full h-8 w-8"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-                <div className="flex items-center gap-3 pr-10">
-                  <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
-                    type === 'xmod' ? 'bg-accent/10' : 'bg-muted'
-                  )}>
-                    <details.icon className={cn(
-                      "w-6 h-6",
-                      type === 'xmod' ? 'text-accent' : 'text-foreground'
-                    )} />
-                  </div>
-                  <div>
-                    <Badge 
-                      variant={type === 'xmod' ? 'default' : 'secondary'} 
-                      className="mb-1 text-xs"
-                    >
-                      {details.badge}
-                    </Badge>
-                    <h3 className="text-xl font-semibold text-foreground">{details.learnMore.title}</h3>
-                  </div>
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', duration: 0.4 }}
+            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-lg md:w-full bg-card rounded-2xl shadow-2xl border border-border z-50 flex flex-col max-h-[85vh]"
+          >
+            {/* Header */}
+            <div className="relative p-6 pb-4 border-b border-border">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="absolute right-4 top-4 rounded-full h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              <div className="flex items-center gap-3 pr-10">
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  type === 'xmod' ? 'bg-accent/10' : 'bg-muted'
+                )}>
+                  <details.icon className={cn(
+                    "w-6 h-6",
+                    type === 'xmod' ? 'text-accent' : 'text-foreground'
+                  )} />
+                </div>
+                <div>
+                  <Badge 
+                    variant={type === 'xmod' ? 'default' : 'secondary'} 
+                    className="mb-1 text-xs"
+                  >
+                    {details.badge}
+                  </Badge>
+                  <h3 className="text-xl font-semibold text-foreground">{details.learnMore.title}</h3>
                 </div>
               </div>
-              
-              {/* Content - scrollable */}
-              <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                {details.learnMore.sections.map((section, i) => (
-                  <div 
-                    key={i} 
-                    className={cn(
-                      "p-6",
-                      i !== details.learnMore.sections.length - 1 && "border-b border-border"
-                    )}
-                  >
-                    <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
-                      {section.heading}
-                    </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {section.content}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Footer */}
-              <div className="p-4 border-t border-border bg-muted/30 flex-shrink-0">
-                <Button onClick={onClose} className="w-full" size="lg">
-                  Got it
-                </Button>
-              </div>
-            </motion.div>
-          </div>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              {details.learnMore.sections.map((section, i) => (
+                <div 
+                  key={i} 
+                  className={cn(
+                    "p-6",
+                    i !== details.learnMore.sections.length - 1 && "border-b border-border"
+                  )}
+                >
+                  <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
+                    {section.heading}
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {section.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+            
+            {/* Footer */}
+            <div className="p-4 border-t border-border bg-muted/30">
+              <Button onClick={onClose} className="w-full" size="lg">
+                Got it
+              </Button>
+            </div>
+          </motion.div>
         </>
       )}
     </AnimatePresence>

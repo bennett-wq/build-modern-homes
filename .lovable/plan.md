@@ -1,129 +1,180 @@
 
 
-# Mobile Pricing Drawer Fix: Show Pricing Before Build Type Selection
+## Buyer Financial Summary - Lender-Ready Deliverable
 
-## Problem Identified
+### Overview
+After completing Plaid bank verification, buyers will be able to download a professional "Financial Summary" PDF and copy a text summary to share with lenders for MH Advantage, CHOICEHome, or other manufactured housing loan programs.
 
-On Step 4 of the /build wizard, the mobile pricing drawer shows empty content because:
+### What Lenders Need (Based on Fannie Mae/Freddie Mac Guidelines)
+For MH Advantage and CHOICEHome loans, lenders require:
+- **Income verification** (verified via Plaid bank transactions/deposits)
+- **Asset documentation** (bank account balances from Plaid)
+- **Debt-to-Income ratios** (calculated from verified income and liabilities)
+- **Employment information** (detected from payroll transactions)
+- **Credit assessment** (self-reported, lender will pull actual credit)
 
-1. **`hasPricing` evaluates to `false`** when `buildType` is null
-2. This hides all pricing content and financing CTAs in the drawer
-3. Users see only "Home Package Estimate" title with Back/Continue buttons - no actual price or payment info
+### What We Can Provide from Verified Data
+| Data Point | Source | Lender Value |
+|------------|--------|--------------|
+| Verified Annual Income | Plaid transactions | Primary qualification metric |
+| Verified Monthly Income | Calculated | DTI calculations |
+| Total Assets | Plaid account balances | Reserves verification |
+| Total Liabilities | Plaid credit/loan accounts | Back-end DTI |
+| Net Worth | Calculated | Overall financial health |
+| Front-End DTI | Calculated | Housing expense ratio (target: <31%) |
+| Back-End DTI | Calculated | Total debt ratio (target: <43%) |
+| Employment Verified | Plaid payroll detection | Income stability |
+| Eligible Programs | Engine calculation | Loan program matching |
 
-**Code location**: `src/hooks/useConfiguratorPricing.ts` line 178:
-```typescript
-hasPricing: Boolean(input.modelSlug && input.buildType && unifiedPricing.home.factoryQuoteTotal > 0)
+### Implementation Plan
+
+#### 1. Create Buyer Financial Summary Component
+Create a new `src/components/financing/BuyerFinancialSummary.tsx` component that:
+- Accepts the application ID and verified financial data
+- Generates a professional, lender-ready PDF using jsPDF
+- Provides a "Copy to Clipboard" text summary option
+
+#### 2. PDF Report Sections
+The buyer-facing PDF will include:
+
+**Header**
+- "Financial Summary" title with BaseMod Financial branding
+- Buyer name and date generated
+- "Bank Verified" or "Self-Reported" badge
+
+**Buyer Information**
+- Full name, email, phone
+- Intended use (Primary/Second Home/Investment)
+- Purchase timeframe
+
+**Loan Overview**
+- Purchase price
+- Down payment (amount and percentage)
+- Loan amount requested
+- Estimated monthly payment (PITI breakdown)
+
+**Verified Financial Profile** (highlighted section)
+- Verified Annual Income (with Plaid verification badge)
+- Verified Monthly Income
+- Total Assets (from connected accounts)
+- Total Liabilities
+- Net Worth (Assets - Liabilities)
+
+**DTI Analysis** (visual boxes like admin PDF)
+- Front-End DTI with health indicator (green/yellow/red)
+- Back-End DTI with health indicator
+- Target thresholds for MH Advantage (31%/43%)
+
+**Eligible Loan Programs**
+- List of programs buyer qualifies for
+- Best match highlighted
+- Brief description of each program
+
+**Footer/Disclaimer**
+- "This summary is based on verified bank data and is provided for informational purposes"
+- "Final loan approval subject to lender underwriting"
+- Generation date and application reference
+
+#### 3. Update PreQualificationFlow Step 3
+Add download/share buttons to the results screen after verification completes:
+
+```text
+[Results Screen after verification]
+   |
+   v
++----------------------------------+
+| Download Financial Summary (PDF) |  <-- Primary CTA
++----------------------------------+
++----------------------------------+
+| Copy Summary to Clipboard        |  <-- Secondary option
++----------------------------------+
 ```
 
-## Solution
+The buttons will only appear when:
+- User completed Plaid bank verification
+- Prequal results have been calculated
+- Verified financial data exists
 
-Modify the `hasPricing` logic to allow pricing display when a model is selected, even if buildType hasn't been chosen yet. For Step 4, we should show a "preview" price based on a default buildType (e.g., 'xmod' since it's the more common choice).
+#### 4. Text Summary for Clipboard
+Generate a clean, professional text summary for easy sharing:
 
-### Option A (Recommended): Fix at the Hook Level
+```
+BASEMOB FINANCIAL - BUYER SUMMARY
+=================================
+Name: [Buyer Name]
+Generated: [Date]
+Status: BANK VERIFIED
 
-Update `useConfiguratorPricing.ts` to calculate pricing with a fallback buildType when none is selected, while still indicating the estimate is preliminary.
+LOAN DETAILS
+Purchase Price: $XXX,XXX
+Down Payment: $XX,XXX (X%)
+Loan Amount: $XXX,XXX
 
-**Changes to `src/hooks/useConfiguratorPricing.ts`:**
+VERIFIED FINANCIALS (Plaid)
+Annual Income: $XXX,XXX
+Total Assets: $XX,XXX
+Total Liabilities: $XX,XXX
+Front-End DTI: XX.X%
+Back-End DTI: XX.X%
 
-1. **Line 91-101**: When `buildType` is null but `modelSlug` exists, use a default buildType ('xmod') for calculation instead of returning empty pricing
+ELIGIBLE PROGRAMS
+- MH Advantage (Best Match)
+- CHOICEHome
+- Conventional
 
-2. **Line 178**: Update `hasPricing` condition:
-   ```typescript
-   // Before:
-   hasPricing: Boolean(input.modelSlug && input.buildType && unifiedPricing.home.factoryQuoteTotal > 0)
-   
-   // After:
-   hasPricing: Boolean(input.modelSlug && unifiedPricing.home.factoryQuoteTotal > 0)
-   ```
-
-### Implementation Details
-
-```typescript
-// src/hooks/useConfiguratorPricing.ts
-
-// Line 91-116: Update the calculation to use fallback buildType
-const unifiedPricing = useMemo(() => {
-  if (!input.modelSlug) {
-    // No model selected - return empty pricing
-    return engine.calculatePrice({
-      modelSlug: 'hawthorne',
-      buildType: 'xmod',
-      servicePackage: unifiedServicePackage,
-      selectedOptionIds: [],
-      lotPremium: 0,
-    });
-  }
-  
-  // Use selected buildType, or fallback to 'xmod' for preview pricing
-  const effectiveBuildType = input.buildType || 'xmod';
-  
-  return engine.calculatePrice({
-    modelSlug: input.modelSlug,
-    buildType: effectiveBuildType,
-    foundationType: 'crawl',
-    servicePackage: unifiedServicePackage,
-    selectedOptionIds: input.selectedOptionIds || [],
-    includeFeesAllowance: input.includeUtilityFees || input.includePermitsCosts,
-    includeSitework: unifiedServicePackage === 'installed',
-    includeSiteworkContingency: true,
-    lotPremium: input.lotPremium || 0,
-    lotNumber: input.lotNumber,
-    developmentName: input.developmentName,
-  });
-}, [/* deps */]);
-
-// Line 178: Update hasPricing to only require modelSlug
-const flags: BuyerPricingFlags = useMemo(() => ({
-  freightPending: unifiedPricing.freightPending,
-  basementSelectedRequiresQuote: false,
-  estimateConfidence,
-  hasPricing: Boolean(input.modelSlug && unifiedPricing.home.factoryQuoteTotal > 0),
-  pricingMode,
-}), [/* deps */]);
+Reference: [App ID]
 ```
 
-## Files to Modify
+### Technical Details
 
-| File | Changes |
-|------|---------|
-| `src/hooks/useConfiguratorPricing.ts` | Update pricing calculation to use fallback buildType; update hasPricing condition to not require buildType |
+**New Files:**
+- `src/components/financing/BuyerFinancialSummary.tsx` - PDF generation and clipboard logic
 
-## UX Impact
+**Modified Files:**
+- `src/components/financing/PreQualificationFlow.tsx` - Add download/share buttons to Step 3 results
 
-After this fix, on Step 4 (Build Type selection):
+**Data Flow:**
+1. User completes Plaid verification
+2. `prequal-engine` calculates DTI and eligible programs
+3. Results stored in `financing_applications` and `verified_financials` tables
+4. Step 3 renders with download buttons when `prequalResults` has verified data
+5. User clicks download -> PDF generated client-side with jsPDF
+6. User clicks copy -> Text summary copied to clipboard
 
-**Before:**
-- Mobile drawer shows: "Home Package Estimate" + disclaimers + Back/Continue
-- No price, no monthly payment, no financing CTAs
+**PDF Design:**
+- Match the admin BorrowerProfile PDF style (professional, color-coded DTI boxes)
+- Use emerald/green for healthy metrics, amber for borderline, red for high DTI
+- Include "Verified" badges prominently
+- Professional footer with disclaimers
 
-**After:**
-- Mobile drawer shows: Full price (e.g., "$197,350")
-- Monthly payment estimate (e.g., "Est. $1,145/mo")
-- "BaseMod Financial" section with:
-  - "Explore Payments" button
-  - "Get Pre-Qualified" CTA
-- Price breakdown (collapsible)
-- Back/Continue navigation
+### User Experience Flow
 
-## Acceptance Criteria
+```text
+[Step 2: Bank Verification]
+        |
+        v
+[Secure Bank Connect Page]
+        |
+   [Success!]
+        |
+        v
+[Step 3: Results Dashboard]
+        |
+   Shows: Verified income, DTI ratios, eligible programs
+        |
+        v
+[New Section: "Share with Your Lender"]
+   |                           |
+   v                           v
+[Download PDF]         [Copy Summary]
+   |                           |
+   v                           v
+Professional PDF      Text on clipboard
+saved to device       ready to paste
+```
 
-- [ ] Price displays in mobile drawer on Step 4 before buildType is selected
-- [ ] Monthly payment estimate is visible
-- [ ] "Explore Payments" button works
-- [ ] "Get Pre-Qualified" CTA works
-- [ ] Price updates when buildType changes (MOD vs XMOD)
-- [ ] Navigation (Back/Continue) continues to work
-- [ ] No regressions on Steps 5-8
-- [ ] Desktop pricing rail still works correctly
-
-## Testing Plan
-
-1. Navigate to /build
-2. Select intent (Build on My Land)
-3. Select location (I don't know yet)
-4. Select model (Hawthorne)
-5. **Verify Step 4**: Mobile drawer should show price and financing CTAs
-6. Select build type (XMOD)
-7. **Verify Step 5**: Price should update, financing still visible
-8. Continue through remaining steps to verify no regressions
+### Value Proposition
+- **For Buyers**: Professional document to share with lenders, speeding up the loan process
+- **For Lenders**: Pre-verified financial data reduces document requests
+- **For BaseMod**: Positions platform as a true fintech partner in the home buying journey
 

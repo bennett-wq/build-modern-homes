@@ -134,62 +134,51 @@ export default function AdminUsers() {
         body: { email: newUserEmail.trim(), role: newUserRole }
       });
 
-      const readFnErrorBody = async (): Promise<{ error?: string; code?: string } | null> => {
-        try {
-          const ctx = (fnError as any)?.context;
-          if (!ctx) return null;
-          if (typeof ctx.body === 'string') return JSON.parse(ctx.body);
-          if (ctx?.response?.text) {
-            const text = await ctx.response.text();
-            return text ? JSON.parse(text) : null;
-          }
-        } catch {
-          // ignore
-        }
-        return null;
-      };
-
-      const payload: any = (data && typeof data === 'object') ? data : null;
-
-      // Handle edge function errors - the data contains the JSON body even on non-2xx
-      // when using supabase.functions.invoke
+      // Handle edge function errors - parse the error response body
       if (fnError) {
         console.error('Function error:', fnError);
-
-        const errorBody = (payload?.error || payload?.code) ? payload : await readFnErrorBody();
+        
+        // Try to parse error body from the FunctionsHttpError context
+        let errorBody: { error?: string; code?: string } | null = null;
+        try {
+          // The context contains the response, try to parse it
+          const context = (fnError as any).context;
+          if (context?.body) {
+            errorBody = JSON.parse(context.body);
+          } else if (context?.json) {
+            errorBody = await context.json();
+          }
+        } catch {
+          // Parsing failed, use generic message
+        }
 
         if (errorBody?.code === 'USER_NOT_FOUND') {
           setError(
             `"${newUserEmail}" hasn't signed up yet.\n\n` +
             `Ask them to create an account at /admin/login first, then try again.`
           );
-          return;
-        }
-
-        if (errorBody?.error) {
+        } else if (errorBody?.error) {
           setError(errorBody.error);
-          return;
+        } else {
+          setError(fnError.message || 'Failed to add team member');
         }
-        
-        // Fallback to generic message
-        setError(fnError.message || 'Failed to add team member');
         return;
       }
 
-      if (payload?.error) {
-        if (payload.code === 'USER_NOT_FOUND') {
+      if (data?.error) {
+        if (data.code === 'USER_NOT_FOUND') {
           setError(
             `"${newUserEmail}" hasn't signed up yet.\n\n` +
             `Ask them to create an account at /admin/login first, then try again.`
           );
         } else {
-          setError(payload.error);
+          setError(data.error);
         }
         return;
       }
 
-      const action = payload?.updated ? 'Updated' : 'Added';
-      const emailNote = payload?.emailSent ? ' (welcome email sent)' : '';
+      const action = data?.updated ? 'Updated' : 'Added';
+      const emailNote = data?.emailSent ? ' (welcome email sent)' : '';
       setSuccessMessage(`${action} ${newUserEmail} as ${newUserRole}${emailNote}`);
       setNewUserEmail('');
       await loadUsers();

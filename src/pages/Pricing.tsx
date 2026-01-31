@@ -1,11 +1,9 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Home, Hammer, MapPin, Wrench, HelpCircle, FileCheck, Scale, ClipboardCheck, Info } from "lucide-react";
+import { ArrowRight, Home, Hammer, MapPin, Wrench, HelpCircle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
-import { SEO } from "@/components/SEO";
-import { Section, SectionHeader, FeatureCard, CTASection, Container } from "@/components/marketing";
+import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Accordion,
@@ -13,16 +11,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { brandMessaging } from "@/content/brandMessaging";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.6 }
 };
-
-// Map pricing bullets to icons
-const pricingBulletIcons = [FileCheck, Scale, ClipboardCheck];
 
 const pricingComponents = [
   {
@@ -104,54 +98,28 @@ const packageExamples = [
 export default function Pricing() {
   return (
     <Layout>
-      <SEO 
-        title={brandMessaging.meta.pricing.title} 
-        description={brandMessaging.meta.pricing.description} 
-      />
-      
       {/* Hero Section */}
-      <section className="relative py-20 sm:py-24 lg:py-32 bg-secondary/40">
-        <div className="absolute inset-0 bg-gradient-radial opacity-50" />
-        <Container className="relative">
+      <section className="relative py-24 lg:py-32 bg-secondary">
+        <div className="container mx-auto px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <Badge 
-              variant="secondary" 
-              className="mb-6 text-xs font-medium tracking-wider uppercase px-3 py-1.5 bg-background"
-            >
-              Honest Pricing
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground leading-[1.05] mb-6">
-              {brandMessaging.pricing.headline}
+            <span className="inline-block text-accent font-medium text-sm uppercase tracking-wider mb-4">
+              Transparent Pricing
+            </span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
+              Understanding Your Investment
             </h1>
-            <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl">
-              {brandMessaging.pricing.subhead}
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+              BaseMod package pricing includes everything you need—home, lot, 
+              site-built components, and site work. No hidden costs, just clear 
+              estimates to help you plan.
             </p>
-            
-            {/* Pricing bullets as cards */}
-            <div className="grid sm:grid-cols-3 gap-4">
-              {brandMessaging.pricing.bullets.map((bullet, index) => {
-                const Icon = pricingBulletIcons[index];
-                return (
-                  <Card key={index} className="bg-background/80 backdrop-blur-sm border-border">
-                    <CardContent className="p-4 flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Icon className="w-4 h-4 text-accent" />
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {bullet}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
           </motion.div>
-        </Container>
+        </div>
       </section>
 
       {/* Pricing Components */}
@@ -169,15 +137,15 @@ export default function Pricing() {
         >
           {pricingComponents.map((component, index) => (
             <motion.div key={index} variants={fadeInUp}>
-              <Card className="h-full border-border hover:border-accent/30 hover:shadow-lg transition-all duration-300">
+              <Card className="h-full border-border hover:border-accent/50 transition-colors duration-300">
                 <CardHeader className="pb-4">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
                       <component.icon className="h-6 w-6 text-accent" />
                     </div>
                     <div>
                       <CardTitle className="text-xl mb-2">{component.title}</CardTitle>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{component.description}</p>
+                      <p className="text-muted-foreground text-sm">{component.description}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -191,7 +159,7 @@ export default function Pricing() {
       </Section>
 
       {/* Package Examples */}
-      <Section background="muted">
+      <Section className="bg-secondary">
         <SectionHeader
           title="Estimated Package Pricing"
           subtitle="Starting prices for complete home packages in our Grand Haven development."
@@ -205,7 +173,7 @@ export default function Pricing() {
           className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {packageExamples.map((pkg, index) => (
-            <Card key={index} className="text-center hover:shadow-lg hover:border-accent/30 hover:-translate-y-1 transition-all duration-300">
+            <Card key={index} className="text-center">
               <CardContent className="pt-8 pb-6">
                 <h3 className="text-xl font-semibold mb-2 text-foreground">The {pkg.model}</h3>
                 <p className="text-sm text-muted-foreground mb-1">{pkg.sqft}</p>
@@ -221,25 +189,17 @@ export default function Pricing() {
           ))}
         </motion.div>
 
-        {/* Disclaimer Notice Card */}
-        <motion.div
+        <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-10"
+          className="text-center text-sm text-muted-foreground mt-8 max-w-2xl mx-auto"
         >
-          <Card className="bg-background border-border max-w-2xl mx-auto">
-            <CardContent className="p-5 flex items-start gap-3">
-              <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                All prices are estimates and subject to change based on lot selection, 
-                exterior customizations, and site conditions. Request a personalized quote 
-                for accurate pricing.
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
+          * All prices are estimates and subject to change based on lot selection, 
+          exterior customizations, and site conditions. Request a personalized quote 
+          for accurate pricing.
+        </motion.p>
       </Section>
 
       {/* FAQ Section */}
@@ -258,14 +218,14 @@ export default function Pricing() {
         >
           <Accordion type="single" collapsible className="w-full">
             {pricingFaqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="border-border">
-                <AccordionTrigger className="text-left hover:no-underline py-5">
-                  <span className="flex items-center gap-3 text-foreground font-medium">
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left">
+                  <span className="flex items-center gap-3">
                     <HelpCircle size={18} className="text-accent flex-shrink-0" />
                     {faq.question}
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pl-9 pb-5 leading-relaxed">
+                <AccordionContent className="text-muted-foreground pl-9">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
@@ -275,12 +235,30 @@ export default function Pricing() {
       </Section>
 
       {/* CTA */}
-      <CTASection
-        headline="Get Your Personalized Quote"
-        body="Schedule a design and pricing call to receive detailed pricing based on your preferred model, lot, and customizations."
-        primaryCta={{ label: "Schedule a Pricing Call", href: "/contact" }}
-        variant="dark"
-      />
+      <Section dark>
+        <div className="text-center max-w-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-primary-foreground">
+              Get Your Personalized Quote
+            </h2>
+            <p className="text-primary-foreground/70 text-lg mb-8">
+              Schedule a design and pricing call to receive detailed pricing 
+              based on your preferred model, lot, and customizations.
+            </p>
+            <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Link to="/contact">
+                Schedule a Pricing Call
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </motion.div>
+        </div>
+      </Section>
     </Layout>
   );
 }
