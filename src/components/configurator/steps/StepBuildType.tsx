@@ -30,6 +30,8 @@ interface StepBuildTypeProps {
   onSelectBuildType: (type: BuildType) => void;
   onNext: () => void;
   onBack: () => void;
+  /** Hide built-in navigation (when parent handles it, e.g., mobile with UnifiedMobileFooter) */
+  hideNavigation?: boolean;
 }
 
 interface BuildTypeDetail {
@@ -134,6 +136,7 @@ export function StepBuildType({
   onSelectBuildType,
   onNext,
   onBack,
+  hideNavigation = false,
 }: StepBuildTypeProps) {
   const [expandedInfo, setExpandedInfo] = useState<BuildType | null>(null);
   const isFirstRender = useRef(true);
@@ -230,18 +233,20 @@ export function StepBuildType({
         </motion.div>
 
         <WizardFooterSpacer />
-        <WizardStickyFooter
-          onBack={onBack}
-          onContinue={handleContinue}
-          canContinue={true}
-          continueLabel="Continue"
-          pulseOnReady={effectiveSelection ?? undefined}
-        >
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Check className="w-4 h-4 text-accent" />
-            <span className="truncate">{details.title}</span>
-          </div>
-        </WizardStickyFooter>
+        {!hideNavigation && (
+          <WizardStickyFooter
+            onBack={onBack}
+            onContinue={handleContinue}
+            canContinue={true}
+            continueLabel="Continue"
+            pulseOnReady={effectiveSelection ?? undefined}
+          >
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Check className="w-4 h-4 text-accent" />
+              <span className="truncate">{details.title}</span>
+            </div>
+          </WizardStickyFooter>
+        )}
         
         {/* Learn More Modal */}
         <LearnMoreModal
@@ -432,22 +437,24 @@ export function StepBuildType({
       </motion.div>
       
       <WizardFooterSpacer />
-      <WizardStickyFooter
-        onBack={onBack}
-        onContinue={onNext}
-        canContinue={!!selectedBuildType}
-        continueLabel="Continue"
-        pulseOnReady={selectedBuildType}
-      >
-        {selectedBuildType ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Check className="w-4 h-4 text-accent" />
-            <span className="truncate">{buildTypeDetails[selectedBuildType].title}</span>
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">Select a build type to continue</span>
-        )}
-      </WizardStickyFooter>
+      {!hideNavigation && (
+        <WizardStickyFooter
+          onBack={onBack}
+          onContinue={onNext}
+          canContinue={!!selectedBuildType}
+          continueLabel="Continue"
+          pulseOnReady={selectedBuildType}
+        >
+          {selectedBuildType ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Check className="w-4 h-4 text-accent" />
+              <span className="truncate">{buildTypeDetails[selectedBuildType].title}</span>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">Select a build type to continue</span>
+          )}
+        </WizardStickyFooter>
+      )}
       
       {/* Learn More Modal */}
       <LearnMoreModal

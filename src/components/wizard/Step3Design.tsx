@@ -69,6 +69,8 @@ interface Step3DesignProps {
   developmentSlug?: string;
   lotId?: number | null;
   modelSlug?: string | null;
+  /** Hide built-in navigation (when parent handles it, e.g., mobile with UnifiedMobileFooter) */
+  hideNavigation?: boolean;
 }
 
 export function Step3Design({
@@ -82,6 +84,7 @@ export function Step3Design({
   developmentSlug,
   lotId,
   modelSlug,
+  hideNavigation = false,
 }: Step3DesignProps) {
   const normalizedModel = normalizeModelSlug(modelSlug);
   const usePhotoPreview = isPhotoBasedModel(modelSlug);
@@ -411,58 +414,60 @@ export function Step3Design({
       </div>
 
       {/* Sticky Footer */}
-      <WizardStickyFooter
-        onBack={onBack}
-        onContinue={onNext}
-        canContinue={!!canProceed}
-        continueLabel="Review Your Build"
-        pulseOnReady={`${selectedPackageId}-${selectedGarageDoorId}`}
-      >
-        {/* Selection summary */}
-        {(selectedPackage || selectedDoor) && (
-          <div className="flex items-center gap-3">
-            {selectedPackage && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                <div 
-                  className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                  style={{ 
-                    backgroundColor: 'swatches' in selectedPackage 
-                      ? selectedPackage.swatches[0] 
-                      : 'primaryColor' in selectedPackage 
-                        ? selectedPackage.primaryColor 
-                        : selectedPackage.sidingColor 
-                  }}
-                />
-                <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
-                  {selectedPackage.name}
-                </span>
-              </div>
-            )}
-            {selectedDoor && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                <div 
-                  className="w-4 h-4 rounded-sm border border-border shadow-sm"
-                  style={{ 
-                    backgroundColor: 'color' in selectedDoor 
-                      ? selectedDoor.color 
-                      : 'swatches' in selectedDoor && selectedDoor.swatches 
-                        ? selectedDoor.swatches[0] 
-                        : '#666666'
-                  }}
-                />
-                <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
-                  {selectedDoor.name}
-                </span>
-                {'isUpgrade' in selectedDoor && selectedDoor.isUpgrade && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    Upgrade
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </WizardStickyFooter>
+      {!hideNavigation && (
+        <WizardStickyFooter
+          onBack={onBack}
+          onContinue={onNext}
+          canContinue={!!canProceed}
+          continueLabel="Review Your Build"
+          pulseOnReady={`${selectedPackageId}-${selectedGarageDoorId}`}
+        >
+          {/* Selection summary */}
+          {(selectedPackage || selectedDoor) && (
+            <div className="flex items-center gap-3">
+              {selectedPackage && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                  <div 
+                    className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                    style={{ 
+                      backgroundColor: 'swatches' in selectedPackage 
+                        ? selectedPackage.swatches[0] 
+                        : 'primaryColor' in selectedPackage 
+                          ? selectedPackage.primaryColor 
+                          : selectedPackage.sidingColor 
+                    }}
+                  />
+                  <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                    {selectedPackage.name}
+                  </span>
+                </div>
+              )}
+              {selectedDoor && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                  <div 
+                    className="w-4 h-4 rounded-sm border border-border shadow-sm"
+                    style={{ 
+                      backgroundColor: 'color' in selectedDoor 
+                        ? selectedDoor.color 
+                        : 'swatches' in selectedDoor && selectedDoor.swatches 
+                          ? selectedDoor.swatches[0] 
+                          : '#666666'
+                    }}
+                  />
+                  <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                    {selectedDoor.name}
+                  </span>
+                  {'isUpgrade' in selectedDoor && selectedDoor.isUpgrade && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                      Upgrade
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </WizardStickyFooter>
+      )}
 
       {/* Financing Modal */}
       <FinancingModal

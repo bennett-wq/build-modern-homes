@@ -21,6 +21,7 @@ import { getBelmontPackageById } from '@/data/belmont-exteriors';
 import { useBuildSelection } from '@/hooks/useBuildSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useConfiguratorPricing } from '@/hooks/useConfiguratorPricing';
+import { UnifiedMobileFooter, UnifiedMobileFooterSpacer } from '@/components/wizard/UnifiedMobileFooter';
 import { Step1Lot } from '@/components/wizard/Step1Lot';
 import { Step2Model } from '@/components/wizard/Step2Model';
 import { StepBuildType } from '@/components/configurator/steps/StepBuildType';
@@ -372,12 +373,14 @@ export default function BuildWizard() {
               className="absolute inset-0 overflow-y-auto"
             >
               <div className="container mx-auto px-4 py-8">
+                {isMobile && <UnifiedMobileFooterSpacer showPricing={true} showFinancingCTA={true} />}
                 <StepBuildType
                   model={selectedModelConfig}
                   selectedBuildType={selection.buildType}
                   onSelectBuildType={setBuildType}
                   onNext={() => setCurrentStep(4)}
                   onBack={() => setCurrentStep(2)}
+                  hideNavigation={isMobile} // Hide step's own nav on mobile - UnifiedMobileFooter handles it
                 />
               </div>
             </motion.div>
@@ -404,6 +407,7 @@ export default function BuildWizard() {
                 developmentSlug={slug}
                 lotId={selection.lotId}
                 modelSlug={selection.modelSlug}
+                hideNavigation={isMobile} // Hide step's own nav on mobile - UnifiedMobileFooter handles it
               />
             </motion.div>
           )}
@@ -436,6 +440,30 @@ export default function BuildWizard() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* UnifiedMobileFooter for steps 3-4 on mobile */}
+      {isMobile && (currentStep === 3 || currentStep === 4) && (
+        <UnifiedMobileFooter
+          breakdown={pricing.breakdown}
+          flags={pricing.flags}
+          showPricing={true}
+          showFinancingCTA={true}
+          onBack={() => setCurrentStep(currentStep - 1)}
+          onContinue={() => setCurrentStep(currentStep + 1)}
+          canContinue={
+            currentStep === 3 ? !!selection.buildType :
+            currentStep === 4 ? !!(selection.packageId && selection.garageDoorId) :
+            true
+          }
+          backLabel="Back"
+          continueLabel={currentStep === 4 ? "Review Your Build" : "Continue"}
+          pulseOnReady={
+            currentStep === 3 ? selection.buildType :
+            currentStep === 4 ? `${selection.packageId}-${selection.garageDoorId}` :
+            null
+          }
+        />
+      )}
     </div>
   );
 }
