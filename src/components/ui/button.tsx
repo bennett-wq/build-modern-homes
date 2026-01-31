@@ -25,9 +25,9 @@ const buttonVariants = cva(
   // Base styles - consistent across all variants
   [
     "inline-flex items-center justify-center gap-2 whitespace-nowrap",
-    "rounded-md text-sm font-medium",
-    // Consistent transition for all states
-    "transition-all duration-150 ease-out",
+    "rounded-lg text-sm font-medium",
+    // Consistent transition for all states - premium 200ms
+    "transition-all duration-200 ease-out",
     // Focus ring - high contrast, accessible
     "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
     // Disabled state
@@ -43,19 +43,19 @@ const buttonVariants = cva(
         // Primary - Main CTAs (Get Started, Build on This Lot, Schedule Call)
         default: [
           "bg-accent text-accent-foreground",
-          "hover:bg-accent/90 hover:shadow-md",
+          "hover:bg-accent/90 hover:shadow-lg hover:-translate-y-0.5 hover:scale-[1.01]",
         ].join(" "),
         
         // Secondary - Supportive actions (View Models, Browse)  
         secondary: [
           "bg-secondary text-secondary-foreground",
-          "hover:bg-secondary/80 hover:shadow-sm",
+          "hover:bg-secondary/80 hover:shadow-md hover:-translate-y-0.5",
         ].join(" "),
         
         // Outline - Secondary actions with border
         outline: [
           "border border-input bg-background text-foreground",
-          "hover:bg-muted hover:border-muted-foreground/30",
+          "hover:bg-muted hover:border-muted-foreground/30 hover:-translate-y-0.5 hover:shadow-sm",
         ].join(" "),
         
         // Ghost - Tertiary/minimal actions (Learn More, Back)
@@ -73,13 +73,14 @@ const buttonVariants = cva(
         // Destructive - Error/danger actions
         destructive: [
           "bg-destructive text-destructive-foreground",
-          "hover:bg-destructive/90 hover:shadow-md",
+          "hover:bg-destructive/90 hover:shadow-lg hover:-translate-y-0.5",
         ].join(" "),
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3 text-xs",
-        lg: "h-12 rounded-md px-6 text-base",
+        sm: "h-9 rounded-lg px-3 text-xs",
+        lg: "h-12 rounded-xl px-8 text-base",
+        xl: "h-14 rounded-xl px-10 text-base font-semibold",
         icon: "h-10 w-10",
       },
     },

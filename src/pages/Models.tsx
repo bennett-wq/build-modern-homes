@@ -10,6 +10,7 @@ import { useUnifiedPricingEngine } from "@/hooks/useUnifiedPricingEngine";
 import { HERO_PLACEHOLDER } from "@/lib/model-images";
 import { getHeroImageFallbackChain } from "@/lib/image-utils";
 import type { Model } from "@/types/database";
+
 // Trust chips - same as homepage
 const trustChips = [
   "Financing-ready pathways",
@@ -39,7 +40,7 @@ export default function Models() {
               </span>
 
               {/* Headline */}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground leading-[1.1] mb-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1] mb-6">
                 Find the plan that fits.
               </h1>
 
@@ -91,7 +92,7 @@ export default function Models() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-semibold text-foreground tracking-tight mb-3">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-3">
             All Models
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
@@ -142,7 +143,7 @@ export default function Models() {
             <span className="inline-block text-accent font-medium text-sm tracking-wide mb-4">
               Build Types
             </span>
-            <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-foreground tracking-tight">
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-foreground tracking-tight">
               What is Factory-Built?
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
@@ -174,6 +175,7 @@ export default function Models() {
               src="/images/factory-built-diagram.png" 
               alt="Factory-built construction process showing factory assembly, transport, and site installation"
               className="w-full h-full object-contain p-4"
+              loading="lazy"
             />
           </motion.div>
         </div>
@@ -188,7 +190,7 @@ export default function Models() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-2xl mx-auto"
         >
-          <h2 className="text-3xl md:text-4xl font-semibold text-primary-foreground tracking-tight mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground tracking-tight mb-4">
             Ready to get your price?
           </h2>
           <p className="text-lg text-primary-foreground/70 mb-8">
@@ -252,21 +254,27 @@ function ModelCard({ model, index }: ModelCardProps) {
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
     >
-      <div className="group bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all duration-200">
+      <div className="group bg-card rounded-2xl border border-border overflow-hidden card-premium">
         {/* Image Container - Links to detail - aspect-video for premium 16:9 feel */}
         <Link to={`/models/${model.slug}`}>
-          <div className="aspect-video bg-muted overflow-hidden relative rounded-t-2xl">
+          <div className="aspect-video bg-muted overflow-hidden relative rounded-t-2xl image-zoom">
             {/* Skeleton loader */}
             {!imageLoaded && (
               <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
             )}
             
+            {/* Price Badge */}
+            <div className="absolute top-3 right-3 bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-sm font-semibold shadow-md z-10">
+              Starting at $XXX,XXX
+            </div>
+            
             <img
               src={currentSrc}
               alt={`${model.name} exterior`}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+              className={`w-full h-full object-cover ${
                 imageLoaded ? "opacity-100" : "opacity-0"
               }`}
+              loading="lazy"
               onLoad={() => setImageLoaded(true)}
               onError={() => {
                 // Dev-only warning for missing assets
@@ -315,7 +323,7 @@ function ModelCard({ model, index }: ModelCardProps) {
             <Button onClick={handleGetQuote} size="sm" className="flex-1">
               Get Quote
             </Button>
-            <Button asChild variant="outline" size="sm" className="flex-1">
+            <Button asChild variant="secondary" size="sm" className="flex-1">
               <Link to={`/models/${model.slug}`}>
                 View Details
               </Link>

@@ -267,7 +267,8 @@ export default function BuildWizard() {
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                       isActive && 'bg-accent text-accent-foreground shadow-sm',
                       isComplete && 'bg-green-500/10 text-green-600 hover:bg-green-500/15 cursor-pointer',
-                      !isActive && !isComplete && 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                      !isActive && !isComplete && 'bg-muted text-muted-foreground cursor-not-allowed opacity-60',
+                      isClickable && !isActive && !isComplete && 'hover:-translate-y-0.5'
                     )}
                   >
                     {isComplete ? (

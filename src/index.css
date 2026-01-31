@@ -51,17 +51,21 @@
     --warm-white: 30 20% 98%;
     --warm-gray: 30 5% 92%;
     --stone: 30 8% 85%;
+    --warm-cream: 40 33% 98%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 98%) 0%, hsl(30 10% 96%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(40 33% 98%) 0%, hsl(0 0% 100%) 100%);
     --gradient-dark: linear-gradient(180deg, hsl(0 0% 13%) 0%, hsl(0 0% 18%) 100%);
 
-    /* Shadows */
+    /* Shadows - Premium feel */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
     --shadow-elegant: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.08);
+    --shadow-card-hover: 0 8px 24px hsl(0 0% 0% / 0.12);
+    --shadow-glow-accent: 0 0 20px hsl(30 40% 45% / 0.3);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 25%;
@@ -162,9 +166,63 @@
     @apply transition-all duration-200 ease-out;
   }
 
-  /* Card hover effect */
+  /* Card hover effect - basic */
   .card-hover {
     @apply transition-all duration-200 ease-out hover:shadow-md hover:border-accent/30 hover:-translate-y-0.5;
+  }
+
+  /* Premium card hover effect - enhanced lift + scale */
+  .card-premium {
+    @apply transition-all duration-200 ease-out rounded-2xl;
+  }
+  .card-premium:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Hover lift for buttons and interactive elements */
+  .hover-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Button lift - subtle */
+  .btn-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+  .btn-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Link underline animation */
+  .link-underline {
+    @apply relative;
+  }
+  .link-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-accent transition-all duration-200;
+  }
+  .link-underline:hover::after {
+    @apply w-full;
+  }
+
+  /* Image zoom on hover */
+  .image-zoom {
+    @apply overflow-hidden;
+  }
+  .image-zoom img {
+    @apply transition-transform duration-500;
+  }
+  .image-zoom:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Warm cream background section */
+  .bg-warm-cream {
+    background-color: hsl(var(--warm-cream));
   }
 
   /* Selection highlight */

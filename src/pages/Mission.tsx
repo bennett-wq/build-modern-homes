@@ -13,7 +13,7 @@ const fadeInUp = {
 export default function Mission() {
   return (
     <Layout>
-      {/* Hero/Opening Section */}
+      {/* Hero/Opening Section - White */}
       <section className="py-24 lg:py-32 bg-background">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
@@ -22,11 +22,11 @@ export default function Mission() {
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-foreground leading-[1.08] tracking-tight mb-8">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.08] tracking-tight mb-8">
               The housing market failed a generation. We're building the fix.
             </h1>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed max-w-2xl">
+            <div className="space-y-8 text-lg text-muted-foreground leading-relaxed-lg max-w-2xl">
               <p>
                 Here's the math: there are millions of families earning enough to afford a mortgage who still can't buy a home. Not because they're not ready—because the system isn't.
               </p>
@@ -47,8 +47,8 @@ export default function Mission() {
         </div>
       </section>
 
-      {/* What We're Here To Do */}
-      <section className="py-24 lg:py-32 bg-secondary/50">
+      {/* What We're Here To Do - Warm Cream */}
+      <section className="py-24 lg:py-32 bg-warm-cream">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
             initial="initial"
@@ -57,11 +57,11 @@ export default function Mission() {
             variants={fadeInUp}
             className="max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-8">
+            <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-8">
               What we're here to do
             </h2>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+            <div className="space-y-8 text-lg text-muted-foreground leading-relaxed-lg">
               <p>
                 BaseMod exists to make homeownership systematically attainable—not through subsidies or shortcuts, but through better infrastructure.
               </p>
@@ -79,7 +79,24 @@ export default function Mission() {
         </div>
       </section>
 
-      {/* What We Believe */}
+      {/* Pull Quote Section */}
+      <section className="py-12 bg-background">
+        <div className="container mx-auto px-6 lg:px-12">
+          <motion.blockquote 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="border-l-4 border-accent pl-8 max-w-2xl mx-auto"
+          >
+            <p className="text-2xl lg:text-3xl text-foreground font-medium">
+              "This isn't charity. It's correction."
+            </p>
+          </motion.blockquote>
+        </div>
+      </section>
+
+      {/* What We Believe - White */}
       <section className="py-24 lg:py-32 bg-background">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
@@ -89,11 +106,11 @@ export default function Mission() {
             variants={fadeInUp}
             className="max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-8">
+            <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-8">
               What we believe
             </h2>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+            <div className="space-y-8 text-lg text-muted-foreground leading-relaxed-lg">
               <p className="text-xl text-foreground font-medium">
                 Ownership is infrastructure.
               </p>
@@ -114,8 +131,8 @@ export default function Mission() {
         </div>
       </section>
 
-      {/* How We're Built */}
-      <section className="py-24 lg:py-32 bg-secondary/50">
+      {/* How We're Built - Warm Cream */}
+      <section className="py-24 lg:py-32 bg-warm-cream">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
             initial="initial"
@@ -124,43 +141,43 @@ export default function Mission() {
             variants={fadeInUp}
             className="max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-6">
+            <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-6">
               How we're built
             </h2>
             
-            <p className="text-lg text-muted-foreground leading-relaxed mb-10">
+            <p className="text-lg text-muted-foreground leading-relaxed-lg mb-10">
               We're not a tech company cosplaying as a builder. We're not a builder with a website. We're an infrastructure company for housing—built from scratch to deliver at scale.
             </p>
             
             <ul className="space-y-6 mb-10">
               <li className="flex items-start gap-4">
                 <span className="w-2 h-2 rounded-full bg-accent mt-3 flex-shrink-0" />
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed-lg">
                   <span className="text-foreground font-medium">A digital platform that makes the process legible:</span> pricing, timelines, and progress you can actually see—without chasing anyone down.
                 </p>
               </li>
               <li className="flex items-start gap-4">
                 <span className="w-2 h-2 rounded-full bg-accent mt-3 flex-shrink-0" />
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed-lg">
                   <span className="text-foreground font-medium">Manufacturing partnerships built for volume:</span> consistent quality, predictable timelines, purchasing power that bends the cost curve.
                 </p>
               </li>
               <li className="flex items-start gap-4">
                 <span className="w-2 h-2 rounded-full bg-accent mt-3 flex-shrink-0" />
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed-lg">
                   <span className="text-foreground font-medium">Accountable site execution:</span> delivery and installation that's scoped, managed, and owned—because most builders fail in the last mile.
                 </p>
               </li>
             </ul>
             
-            <p className="text-lg text-foreground font-medium leading-relaxed">
+            <p className="text-lg text-foreground font-medium leading-relaxed-lg">
               The result: homes that cost less, arrive faster, and hold up better. Not because of magic. Because of systems designed to work at ten thousand homes, not ten.
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Closing Section */}
+      {/* Closing Section - Dark */}
       <section className="py-24 lg:py-32 bg-primary">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
@@ -170,11 +187,11 @@ export default function Mission() {
             variants={fadeInUp}
             className="max-w-3xl mx-auto text-center"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-primary-foreground mb-8">
+            <h2 className="text-3xl lg:text-5xl font-bold text-primary-foreground mb-8">
               This is the decade housing gets rebuilt.
             </h2>
             
-            <div className="space-y-6 text-lg text-primary-foreground/80 leading-relaxed mb-10">
+            <div className="space-y-8 text-lg text-primary-foreground/80 leading-relaxed-lg mb-10">
               <p>
                 The demand is there. The families are ready. The old system can't meet them—and it never will.
               </p>
@@ -194,8 +211,9 @@ export default function Mission() {
             
             <Button
               asChild
-              size="lg"
-              className="h-12 px-8 text-base font-medium rounded-lg bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-md hover:shadow-lg transition-all"
+              size="xl"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-lg hover:shadow-xl"
+              style={{ boxShadow: '0 0 20px rgba(184, 134, 11, 0.3)' }}
             >
               <Link to="/build">
                 Design Your Home

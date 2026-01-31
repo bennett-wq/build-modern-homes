@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, MapPin, Compass, Building2, Clock, Repeat, Users, Shield, DollarSign, Zap, Heart } from "lucide-react";
+import { ArrowRight, MapPin, Compass, Building2, Clock, Repeat, Users, Shield, DollarSign, Zap, Heart, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { models } from "@/data/pricing-config";
@@ -87,8 +87,8 @@ const fadeInUp = {
 const Index = () => {
   return (
     <Layout>
-      {/* Hero Section - Statement feel */}
-      <section className="relative min-h-[90vh] flex items-center bg-background overflow-hidden">
+      {/* Hero Section - Statement feel with warm gradient */}
+      <section className="relative min-h-[90vh] flex items-center bg-gradient-to-b from-warm-cream to-background overflow-hidden">
         <div className="container mx-auto px-6 lg:px-12 py-20">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Copy */}
@@ -98,23 +98,24 @@ const Index = () => {
               transition={{ duration: 0.6 }}
               className="max-w-xl"
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-foreground leading-[1.08] tracking-tight mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.08] tracking-tight mb-6">
                 The path to ownership is broken.
                 <br />
                 <span className="text-muted-foreground">We're rebuilding it.</span>
               </h1>
 
-              <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed mb-4 max-w-md">
+              <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed-lg mb-4 max-w-md">
                 Millions of families are ready to buy. The system wasn't ready for them. Until now.
               </p>
 
-              <p className="text-sm text-accent font-medium mb-8 max-w-md">
+              <p className="text-sm text-accent font-medium mb-8 max-w-md flex items-center">
+                <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                 150+ families. 3 communities. And we're just getting started.
               </p>
 
               {/* CTA Row */}
               <div className="flex flex-wrap items-center gap-4">
-                <Button asChild size="lg" className="h-12 px-8 text-base font-medium rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <Button asChild size="xl" className="shadow-lg hover:shadow-xl">
                   <Link to="/build">
                     Design Your Home
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -122,7 +123,7 @@ const Index = () => {
                 </Button>
                 <Link 
                   to="/models" 
-                  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors link-underline"
                 >
                   Explore Models
                 </Link>
@@ -141,6 +142,7 @@ const Index = () => {
                   src={hawthornHomepage}
                   alt="Modern BaseMod home exterior"
                   className="w-full h-full object-cover"
+                  loading="eager"
                 />
               </div>
             </motion.div>
@@ -148,8 +150,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Why This Matters - Emotional core */}
-      <section className="py-24 lg:py-32 bg-secondary/50">
+      {/* Why This Matters - Emotional core with warm cream background */}
+      <section className="py-24 lg:py-32 bg-warm-cream">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
             initial="initial"
@@ -158,11 +160,11 @@ const Index = () => {
             variants={fadeInUp}
             className="max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-10">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-10">
               Why this matters
             </h2>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+            <div className="space-y-8 text-lg text-muted-foreground leading-relaxed-lg">
               <p>
                 Housing isn't just unaffordable. The entire path to getting there is broken.
               </p>
@@ -172,6 +174,14 @@ const Index = () => {
               <p>
                 Meanwhile, something bigger is breaking. When people can't own where they live, they stop investing in where they live. They stop showing up. They stop caring. Communities hollow out. Pride disappears. Neighborhoods become transactional instead of generational.
               </p>
+              
+              {/* Pull Quote */}
+              <blockquote className="border-l-4 border-accent pl-6 my-10">
+                <p className="text-xl lg:text-2xl text-foreground font-medium italic">
+                  "When you don't own anything, you stop caring about anything."
+                </p>
+              </blockquote>
+              
               <p>
                 This isn't just a housing problem. It's an ownership crisis. And it's only getting worse.
               </p>
@@ -196,11 +206,11 @@ const Index = () => {
             variants={fadeInUp}
             className="max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-10">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-10">
               What we're building
             </h2>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+            <div className="space-y-8 text-lg text-muted-foreground leading-relaxed-lg">
               <p>
                 Beautiful homes that belong in real neighborhoods—delivered faster, priced clearer, and built to last.
               </p>
@@ -215,8 +225,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* How It Works - 4 steps */}
-      <section className="py-24 lg:py-32 bg-secondary/50">
+      {/* How It Works - 4 steps with step badges */}
+      <section className="py-24 lg:py-32 bg-warm-cream">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
             initial="initial"
@@ -225,7 +235,7 @@ const Index = () => {
             variants={fadeInUp}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
               How it works
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -241,11 +251,15 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex gap-5"
+                className="flex gap-5 p-6 bg-card rounded-2xl border border-border card-premium"
               >
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <step.icon className="w-6 h-6 text-accent" />
+                <div className="flex-shrink-0 relative">
+                  {/* Step number badge */}
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-accent text-accent-foreground text-xs font-bold flex items-center justify-center z-10">
+                    {step.number}
+                  </span>
+                  <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <step.icon className="w-7 h-7 text-accent" />
                   </div>
                 </div>
                 <div>
@@ -262,8 +276,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* What Makes BaseMod Different - 3 cards */}
-      <section className="py-24 lg:py-32 bg-background">
+      {/* What Makes BaseMod Different - 3 cards with gradient background */}
+      <section className="py-24 lg:py-32 bg-gradient-to-b from-background to-warm-cream">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
             initial="initial"
@@ -272,7 +286,7 @@ const Index = () => {
             variants={fadeInUp}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
               What makes BaseMod different
             </h2>
           </motion.div>
@@ -285,10 +299,10 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="p-8 lg:p-10 bg-card rounded-2xl border border-border"
+                className="p-8 lg:p-10 bg-card rounded-2xl border border-border card-premium"
               >
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                  <item.icon className="w-6 h-6 text-accent" />
+                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                  <item.icon className="w-7 h-7 text-accent" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-3">
                   {item.title}
@@ -302,7 +316,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Homes */}
+      {/* Featured Homes with image zoom */}
       <section className="py-24 lg:py-32 bg-secondary/30">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
@@ -312,7 +326,7 @@ const Index = () => {
             variants={fadeInUp}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
               Browse homes
             </h2>
             <p className="text-muted-foreground max-w-md mx-auto">
@@ -333,11 +347,19 @@ const Index = () => {
                   to={`/models/${model.slug}`}
                   className="group block"
                 >
-                  <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted mb-4">
+                  {/* Image with zoom effect */}
+                  <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted mb-4 image-zoom relative">
+                    {/* Price badge */}
+                    {model.pricing.xmod && (
+                      <div className="absolute top-3 right-3 bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium shadow-md z-10">
+                        From ${(model.pricing.xmod.factory_quote_total / 1000).toFixed(0)}k
+                      </div>
+                    )}
                     <img
                       src={model.heroImage || "/images/models/placeholders/hero-placeholder.svg"}
                       alt={`${model.name} exterior`}
-                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = "/images/models/placeholders/hero-placeholder.svg";
@@ -350,10 +372,10 @@ const Index = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     {model.sqft.toLocaleString()} sq ft · {model.beds} bed · {model.baths} bath
                   </p>
-                  <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all">
+                  <Button variant="outline" size="sm" className="w-full">
                     Learn More
                     <ArrowRight className="ml-1 h-4 w-4" />
-                  </span>
+                  </Button>
                 </Link>
               </motion.div>
             ))}
@@ -362,7 +384,7 @@ const Index = () => {
           <div className="text-center mt-12">
             <Link 
               to="/models" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors link-underline"
             >
               View all homes →
             </Link>
@@ -370,7 +392,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Choose Your Path - 3 cards */}
+      {/* Choose Your Path - 3 cards with premium hover */}
       <section className="py-24 lg:py-32 bg-background">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
@@ -380,7 +402,7 @@ const Index = () => {
             variants={fadeInUp}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-foreground mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
               Choose your path
             </h2>
             <p className="text-muted-foreground max-w-md mx-auto">
@@ -399,9 +421,9 @@ const Index = () => {
               >
                 <Link
                   to={card.href}
-                  className="group block p-8 lg:p-10 bg-card rounded-2xl border border-border hover:border-accent/30 hover:shadow-lg transition-all duration-200 h-full"
+                  className="group block p-8 lg:p-10 bg-card rounded-2xl border border-border hover:border-accent/50 card-premium h-full"
                 >
-                  <card.icon className="w-6 h-6 text-accent mb-6" />
+                  <card.icon className="w-7 h-7 text-accent mb-6 transition-transform duration-200 group-hover:scale-110" />
                   <h3 className="text-xl font-semibold text-card-foreground mb-2">
                     {card.title}
                   </h3>
@@ -419,7 +441,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Closing Manifesto */}
+      {/* Closing Manifesto with entrance animations */}
       <section className="py-24 lg:py-32 bg-primary">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
@@ -429,18 +451,24 @@ const Index = () => {
             variants={fadeInUp}
             className="max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl lg:text-4xl font-semibold text-primary-foreground mb-10">
+            <h2 className="text-3xl lg:text-4xl font-bold text-primary-foreground mb-10">
               This is bigger than houses
             </h2>
             
-            {/* Pull quote */}
-            <div className="border-l-4 border-accent pl-6 mb-10">
+            {/* Pull quote with entrance animation */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="border-l-4 border-accent pl-6 mb-10"
+            >
               <p className="text-2xl lg:text-3xl text-primary-foreground font-medium leading-snug">
                 One home is a transaction. A thousand homes is infrastructure. Ten thousand homes is a movement.
               </p>
-            </div>
+            </motion.div>
             
-            <div className="space-y-6 text-lg text-primary-foreground/80 leading-relaxed">
+            <div className="space-y-8 text-lg text-primary-foreground/80 leading-relaxed-lg">
               <p>
                 We're not here to help a few lucky families close. We're here to reopen the path to ownership for an entire generation that's been locked out.
               </p>
@@ -461,8 +489,9 @@ const Index = () => {
             <div className="mt-12">
               <Button
                 asChild
-                size="lg"
-                className="h-12 px-8 text-base font-medium rounded-lg bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-md hover:shadow-lg transition-all"
+                size="xl"
+                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0 0 20px rgba(184, 134, 11, 0.3)' }}
               >
                 <Link to="/build">
                   Design Your Home

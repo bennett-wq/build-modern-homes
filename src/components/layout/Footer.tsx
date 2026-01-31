@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const footerLinks = {
   company: [
@@ -15,6 +17,16 @@ const footerLinks = {
 };
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Integrate with email service
+    setSubscribed(true);
+    setEmail("");
+  };
+
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 lg:px-8 py-16">
@@ -26,8 +38,11 @@ export function Footer() {
                 Base<span className="text-accent">Mod</span>
               </span>
             </Link>
-            <p className="text-primary-foreground/70 text-sm leading-relaxed mb-6">
+            <p className="text-xl font-medium text-primary-foreground mb-2">
               Rebuilding the path to ownership.
+            </p>
+            <p className="text-primary-foreground/60 text-sm leading-relaxed">
+              Modern modular homes with transparent pricing. Making homeownership accessible again—at scale.
             </p>
           </div>
 
@@ -69,11 +84,43 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* Newsletter + Contact */}
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider mb-4">
-              Contact
+              Stay Updated
             </h4>
+            
+            {/* Newsletter Form */}
+            <div className="bg-primary-foreground/5 rounded-xl p-4 mb-6">
+              <p className="text-primary-foreground/70 text-sm mb-3">
+                New communities, new models, and the work of making ownership possible again.
+              </p>
+              {subscribed ? (
+                <p className="text-accent text-sm font-medium">
+                  ✓ Thanks for subscribing!
+                </p>
+              ) : (
+                <form onSubmit={handleSubscribe} className="flex gap-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    className="flex-1 px-3 py-2 rounded-lg bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                  <Button 
+                    type="submit" 
+                    size="sm" 
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 px-4"
+                  >
+                    Subscribe
+                  </Button>
+                </form>
+              )}
+            </div>
+
+            {/* Contact Info */}
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-accent mt-0.5 flex-shrink-0" />
@@ -109,9 +156,14 @@ export function Footer() {
             <p className="text-primary-foreground/50 text-sm">
               © {new Date().getFullYear()} BaseMod Developments. All rights reserved.
             </p>
-            <p className="text-primary-foreground/50 text-xs">
-              New communities, new models, and the work of making ownership possible again.
-            </p>
+            <div className="flex items-center gap-6">
+              <Link 
+                to="/privacy-policy" 
+                className="text-primary-foreground/50 hover:text-primary-foreground/70 text-sm transition-colors"
+              >
+                Privacy Policy
+              </Link>
+            </div>
           </div>
         </div>
       </div>
