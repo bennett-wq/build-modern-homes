@@ -28,6 +28,7 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminLeads from "./pages/admin/AdminLeads";
 import BrandGuide from "./pages/BrandGuide";
+import Mission from "./pages/Mission";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +81,8 @@ const App = () => (
           <Route path="/admin/leads" element={<AdminLeads />} />
           {/* Brand guide */}
           <Route path="/brand" element={<BrandGuide />} />
+          {/* Mission page */}
+          <Route path="/mission" element={<Mission />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
