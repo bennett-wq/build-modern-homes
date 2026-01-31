@@ -330,10 +330,10 @@ export default function Configurator() {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex items-center justify-between mb-5">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2" asChild>
                   <Link to="/">
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Exit
@@ -345,23 +345,17 @@ export default function Configurator() {
                 </Link>
               </div>
               <div className="text-center flex-1 px-4">
-                <h1 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">Get Your BaseMod Price</h1>
+                <h1 className="text-base sm:text-xl font-semibold text-foreground tracking-tight">Get Your BaseMod Price</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto hidden sm:block">{brandMessaging.build.headerSubline}</p>
               </div>
               <div className="w-16 sm:w-24" /> {/* Spacer for centering */}
             </div>
             
-            <div className="space-y-3">
-              <StepIndicator
-                steps={STEPS}
-                currentStep={currentStep}
-                onStepClick={goToStep}
-              />
-              {/* Step progress text */}
-              <p className="text-center text-xs text-muted-foreground/60">
-                Step {currentStep} of {STEPS.length}
-              </p>
-            </div>
+            <StepIndicator
+              steps={STEPS}
+              currentStep={currentStep}
+              onStepClick={goToStep}
+            />
           </div>
         </header>
         

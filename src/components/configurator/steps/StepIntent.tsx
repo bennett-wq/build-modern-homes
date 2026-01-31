@@ -2,12 +2,11 @@
 // Step 1: Build Intent - How do you want to build?
 // ============================================================================
 
-import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Search, Building2, ArrowRight, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MapPin, Search, Building2, Check } from 'lucide-react';
 import type { BuildIntent } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
+import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 
 const intentOptions: {
   id: BuildIntent;
@@ -42,29 +41,13 @@ interface StepIntentProps {
 }
 
 export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepIntentProps) {
-  const [isPulsing, setIsPulsing] = useState(false);
-  const isFirstRender = useRef(true);
-  
-  // Trigger pulse when selection changes (skip initial render)
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (selectedIntent) {
-      setIsPulsing(true);
-      const timer = setTimeout(() => setIsPulsing(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedIntent]);
-  
   // No auto-advance - let users confirm with Continue button
   const handleSelect = (intent: BuildIntent) => {
     onSelectIntent(intent);
   };
 
   return (
-    <div className="space-y-8 pb-24">
+    <div className="space-y-8">
       <div className="text-center max-w-xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
@@ -145,40 +128,25 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
         Most buyers choose "Build on My Land" or "Find Land to Build". You can change this later.
       </motion.p>
       
-      {/* Sticky Footer CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              {selectedIntent ? (
-                <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-accent" />
-                  {intentOptions.find(o => o.id === selectedIntent)?.name}
-                </span>
-              ) : (
-                <span>Select an option above</span>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-0.5">
-              <Button
-                size="lg"
-                onClick={onNext}
-                disabled={!selectedIntent}
-                className={cn(
-                  "min-w-[140px]",
-                  isPulsing && selectedIntent && "animate-[pulse-attention_0.6s_ease-in-out_2]"
-                )}
-              >
-                Continue
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <span className="text-[10px] text-muted-foreground/70">
-                You can change this later.
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <WizardFooterSpacer />
+      
+      {/* Standardized Sticky Footer */}
+      <WizardStickyFooter
+        onContinue={onNext}
+        canContinue={!!selectedIntent}
+        continueLabel="Continue"
+        hideBack={true}
+        pulseOnReady={selectedIntent}
+      >
+        {selectedIntent ? (
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Check className="w-4 h-4 text-accent" />
+            {intentOptions.find(o => o.id === selectedIntent)?.name}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">Select an option above</span>
+        )}
+      </WizardStickyFooter>
     </div>
   );
 }

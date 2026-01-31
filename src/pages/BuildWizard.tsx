@@ -211,11 +211,11 @@ export default function BuildWizard() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Progress Header - sticky and stable */}
-      <header className="border-b border-border bg-card/95 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-3">
+      {/* Progress Header - sticky and stable, harmonized with Configurator */}
+      <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           {/* Top row */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
@@ -230,25 +230,37 @@ export default function BuildWizard() {
               </Button>
             </div>
             
+            {/* Center title - harmonized with 8-step flow */}
+            <div className="text-center flex-1 px-4">
+              <h1 className="text-base sm:text-xl font-semibold text-foreground tracking-tight">
+                Build in {development.name}
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+                Configure your dream home
+              </p>
+            </div>
+            
             {/* Save indicator */}
-            <AnimatePresence mode="wait">
-              {justSaved && (
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex items-center gap-1.5 text-sm text-green-600"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  <span className="font-medium">Saved</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="w-16 sm:w-24 flex justify-end">
+              <AnimatePresence mode="wait">
+                {justSaved && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-1.5 text-sm text-green-600"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-medium hidden sm:inline">Saved</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
           
-          {/* Step Indicators - consistent sizing */}
-          <nav className="flex items-center gap-1 sm:gap-2" aria-label="Wizard progress">
+          {/* Step Indicators - icon-based for Communities flow */}
+          <nav className="flex items-center justify-center gap-1 sm:gap-2" aria-label="Wizard progress">
             {STEPS.map((step, index) => {
               const StepIcon = step.icon;
               const isActive = currentStep === step.id;
@@ -263,38 +275,36 @@ export default function BuildWizard() {
                     aria-current={isActive ? 'step' : undefined}
                     aria-label={`Step ${step.id}: ${step.name}${isComplete ? ' (completed)' : ''}`}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                      'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                      'min-h-[44px]', // Minimum tap target
                       isActive && 'bg-accent text-accent-foreground shadow-sm',
                       isComplete && 'bg-green-500/10 text-green-600 hover:bg-green-500/15 cursor-pointer',
                       !isActive && !isComplete && 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
                     )}
                   >
                     {isComplete ? (
-                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
                         <Check className="h-3 w-3 text-white" />
                       </div>
                     ) : (
                       <StepIcon className={cn(
-                        'h-4 w-4',
+                        'h-4 w-4 shrink-0',
                         isActive ? 'text-accent-foreground' : 'text-current'
                       )} />
                     )}
-                    <span className={cn(
-                      'hidden sm:inline',
-                      isMobile && 'sm:hidden'
-                    )}>
-                      {isMobile ? step.shortName : step.name}
+                    <span className="hidden sm:inline text-sm">
+                      {step.name}
                     </span>
-                    {isMobile && (
-                      <span className="sm:hidden text-xs">{step.shortName}</span>
-                    )}
+                    <span className="sm:hidden text-xs">
+                      {step.shortName}
+                    </span>
                   </button>
                   
                   {/* Connector line */}
                   {index < STEPS.length - 1 && (
                     <div className={cn(
-                      'w-4 sm:w-8 h-0.5 mx-0.5 sm:mx-1 rounded-full transition-colors duration-200',
+                      'w-3 sm:w-6 h-0.5 mx-0.5 sm:mx-1 rounded-full transition-colors duration-200',
                       currentStep > step.id ? 'bg-green-500' : 'bg-border'
                     )} />
                   )}
