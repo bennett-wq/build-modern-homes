@@ -1,180 +1,190 @@
 
+# BaseMod Messaging Overhaul - Implementation Plan
 
-## Buyer Financial Summary - Lender-Ready Deliverable
+## Overview
+This plan transforms the BaseMod website from a "builder brochure" into a "movement site" that speaks to both homebuyers seeking ownership and investors seeing inevitability. The changes are content-focused with no routing changes except adding `/mission`.
 
-### Overview
-After completing Plaid bank verification, buyers will be able to download a professional "Financial Summary" PDF and copy a text summary to share with lenders for MH Advantage, CHOICEHome, or other manufactured housing loan programs.
+---
 
-### What Lenders Need (Based on Fannie Mae/Freddie Mac Guidelines)
-For MH Advantage and CHOICEHome loans, lenders require:
-- **Income verification** (verified via Plaid bank transactions/deposits)
-- **Asset documentation** (bank account balances from Plaid)
-- **Debt-to-Income ratios** (calculated from verified income and liabilities)
-- **Employment information** (detected from payroll transactions)
-- **Credit assessment** (self-reported, lender will pull actual credit)
+## Files to Modify
 
-### What We Can Provide from Verified Data
-| Data Point | Source | Lender Value |
-|------------|--------|--------------|
-| Verified Annual Income | Plaid transactions | Primary qualification metric |
-| Verified Monthly Income | Calculated | DTI calculations |
-| Total Assets | Plaid account balances | Reserves verification |
-| Total Liabilities | Plaid credit/loan accounts | Back-end DTI |
-| Net Worth | Calculated | Overall financial health |
-| Front-End DTI | Calculated | Housing expense ratio (target: <31%) |
-| Back-End DTI | Calculated | Total debt ratio (target: <43%) |
-| Employment Verified | Plaid payroll detection | Income stability |
-| Eligible Programs | Engine calculation | Loan program matching |
+### 1. Homepage (`src/pages/Index.tsx`)
+**Current state:** Standard builder homepage with "Design your home. See your installed price. Move faster." hero
+**New state:** Movement-style manifesto site
 
-### Implementation Plan
+**Sections to implement:**
 
-#### 1. Create Buyer Financial Summary Component
-Create a new `src/components/financing/BuyerFinancialSummary.tsx` component that:
-- Accepts the application ID and verified financial data
-- Generates a professional, lender-ready PDF using jsPDF
-- Provides a "Copy to Clipboard" text summary option
+**Hero Section**
+- Headline: "The path to ownership is broken. We're rebuilding it."
+- Subhead: "Millions of families are ready to buy. The system wasn't ready for them. Until now."
+- Trust line: "150+ families. 3 communities. And we're just getting started."
+- Design: Large typography, breathing room, statement feel
 
-#### 2. PDF Report Sections
-The buyer-facing PDF will include:
+**"Why This Matters" Section (NEW)**
+- Full emotional core copy about broken housing system
+- Multi-paragraph prose layout
+- Strong typography with whitespace between paragraphs
 
-**Header**
-- "Financial Summary" title with BaseMod Financial branding
-- Buyer name and date generated
-- "Bank Verified" or "Self-Reported" badge
+**"What We're Building" Section (NEW)**
+- Focus on homes: "Beautiful homes that belong in real neighborhoods..."
+- Copy about modern modular meaning precision, not temporary
 
-**Buyer Information**
-- Full name, email, phone
-- Intended use (Primary/Second Home/Investment)
-- Purchase timeframe
+**"How It Works" Section (REWORK)**
+- New subhead: "We rebuilt the homebuilding process from first click to front door..."
+- 4 new steps:
+  1. "Clarity from day one"
+  2. "Designed for repeatability"
+  3. "Built with scale partners"
+  4. "Accountable site execution"
 
-**Loan Overview**
-- Purchase price
-- Down payment (amount and percentage)
-- Loan amount requested
-- Estimated monthly payment (PITI breakdown)
+**"What Makes BaseMod Different" Section (NEW - 3 cards)**
+- Card 1: "Truth in pricing"
+- Card 2: "Speed through systems"
+- Card 3: "Pride at every price point"
 
-**Verified Financial Profile** (highlighted section)
-- Verified Annual Income (with Plaid verification badge)
-- Verified Monthly Income
-- Total Assets (from connected accounts)
-- Total Liabilities
-- Net Worth (Assets - Liabilities)
+**Keep existing sections:**
+- Featured Homes grid (unchanged)
+- Choose Your Path cards (unchanged)
 
-**DTI Analysis** (visual boxes like admin PDF)
-- Front-End DTI with health indicator (green/yellow/red)
-- Back-End DTI with health indicator
-- Target thresholds for MH Advantage (31%/43%)
+**Closing Manifesto (NEW - before footer)**
+- Headline: "This is bigger than houses"
+- Full manifesto copy with pull-quote potential
+- Consider different background treatment (full-bleed)
 
-**Eligible Loan Programs**
-- List of programs buyer qualifies for
-- Best match highlighted
-- Brief description of each program
+---
 
-**Footer/Disclaimer**
-- "This summary is based on verified bank data and is provided for informational purposes"
-- "Final loan approval subject to lender underwriting"
-- Generation date and application reference
+### 2. New Mission Page (`src/pages/Mission.tsx`)
+**Create new file** with the following sections:
 
-#### 3. Update PreQualificationFlow Step 3
-Add download/share buttons to the results screen after verification completes:
+**Hero/Opening Section**
+- Headline: "The housing market failed a generation. We're building the fix."
+- Opening body copy about the math of excluded families
 
-```text
-[Results Screen after verification]
-   |
-   v
-+----------------------------------+
-| Download Financial Summary (PDF) |  <-- Primary CTA
-+----------------------------------+
-+----------------------------------+
-| Copy Summary to Clipboard        |  <-- Secondary option
-+----------------------------------+
+**"What We're Here To Do" Section**
+- Copy about systematically attainable ownership
+- Infrastructure-level correction messaging
+
+**"What We Believe" Section**
+- "Ownership is infrastructure" theme
+- Copy about rootedness, investment, and community compounding
+
+**"How We're Built" Section**
+- Intro: "We're not a tech company cosplaying as a builder..."
+- 3 bullet points about platform, manufacturing, site execution
+- Closing line about homes at ten thousand scale
+
+**Closing Section**
+- Headline: "This is the decade housing gets rebuilt."
+- Final manifesto-style closing copy
+
+---
+
+### 3. App Router (`src/App.tsx`)
+- Add route: `<Route path="/mission" element={<Mission />} />`
+- Add import for Mission page
+
+---
+
+### 4. Header Navigation (`src/components/layout/Header.tsx`)
+Update `navItems` array to add "Our Mission":
+```typescript
+const navItems = [
+  { label: "Homes", href: "/models" },
+  { label: "Communities", href: "/communities" },
+  { label: "Our Mission", href: "/mission" },
+  { label: "How It Works", href: "/how-it-works" },
+];
 ```
 
-The buttons will only appear when:
-- User completed Plaid bank verification
-- Prequal results have been calculated
-- Verified financial data exists
+---
 
-#### 4. Text Summary for Clipboard
-Generate a clean, professional text summary for easy sharing:
+### 5. Footer (`src/components/layout/Footer.tsx`)
+**Changes:**
+- Brand description: "Rebuilding the path to ownership."
+- Newsletter line: "New communities, new models, and the work of making ownership possible again."
+- Keep copyright and contact info unchanged
+- Update Company links to include "Our Mission" instead of "About BaseMod" or add it
 
-```
-BASEMOB FINANCIAL - BUYER SUMMARY
-=================================
-Name: [Buyer Name]
-Generated: [Date]
-Status: BANK VERIFIED
+---
 
-LOAN DETAILS
-Purchase Price: $XXX,XXX
-Down Payment: $XX,XXX (X%)
-Loan Amount: $XXX,XXX
+### 6. Pricing Page (`src/pages/Pricing.tsx`)
+**Hero section updates:**
+- Remove "Transparent Pricing" label
+- Headline: "Know your number before you commit."
+- Subhead: "Homebuilding has been a guessing game for too long. We're changing that with upfront, all-in pricing designed to help you actually plan your life."
 
-VERIFIED FINANCIALS (Plaid)
-Annual Income: $XXX,XXX
-Total Assets: $XX,XXX
-Total Liabilities: $XX,XXX
-Front-End DTI: XX.X%
-Back-End DTI: XX.X%
+---
 
-ELIGIBLE PROGRAMS
-- MH Advantage (Best Match)
-- CHOICEHome
-- Conventional
+### 7. Configurator Header (`src/pages/Configurator.tsx`)
+**Update header subline (around line 348-349):**
+- Current: "Design your home and see a real estimate in minutes."
+- New: "Configure your home. See your real price. Take the first step toward something that's actually yours."
 
-Reference: [App ID]
-```
+---
 
-### Technical Details
+### 8. Site Metadata (`index.html`)
+**Update meta tags:**
+- Title: "BaseMod Homes | Rebuilding the Path to Ownership"
+- Description: "Modern modular homes with transparent pricing. We're building the infrastructure to make homeownership accessible again—at scale."
+- Update og:title and og:description to match
 
-**New Files:**
-- `src/components/financing/BuyerFinancialSummary.tsx` - PDF generation and clipboard logic
+---
 
-**Modified Files:**
-- `src/components/financing/PreQualificationFlow.tsx` - Add download/share buttons to Step 3 results
+## Technical Details
 
-**Data Flow:**
-1. User completes Plaid verification
-2. `prequal-engine` calculates DTI and eligible programs
-3. Results stored in `financing_applications` and `verified_financials` tables
-4. Step 3 renders with download buttons when `prequalResults` has verified data
-5. User clicks download -> PDF generated client-side with jsPDF
-6. User clicks copy -> Text summary copied to clipboard
+### Design Approach for New Sections
 
-**PDF Design:**
-- Match the admin BorrowerProfile PDF style (professional, color-coded DTI boxes)
-- Use emerald/green for healthy metrics, amber for borderline, red for high DTI
-- Include "Verified" badges prominently
-- Professional footer with disclaimers
+**Typography hierarchy:**
+- Hero headlines: `text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.08]`
+- Section headlines: `text-3xl lg:text-4xl font-semibold`
+- Body prose: `text-lg text-muted-foreground leading-relaxed`
+- Pull quotes: Larger text, possibly accent background
 
-### User Experience Flow
+**Section spacing:**
+- Use `py-24 lg:py-32` for breathing room
+- Max prose width: `max-w-2xl` or `max-w-3xl` for readability
 
-```text
-[Step 2: Bank Verification]
-        |
-        v
-[Secure Bank Connect Page]
-        |
-   [Success!]
-        |
-        v
-[Step 3: Results Dashboard]
-        |
-   Shows: Verified income, DTI ratios, eligible programs
-        |
-        v
-[New Section: "Share with Your Lender"]
-   |                           |
-   v                           v
-[Download PDF]         [Copy Summary]
-   |                           |
-   v                           v
-Professional PDF      Text on clipboard
-saved to device       ready to paste
-```
+**Manifesto section styling:**
+- Consider `bg-primary` or `bg-secondary` full-bleed treatment
+- Pull quote could use border-left accent styling
 
-### Value Proposition
-- **For Buyers**: Professional document to share with lenders, speeding up the loan process
-- **For Lenders**: Pre-verified financial data reduces document requests
-- **For BaseMod**: Positions platform as a true fintech partner in the home buying journey
+**Animation:**
+- Continue using existing framer-motion patterns
+- `fadeInUp` variants for content blocks
 
+### CTAs Consistency
+Per spec, standardize buttons across site:
+- Primary: "Design Your Home"
+- Quote flow: "See Your Price"
+- Secondary: "Explore Models" / "Find a Community" / "Talk to Us"
+
+---
+
+## Implementation Order
+
+1. Create `Mission.tsx` page with all new content
+2. Add route in `App.tsx`
+3. Update `Header.tsx` navigation
+4. Overhaul `Index.tsx` homepage with all new sections
+5. Update `Footer.tsx` messaging
+6. Update `Pricing.tsx` hero
+7. Update `Configurator.tsx` header subline
+8. Update `index.html` metadata
+
+---
+
+## What Will NOT Change
+- Routing structure (except adding /mission)
+- Pricing logic or configurator functionality
+- Component architecture
+- Styling system (Tailwind, shadcn)
+- Database or backend
+- Any admin pages
+
+---
+
+## Content Validation Checklist
+- No misleading financing claims
+- No "appraises like site-built" claims
+- No startup cliches
+- Voice: confident not arrogant, urgent not desperate, systematic not corporate, human not soft
