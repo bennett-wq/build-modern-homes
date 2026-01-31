@@ -1,136 +1,91 @@
 
-# Wizard Flow Optimization Plan: Making BaseMod the Best Digital Homebuilder Platform
+# Mobile Pricing Drawer Fix Plan
 
-## Executive Summary
-This plan addresses visual inconsistencies and UX friction discovered during mobile testing of both the 8-step `/build` flow and 5-step Communities flow (`/developments/:slug/build`). The goal is to create a seamless, premium experience across all wizard flows.
+## Problem Identified
+On mobile (steps 4-8 of the /build wizard), the pricing display is extremely minimal:
+- Only shows "Starting from" + price
+- Missing: Monthly payment estimate ($X,XXX/mo)
+- Missing: "Explore Payments" button
+- Missing: "Get Pre-Qualified" CTA (critical conversion point)
+- Missing: Price breakdown and "What's included"
+- Potential z-index conflict with WizardStickyFooter (both use `fixed bottom-0 z-50`)
 
----
-
-## Issues Identified During Testing
-
-### 1. Duplicate "Step X of Y" Text (High Priority)
-In `/build`, the step progress text appears twice:
-- Once in the mobile StepIndicator component
-- Again below the indicator (`Step {currentStep} of {STEPS.length}`)
-
-**Location**: `src/pages/Configurator.tsx` lines 361-362
-
-### 2. Inconsistent Step Indicators Between Flows
-- **8-Step Flow** (`Configurator.tsx`): Uses `StepIndicator` component with progress bars on mobile
-- **5-Step Flow** (`BuildWizard.tsx`): Uses inline icon-based step buttons with connector lines
-
-### 3. StepIntent Has Its Own Footer
-`StepIntent.tsx` renders its own fixed footer (lines 149-181) instead of using the shared `WizardStickyFooter` component, causing inconsistent styling.
-
-### 4. Header Spacing Differences
-- 8-Step: `py-5` padding with `mb-5` margin before indicator
-- 5-Step: `py-3` padding with `mb-4` margin
-
-### 5. Mobile Typography Inconsistencies
-Different title sizes and subline visibility across flows.
+Desktop users see the full pricing rail with all financing options, but mobile users are missing critical CTAs.
 
 ---
 
-## Phase 1: Unify Step Indicator Design
+## Solution: Mobile Pricing Drawer
 
-### 1.1 Update StepIndicator Component
-Enhance `src/components/configurator/StepIndicator.tsx` to:
-- Remove redundant mobile progress text (already shown in parent)
-- Add icon support for visual hierarchy
-- Improve mobile tap targets
-- Use consistent animation patterns
+Create an enhanced mobile pricing experience using a bottom drawer pattern (using the existing `vaul` Drawer component) that:
 
+1. **Compact Bar (Always Visible)**: Shows price + monthly payment + tap-to-expand indicator
+2. **Expandable Drawer**: Full pricing breakdown, financing options, and CTAs when tapped
+3. **Properly Stacks**: Works with or replaces WizardStickyFooter on pricing steps
+
+---
+
+## Implementation
+
+### Phase 1: Enhance MobilePricingBar Component
+
+Update `src/components/pricing/BuyerPricingDisplay.tsx` to replace the minimal `MobilePricingBar` with an enhanced version:
+
+**New Features:**
+- Add MonthlyPaymentBadge inline (compact format)
+- Add tap indicator ("Tap for details" or chevron up icon)
+- Add Drawer that opens to show:
+  - Full price breakdown (collapsible sections)
+  - "What's included" modal trigger
+  - BaseMod Financial section with monthly payment
+  - "Explore Payments" and "Get Pre-Qualified" buttons
+  - Disclaimers
+
+**Structure:**
 ```text
-Changes:
-- Add optional `icon` prop to Step interface
-- Improve mobile progress bar visual weight
-- Remove "Step X of Y" text (parent handles this)
-- Add subtle gradient to active state
+[Collapsed State - Fixed Bottom Bar]
+┌─────────────────────────────────────────────┐
+│ Starting from         │ Est. $1,145/mo  [↑] │
+│ $197,350  Preliminary │                     │
+└─────────────────────────────────────────────┘
+
+[Expanded State - Drawer]
+┌─────────────────────────────────────────────┐
+│ ─────────────────  (drag handle)            │
+│                                             │
+│ Starting from              [Preliminary]    │
+│ $197,350                                    │
+│ Typical Installed Allowance                 │
+│                                             │
+│ ┌─────────────────────────────────────────┐ │
+│ │ BaseMod Financial           6.875% APR  │ │
+│ │ Est. Monthly  $1,145/mo             (i) │ │
+│ │ [Explore Payments] [Get Pre-Qualified]  │ │
+│ └─────────────────────────────────────────┘ │
+│                                             │
+│ [▼ View price breakdown]                    │
+│ [▼ What's included]                         │
+│ [▼ Not included / site dependent]           │
+│                                             │
+│ Estimates exclude land unless selected.     │
+│ Final pricing confirmed via formal quote.   │
+└─────────────────────────────────────────────┘
 ```
 
-### 1.2 Standardize BuildWizard Step Navigation
-Update `src/pages/BuildWizard.tsx` to use the shared `StepIndicator` component instead of custom inline step buttons, ensuring visual consistency between flows.
+### Phase 2: Handle Footer Conflict
 
----
+On steps 4-8, when `showPricingRail` is true:
+- The enhanced mobile pricing bar should replace the navigation footer
+- Add back/continue navigation buttons INTO the mobile pricing drawer
+- Or: Stack the pricing bar above the footer with proper spacing
 
-## Phase 2: Fix Configurator Header Issues
+**Approach chosen**: Integrate navigation into the mobile pricing drawer footer area, eliminating the need for separate WizardStickyFooter on steps 4+.
 
-### 2.1 Remove Duplicate Step Text
-In `src/pages/Configurator.tsx`, remove the redundant "Step X of Y" text below the indicator:
+### Phase 3: Update Configurator.tsx Integration
 
-```text
-Lines 360-363:
-Delete the p element showing "Step {currentStep} of {STEPS.length}"
-```
-
-### 2.2 Optimize Header Spacing for Mobile
-- Reduce `mb-5` to `mb-3` for tighter mobile layout
-- Add responsive title sizing: `text-base sm:text-lg md:text-xl`
-
----
-
-## Phase 3: Standardize Sticky Footer Usage
-
-### 3.1 Migrate StepIntent to WizardStickyFooter
-Replace the custom fixed footer in `StepIntent.tsx` with `WizardStickyFooter` for consistency:
-
-```text
-Changes to src/components/configurator/steps/StepIntent.tsx:
-- Import WizardStickyFooter, WizardFooterSpacer
-- Remove lines 149-181 (custom footer)
-- Add WizardFooterSpacer to content area
-- Add WizardStickyFooter with proper props
-```
-
-### 3.2 Audit All Steps for Footer Consistency
-Verify all step components use the shared footer pattern:
-- StepLocation.tsx - needs audit
-- StepModel.tsx - needs audit  
-- StepBuildType.tsx - needs audit
-- StepServicePackage.tsx - needs audit
-- StepFloorPlan.tsx - needs audit
-
----
-
-## Phase 4: Premium Mobile Polish
-
-### 4.1 Header Styling Harmonization
-Create consistent header styling across both flows:
-
-```text
-Unified Header Styles:
-- Height: h-auto with py-3 sm:py-4
-- Background: bg-background/95 backdrop-blur-sm
-- Border: border-b border-border
-- Title: text-base sm:text-xl font-semibold tracking-tight
-- Subline: text-xs sm:text-sm text-muted-foreground (hidden on mobile)
-```
-
-### 4.2 Step Indicator Mobile Improvements
-- Increase progress bar height from `h-1` to `h-1.5` for better visibility
-- Add subtle shadow to active step
-- Ensure minimum tap target of 44px
-
-### 4.3 Safe Area Handling
-Ensure all footers account for device safe areas:
-```text
-Add to WizardStickyFooter:
-- pb-safe or env(safe-area-inset-bottom)
-```
-
----
-
-## Phase 5: Flow-Specific Optimizations
-
-### 5.1 Communities Flow (BuildWizard.tsx)
-- Use shared StepIndicator component
-- Match header styling to 8-step flow
-- Ensure lot selection celebration animation is smooth
-
-### 5.2 Direct Build Flow (Configurator.tsx)
-- Remove duplicate step text
-- Tighten header spacing
-- Ensure footer visibility on all devices
+Modify how the mobile pricing is rendered:
+- Pass `onBack` and `onContinue` props to mobile pricing component
+- Include navigation in the mobile drawer
+- Ensure proper safe-area padding
 
 ---
 
@@ -138,90 +93,91 @@ Add to WizardStickyFooter:
 
 | File | Changes |
 |------|---------|
-| `src/components/configurator/StepIndicator.tsx` | Remove mobile step text, add icon support, improve styling |
-| `src/pages/Configurator.tsx` | Remove duplicate step text, optimize header spacing |
-| `src/pages/BuildWizard.tsx` | Use shared StepIndicator, harmonize header styling |
-| `src/components/configurator/steps/StepIntent.tsx` | Migrate to WizardStickyFooter |
-| `src/components/wizard/WizardStickyFooter.tsx` | Add safe area bottom padding |
+| `src/components/pricing/BuyerPricingDisplay.tsx` | Replace MobilePricingBar with EnhancedMobilePricingDrawer including financing CTAs and drawer expansion |
+| `src/pages/Configurator.tsx` | Update mobile pricing render to pass navigation callbacks; hide WizardStickyFooter when mobile pricing is shown |
 
 ---
 
-## Technical Implementation Details
+## Technical Details
 
-### StepIndicator Enhancement
+### New MobilePricingBar Component Structure
+
 ```typescript
-// Add to Step interface
-interface Step {
-  id: number;
-  name: string;
-  shortName: string;
-  icon?: React.ComponentType<{ className?: string }>;
+// Key imports needed
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { MonthlyPaymentBadge } from '@/components/financing/MonthlyPaymentBadge';
+import { FinancingCalculator } from '@/components/financing/FinancingCalculator';
+import { PreQualificationFlow } from '@/components/financing/PreQualificationFlow';
+
+// Props to add
+interface MobilePricingBarProps {
+  breakdown: BuyerFacingBreakdown;
+  flags: BuyerPricingFlags;
+  onAction?: () => void;
+  actionLabel?: string;
+  // New props for navigation integration
+  onBack?: () => void;
+  onContinue?: () => void;
+  canContinue?: boolean;
+  backLabel?: string;
+  continueLabel?: string;
+  showNavigation?: boolean;
 }
-
-// Mobile view changes
-// Remove: "Step {currentStep} of {steps.length}" text
-// Keep: Progress bars only
 ```
 
-### Configurator Header Cleanup
+### Configurator Integration
+
 ```typescript
-// Remove this block (lines 360-363):
-{/* Step progress text */}
-<p className="text-center text-xs text-muted-foreground/60">
-  Step {currentStep} of {STEPS.length}
-</p>
+// In mobile render section (around line 560)
+{isMobile && showPricingRail && (
+  <BuyerPricingDisplay
+    breakdown={displayPricing.breakdown}
+    flags={pricingFlags}
+    variant="mobile"
+    showPlaceholder={false}
+    // New: Pass navigation props
+    onBack={prevStep}
+    onContinue={nextStep}
+    canContinue={/* step-specific logic */}
+    showNavigation={true}
+    // ... existing props
+  />
+)}
+
+// Conditionally hide WizardStickyFooter when mobile pricing handles navigation
+// This is handled within each step component
 ```
 
-### StepIntent Footer Migration
-```typescript
-// Replace custom footer with:
-<WizardFooterSpacer />
-<WizardStickyFooter
-  onContinue={onNext}
-  canContinue={!!selectedIntent}
-  continueLabel="Continue"
-  hideBack={true}
-  pulseOnReady={selectedIntent}
->
-  {selectedIntent && (
-    <span className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Check className="w-4 h-4 text-accent" />
-      {intentOptions.find(o => o.id === selectedIntent)?.name}
-    </span>
-  )}
-</WizardStickyFooter>
-```
+---
+
+## Safe Area Handling
+
+The drawer must properly handle:
+- `pb-[env(safe-area-inset-bottom)]` for devices with home indicators
+- Proper z-index stacking (z-50 for bar, z-60 for drawer overlay)
+- Backdrop blur for premium feel
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] No duplicate "Step X of Y" text on mobile
-- [ ] Consistent header styling between both flows
-- [ ] All step components use WizardStickyFooter
-- [ ] Mobile tap targets are at least 44px
-- [ ] Safe area padding on all devices
-- [ ] Smooth animations without layout shifts
-- [ ] No functional changes to pricing or state logic
-- [ ] Both flows feel premium and "seamless"
+- [ ] Mobile users see price + monthly payment estimate in collapsed bar
+- [ ] Tapping the bar opens a drawer with full pricing breakdown
+- [ ] "Explore Payments" button opens financing calculator
+- [ ] "Get Pre-Qualified" button opens pre-qualification flow
+- [ ] Navigation (Back/Continue) is accessible on mobile
+- [ ] Safe area padding works on iPhone with home indicator
+- [ ] No visual conflicts between pricing bar and navigation
+- [ ] Drawer has smooth open/close animations
+- [ ] All existing pricing logic unchanged
 
 ---
 
-## Testing Checklist
+## Testing Plan
 
-After implementation:
-1. Test 8-step flow (`/build`) on mobile (390x844)
-2. Test 5-step flow (`/developments/grand-haven/build`) on mobile
-3. Verify footer visibility on all steps
-4. Check step navigation works correctly
-5. Verify no visual regressions on desktop
-6. Test on iPhone SE (320px width) for minimum width compatibility
-
----
-
-## Notes
-
-- No changes to pricing logic, calculations, or state management
-- No changes to brandMessaging content
-- All changes are visual/UX polish only
-- Portal-based footer architecture is preserved
+1. Test on mobile viewport (390x844) - iPhone 14 size
+2. Test on smaller mobile (320x568) - iPhone SE size
+3. Verify drawer opens and closes smoothly
+4. Verify "Get Pre-Qualified" flow works from drawer
+5. Verify back/continue navigation works on all steps 4-8
+6. Test on tablet viewport to ensure proper responsive behavior
