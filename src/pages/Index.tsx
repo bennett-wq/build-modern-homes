@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { models } from "@/data/pricing-config";
 import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
 import { brandMessaging } from "@/content/brandMessaging";
@@ -12,6 +13,10 @@ const featuredModels = models.filter(m => m.pricing.xmod).slice(0, 4);
 const Index = () => {
   return (
     <Layout>
+      <SEO 
+        title={brandMessaging.meta.home.title} 
+        description={brandMessaging.meta.home.description} 
+      />
       {/* Hero Section - Stripe/Airbnb minimal */}
       <section className="relative min-h-[90vh] flex items-center bg-background overflow-hidden">
         <div className="container mx-auto px-6 lg:px-12 py-20">

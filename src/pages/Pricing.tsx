@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Home, Hammer, MapPin, Wrench, HelpCircle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,6 +100,10 @@ const packageExamples = [
 export default function Pricing() {
   return (
     <Layout>
+      <SEO 
+        title={brandMessaging.meta.pricing.title} 
+        description={brandMessaging.meta.pricing.description} 
+      />
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">
