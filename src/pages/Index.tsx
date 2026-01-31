@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { models } from "@/data/pricing-config";
 import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
+import { brandMessaging } from "@/content/brandMessaging";
 
 // Featured models (first 4 with valid pricing)
 const featuredModels = models.filter(m => m.pricing.xmod).slice(0, 4);
@@ -73,26 +74,22 @@ const Index = () => {
             {/* Left: Copy */}
             <div className="max-w-xl">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-foreground leading-[1.08] tracking-tight mb-6">
-                Design your home.
-                <br />
-                See your installed price.
-                <br />
-                <span className="text-muted-foreground">Move faster.</span>
+                {brandMessaging.home.hero.headline}
               </h1>
 
               <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed mb-4 max-w-md">
-                BaseMod delivers modern modular homes with site-built curb appeal, transparent pricing, and a faster path to closing.
+                {brandMessaging.home.hero.subhead}
               </p>
 
               <p className="text-sm text-muted-foreground/70 mb-8 max-w-md">
-                Many homes complete in ~78 days on average once the site is ready. Timing varies by permitting and site conditions.
+                {brandMessaging.home.hero.trustLine}
               </p>
 
               {/* CTA Row */}
               <div className="flex flex-wrap items-center gap-4">
                 <Button asChild size="lg" className="h-12 px-8 text-base font-medium rounded-lg shadow-md hover:shadow-lg transition-shadow">
                   <Link to="/build">
-                    Get a Quote
+                    {brandMessaging.home.hero.primaryCta}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
@@ -100,7 +97,7 @@ const Index = () => {
                   to="/models" 
                   className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Explore Homes
+                  {brandMessaging.home.hero.secondaryCta}
                 </Link>
               </div>
             </div>
