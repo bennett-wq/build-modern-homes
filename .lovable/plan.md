@@ -1,242 +1,227 @@
 
-# Premium UI Redesign Plan for BaseMod Marketing Pages
+# Wizard Flow Optimization Plan: Making BaseMod the Best Digital Homebuilder Platform
 
-## Overview
-This plan transforms BaseMod's marketing UI into a tier-1 proptech experience with premium spacing, elegant typography, and refined visual hierarchy—while preserving all existing functionality, routing, and copy.
-
----
-
-## Phase 1: Design System Foundation
-
-### 1.1 Create Reusable Marketing Components
-
-**New Directory:** `src/components/marketing/`
-
-| Component | Purpose |
-|-----------|---------|
-| `Container.tsx` | Consistent max-width wrapper (max-w-7xl) with responsive padding |
-| `Section.tsx` | Section wrapper with py-16/20/24 options, optional bg variants |
-| `SectionHeader.tsx` | Centered or left-aligned headline + subtext with proper prose widths |
-| `FeatureCard.tsx` | Premium card with icon, title, body—hover elevation |
-| `CTASection.tsx` | Bottom CTA band with soft background, headline, buttons |
-| `CalloutCard.tsx` | Subtle quote/callout styling for emphasis blocks |
-
-### 1.2 CSS Enhancements (in `index.css`)
-
-Add utility classes:
-- `.bg-subtle-grid` - Faint CSS grid pattern for hero backgrounds
-- `.bg-gradient-radial` - Soft radial gradient overlay
-- `.prose-constrain` - Max-width for readable text (max-w-2xl/3xl)
+## Executive Summary
+This plan addresses visual inconsistencies and UX friction discovered during mobile testing of both the 8-step `/build` flow and 5-step Communities flow (`/developments/:slug/build`). The goal is to create a seamless, premium experience across all wizard flows.
 
 ---
 
-## Phase 2: Homepage Redesign (`/`)
+## Issues Identified During Testing
 
-### 2.1 Hero Section (Above Fold)
+### 1. Duplicate "Step X of Y" Text (High Priority)
+In `/build`, the step progress text appears twice:
+- Once in the mobile StepIndicator component
+- Again below the indicator (`Step {currentStep} of {STEPS.length}`)
 
-**Layout:** Two-column on desktop (text left, product preview right)
+**Location**: `src/pages/Configurator.tsx` lines 361-362
 
-**Left Column:**
-- Add Badge component above headline: "Built for real life"
-- H1 with `text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.05]`
-- Subhead with `text-lg lg:text-xl text-muted-foreground max-w-md`
-- Trust line in smaller muted text
-- CTA row: Primary button (h-12, icon) + text link secondary
+### 2. Inconsistent Step Indicators Between Flows
+- **8-Step Flow** (`Configurator.tsx`): Uses `StepIndicator` component with progress bars on mobile
+- **5-Step Flow** (`BuildWizard.tsx`): Uses inline icon-based step buttons with connector lines
 
-**Right Column:**
-- Replace simple image with elevated Card containing:
-  - Gradient header band
-  - 3 mini value rows: "Installed Estimate", "Timeline Clarity", "Curb Appeal"
-  - Hero image inset with shadow
+### 3. StepIntent Has Its Own Footer
+`StepIntent.tsx` renders its own fixed footer (lines 149-181) instead of using the shared `WizardStickyFooter` component, causing inconsistent styling.
 
-**Background:** Subtle radial gradient + faint CSS grid pattern
+### 4. Header Spacing Differences
+- 8-Step: `py-5` padding with `mb-5` margin before indicator
+- 5-Step: `py-3` padding with `mb-4` margin
 
-### 2.2 "Why We Exist" Section
-
-- Centered text block with `max-w-3xl mx-auto`
-- Left border accent (4px accent color) or large quotation marks
-- Callout Card below with "Ownership creates stewardship." (from closing body)
-
-### 2.3 "What We Build" Section
-
-- Split layout: Text left, model grid right
-- Model cards with improved spacing and hover states
-- Subtle shadow elevation on hover
-
-### 2.4 "How It Works" Section
-
-- Convert bullets to 4-step horizontal grid (desktop) / vertical stack (mobile)
-- Each step: Card with number badge (01–04), title extracted from bullet start, remaining text as body
-- Consistent card heights, subtle borders
-
-### 2.5 "Differentiators" Section
-
-- 3-card grid with lucide icons (CheckCircle, Clock, Star)
-- Cards: `p-8 lg:p-10`, hover elevation, aligned heights
-- Section background: `bg-secondary/30`
-
-### 2.6 Closing CTA Band
-
-- Create using new CTASection component
-- Soft gradient background + border-top
-- Headline + closing line + single strong CTA button
+### 5. Mobile Typography Inconsistencies
+Different title sizes and subline visibility across flows.
 
 ---
 
-## Phase 3: Pricing Page Redesign (`/pricing`)
+## Phase 1: Unify Step Indicator Design
 
-### 3.1 Hero Area
-- Clean centered hero with headline + subhead from brandMessaging
-- Badge above headline: "Honest Pricing"
-
-### 3.2 Pricing Bullets
-- Convert bullets to 3 horizontal cards (icons: FileCheck, Scale, ClipboardCheck)
-- Each card: Icon + bullet text + subtle background
-
-### 3.3 Pricing Components Section
-- Keep existing 4-card grid but improve spacing and typography
-- Consistent icon containers, improved hover states
-
-### 3.4 Package Examples
-- Improve card styling with better borders, shadows
-- Add subtle accent on "Starting from" price
-
-### 3.5 Disclaimer Notice Card
-- Style in muted bordered Card with info icon
-- Softer background, clear but unobtrusive
-
-### 3.6 FAQ Section
-- Keep existing accordion
-- Polish spacing and typography
-
-### 3.7 Bottom CTA
-- Use new CTASection component for consistency
-
----
-
-## Phase 4: Mission Page Redesign (`/mission`)
-
-### 4.1 Hero
-- Large title with premium spacing
-- Subtle badge: "Our Mission"
-
-### 4.2 Opening Section
-- Prose block with `max-w-2xl mx-auto`
-- Improved line-height and letter-spacing
-
-### 4.3 Promise Block
-- Convert to CalloutCard with accent border-left
-- Larger text, centered alignment
-
-### 4.4 Belief Section
-- Prose with section heading
-- Improved typography hierarchy
-
-### 4.5 Method Section
-- Convert to CalloutCard or subtle background Card
-- Clean presentation of the process
-
-### 4.6 Closing Section
-- Large centered quote styling
-- Premium dark band with proper contrast
-
----
-
-## Phase 5: Build Flow Header (`/build`)
-
-**Changes are styling only—no logic modifications:**
-
-### 5.1 Header Improvements
-- Increase header height padding (py-4 → py-5)
-- Improve title typography: `text-xl font-semibold`
-- Subline: `text-sm text-muted-foreground max-w-md`
-- Better spacing between logo area and title
-
-### 5.2 Step Indicator
-- Improve step indicator spacing and visual hierarchy
-- Clearer active/completed states
-
-### 5.3 Pricing Rail (Steps 4+)
-- Match card styling to new system (borders, shadows)
-- Typography consistency
-- **No changes to pricing logic or calculations**
-
----
-
-## Phase 6: Sitewide Polish
-
-### 6.1 Header (`Header.tsx`)
-- Increase height: `h-16 lg:h-20` → `h-18 lg:h-22`
-- Add subtle `border-b` styling
-- Improve nav link spacing: `gap-8` → `gap-10`
-- Better alignment of logo + links
-- CTA button: ensure `h-11` with proper padding
-
-### 6.2 Footer (`Footer.tsx`)
-- Improve column spacing and alignment
-- Add mission tagline from `brandMessaging.tagline`
-- Better visual hierarchy in link sections
-- Increase bottom bar padding
-
----
-
-## Files to Create
+### 1.1 Update StepIndicator Component
+Enhance `src/components/configurator/StepIndicator.tsx` to:
+- Remove redundant mobile progress text (already shown in parent)
+- Add icon support for visual hierarchy
+- Improve mobile tap targets
+- Use consistent animation patterns
 
 ```text
-src/components/marketing/
-├── Container.tsx
-├── Section.tsx
-├── SectionHeader.tsx
-├── FeatureCard.tsx
-├── CTASection.tsx
-├── CalloutCard.tsx
-└── index.ts
+Changes:
+- Add optional `icon` prop to Step interface
+- Improve mobile progress bar visual weight
+- Remove "Step X of Y" text (parent handles this)
+- Add subtle gradient to active state
 ```
+
+### 1.2 Standardize BuildWizard Step Navigation
+Update `src/pages/BuildWizard.tsx` to use the shared `StepIndicator` component instead of custom inline step buttons, ensuring visual consistency between flows.
+
+---
+
+## Phase 2: Fix Configurator Header Issues
+
+### 2.1 Remove Duplicate Step Text
+In `src/pages/Configurator.tsx`, remove the redundant "Step X of Y" text below the indicator:
+
+```text
+Lines 360-363:
+Delete the p element showing "Step {currentStep} of {STEPS.length}"
+```
+
+### 2.2 Optimize Header Spacing for Mobile
+- Reduce `mb-5` to `mb-3` for tighter mobile layout
+- Add responsive title sizing: `text-base sm:text-lg md:text-xl`
+
+---
+
+## Phase 3: Standardize Sticky Footer Usage
+
+### 3.1 Migrate StepIntent to WizardStickyFooter
+Replace the custom fixed footer in `StepIntent.tsx` with `WizardStickyFooter` for consistency:
+
+```text
+Changes to src/components/configurator/steps/StepIntent.tsx:
+- Import WizardStickyFooter, WizardFooterSpacer
+- Remove lines 149-181 (custom footer)
+- Add WizardFooterSpacer to content area
+- Add WizardStickyFooter with proper props
+```
+
+### 3.2 Audit All Steps for Footer Consistency
+Verify all step components use the shared footer pattern:
+- StepLocation.tsx - needs audit
+- StepModel.tsx - needs audit  
+- StepBuildType.tsx - needs audit
+- StepServicePackage.tsx - needs audit
+- StepFloorPlan.tsx - needs audit
+
+---
+
+## Phase 4: Premium Mobile Polish
+
+### 4.1 Header Styling Harmonization
+Create consistent header styling across both flows:
+
+```text
+Unified Header Styles:
+- Height: h-auto with py-3 sm:py-4
+- Background: bg-background/95 backdrop-blur-sm
+- Border: border-b border-border
+- Title: text-base sm:text-xl font-semibold tracking-tight
+- Subline: text-xs sm:text-sm text-muted-foreground (hidden on mobile)
+```
+
+### 4.2 Step Indicator Mobile Improvements
+- Increase progress bar height from `h-1` to `h-1.5` for better visibility
+- Add subtle shadow to active step
+- Ensure minimum tap target of 44px
+
+### 4.3 Safe Area Handling
+Ensure all footers account for device safe areas:
+```text
+Add to WizardStickyFooter:
+- pb-safe or env(safe-area-inset-bottom)
+```
+
+---
+
+## Phase 5: Flow-Specific Optimizations
+
+### 5.1 Communities Flow (BuildWizard.tsx)
+- Use shared StepIndicator component
+- Match header styling to 8-step flow
+- Ensure lot selection celebration animation is smooth
+
+### 5.2 Direct Build Flow (Configurator.tsx)
+- Remove duplicate step text
+- Tighten header spacing
+- Ensure footer visibility on all devices
+
+---
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/index.css` | Add utility classes for backgrounds/grids |
-| `src/pages/Index.tsx` | Restructure with new components |
-| `src/pages/Pricing.tsx` | Apply premium styling |
-| `src/pages/Mission.tsx` | Manifesto-style layout |
-| `src/pages/Configurator.tsx` | Header styling only (lines ~330-365) |
-| `src/components/layout/Header.tsx` | Height, spacing, alignment polish |
-| `src/components/layout/Footer.tsx` | Add tagline, improve spacing |
+| `src/components/configurator/StepIndicator.tsx` | Remove mobile step text, add icon support, improve styling |
+| `src/pages/Configurator.tsx` | Remove duplicate step text, optimize header spacing |
+| `src/pages/BuildWizard.tsx` | Use shared StepIndicator, harmonize header styling |
+| `src/components/configurator/steps/StepIntent.tsx` | Migrate to WizardStickyFooter |
+| `src/components/wizard/WizardStickyFooter.tsx` | Add safe area bottom padding |
 
 ---
 
-## Technical Notes
+## Technical Implementation Details
 
-### Typography Scale (applied consistently)
-- **H1 (Heroes):** `text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.05]`
-- **H2 (Sections):** `text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight`
-- **H3 (Cards):** `text-xl font-semibold`
-- **Body:** `text-base sm:text-lg text-muted-foreground leading-relaxed`
-- **Small/Meta:** `text-sm text-muted-foreground`
+### StepIndicator Enhancement
+```typescript
+// Add to Step interface
+interface Step {
+  id: number;
+  name: string;
+  shortName: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}
 
-### Spacing Rhythm
-- Section padding: `py-16 sm:py-20` (standard) or `py-20 sm:py-24` (hero)
-- Section margin: `mb-12 lg:mb-16` for headers
-- Card padding: `p-6 lg:p-8` or `p-8 lg:p-10` (feature cards)
-- Container: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`
+// Mobile view changes
+// Remove: "Step {currentStep} of {steps.length}" text
+// Keep: Progress bars only
+```
 
-### No Changes To
-- `brandMessaging.ts` content
-- Any pricing calculations or logic
-- Configurator step logic or state
-- Route definitions
-- Any Supabase/backend code
+### Configurator Header Cleanup
+```typescript
+// Remove this block (lines 360-363):
+{/* Step progress text */}
+<p className="text-center text-xs text-muted-foreground/60">
+  Step {currentStep} of {STEPS.length}
+</p>
+```
+
+### StepIntent Footer Migration
+```typescript
+// Replace custom footer with:
+<WizardFooterSpacer />
+<WizardStickyFooter
+  onContinue={onNext}
+  canContinue={!!selectedIntent}
+  continueLabel="Continue"
+  hideBack={true}
+  pulseOnReady={selectedIntent}
+>
+  {selectedIntent && (
+    <span className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Check className="w-4 h-4 text-accent" />
+      {intentOptions.find(o => o.id === selectedIntent)?.name}
+    </span>
+  )}
+</WizardStickyFooter>
+```
 
 ---
 
-## Acceptance Checklist
+## Acceptance Criteria
 
-- [ ] All pages load without errors
-- [ ] Typography hierarchy is clear and consistent
-- [ ] Spacing feels premium and breathable
-- [ ] Mobile layouts stack cleanly without cramping
-- [ ] No new factual claims added
-- [ ] Pricing/configurator logic unchanged
-- [ ] All existing functionality preserved
+- [ ] No duplicate "Step X of Y" text on mobile
+- [ ] Consistent header styling between both flows
+- [ ] All step components use WizardStickyFooter
+- [ ] Mobile tap targets are at least 44px
+- [ ] Safe area padding on all devices
+- [ ] Smooth animations without layout shifts
+- [ ] No functional changes to pricing or state logic
+- [ ] Both flows feel premium and "seamless"
+
+---
+
+## Testing Checklist
+
+After implementation:
+1. Test 8-step flow (`/build`) on mobile (390x844)
+2. Test 5-step flow (`/developments/grand-haven/build`) on mobile
+3. Verify footer visibility on all steps
+4. Check step navigation works correctly
+5. Verify no visual regressions on desktop
+6. Test on iPhone SE (320px width) for minimum width compatibility
+
+---
+
+## Notes
+
+- No changes to pricing logic, calculations, or state management
+- No changes to brandMessaging content
+- All changes are visual/UX polish only
+- Portal-based footer architecture is preserved
