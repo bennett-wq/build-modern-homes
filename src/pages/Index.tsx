@@ -251,15 +251,15 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex gap-5 p-6 bg-card rounded-2xl border border-border card-premium"
+                className="flex gap-5 p-6 lg:p-8 bg-card rounded-2xl border border-border card-premium"
               >
                 <div className="flex-shrink-0 relative">
                   {/* Step number badge */}
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-accent text-accent-foreground text-xs font-bold flex items-center justify-center z-10">
+                  <span className="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-accent text-accent-foreground text-sm font-bold flex items-center justify-center z-10 shadow-md">
                     {step.number}
                   </span>
-                  <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <step.icon className="w-7 h-7 text-accent" />
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-xl bg-accent flex items-center justify-center shadow-md">
+                    <step.icon className="w-8 h-8 lg:w-10 lg:h-10 text-accent-foreground" />
                   </div>
                 </div>
                 <div>
@@ -301,8 +301,8 @@ const Index = () => {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="p-8 lg:p-10 bg-card rounded-2xl border border-border card-premium"
               >
-                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                  <item.icon className="w-7 h-7 text-accent" />
+                <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl bg-accent flex items-center justify-center mb-6 shadow-md">
+                  <item.icon className="w-7 h-7 lg:w-8 lg:h-8 text-accent-foreground" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-3">
                   {item.title}
@@ -421,9 +421,11 @@ const Index = () => {
               >
                 <Link
                   to={card.href}
-                  className="group block p-8 lg:p-10 bg-card rounded-2xl border border-border hover:border-accent/50 card-premium h-full"
+                  className="group block p-8 lg:p-10 bg-card rounded-2xl border-2 border-border hover:border-accent card-premium h-full"
                 >
-                  <card.icon className="w-7 h-7 text-accent mb-6 transition-transform duration-200 group-hover:scale-110" />
+                  <div className="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-200">
+                    <card.icon className="w-7 h-7 text-accent-foreground" />
+                  </div>
                   <h3 className="text-xl font-semibold text-card-foreground mb-2">
                     {card.title}
                   </h3>

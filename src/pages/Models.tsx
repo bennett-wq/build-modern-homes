@@ -263,9 +263,9 @@ function ModelCard({ model, index }: ModelCardProps) {
               <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
             )}
             
-            {/* Price Badge */}
+            {/* Price Badge - Will show actual price when available */}
             <div className="absolute top-3 right-3 bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-sm font-semibold shadow-md z-10">
-              Starting at $XXX,XXX
+              Get Quote
             </div>
             
             <img

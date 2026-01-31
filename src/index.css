@@ -174,6 +174,7 @@
   /* Premium card hover effect - enhanced lift + scale */
   .card-premium {
     @apply transition-all duration-200 ease-out rounded-2xl;
+    box-shadow: var(--shadow-card);
   }
   .card-premium:hover {
     transform: translateY(-4px) scale(1.02);
@@ -183,6 +184,7 @@
   /* Hover lift for buttons and interactive elements */
   .hover-lift {
     @apply transition-all duration-200 ease-out;
+    box-shadow: var(--shadow-card);
   }
   .hover-lift:hover {
     transform: translateY(-4px);
@@ -195,6 +197,12 @@
   }
   .btn-lift:hover {
     transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Progress bar smooth fill animation */
+  .progress-smooth [data-state="indicator"] {
+    @apply transition-all duration-500 ease-out;
   }
 
   /* Link underline animation */
