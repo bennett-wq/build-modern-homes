@@ -30,9 +30,9 @@ export default function Models() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-3xl">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0.6, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               {/* Eyebrow */}
               <span className="inline-block text-accent font-medium text-sm tracking-wide mb-4">
@@ -40,7 +40,7 @@ export default function Models() {
               </span>
 
               {/* Headline */}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1] mb-6">
+              <h1 className="text-4xl md:text-5xl lg:text-[4rem] font-extrabold tracking-tight text-foreground leading-[1.1] mb-6">
                 Find the plan that fits.
               </h1>
 
@@ -86,10 +86,10 @@ export default function Models() {
       {/* Models Grid - Apple-minimal catalog */}
       <Section className="bg-background">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0.4, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-3">
@@ -249,10 +249,10 @@ function ModelCard({ model, index }: ModelCardProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0.4, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.08 }}
+      transition={{ duration: 0.4, delay: index * 0.06 }}
     >
       <div className="group bg-card rounded-2xl border border-border overflow-hidden card-premium">
         {/* Image Container - Links to detail - aspect-video for premium 16:9 feel */}
@@ -262,11 +262,6 @@ function ModelCard({ model, index }: ModelCardProps) {
             {!imageLoaded && (
               <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
             )}
-            
-            {/* Price Badge - Will show actual price when available */}
-            <div className="absolute top-3 right-3 bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-sm font-semibold shadow-md z-10">
-              Get Quote
-            </div>
             
             <img
               src={currentSrc}

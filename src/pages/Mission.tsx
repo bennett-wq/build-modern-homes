@@ -5,9 +5,9 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 
 const fadeInUp = {
-  initial: { opacity: 0, y: 24 },
+  initial: { opacity: 0.4, y: 24 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
 };
 
 export default function Mission() {
@@ -17,12 +17,12 @@ export default function Mission() {
       <section className="py-24 lg:py-32 bg-background">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0.6, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
             className="max-w-3xl"
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.08] tracking-tight mb-8">
+            <h1 className="text-4xl sm:text-5xl lg:text-[4rem] font-extrabold text-foreground leading-[1.08] tracking-tight mb-8">
               The housing market failed a generation. We're building the fix.
             </h1>
             
@@ -83,10 +83,10 @@ export default function Mission() {
       <section className="py-12 bg-background">
         <div className="container mx-auto px-6 lg:px-12">
           <motion.blockquote 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0.4, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
             className="border-l-4 border-accent pl-8 max-w-2xl mx-auto"
           >
             <p className="text-2xl lg:text-3xl text-foreground font-medium">

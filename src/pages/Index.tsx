@@ -79,9 +79,9 @@ const pathCards = [
 ];
 
 const fadeInUp = {
-  initial: { opacity: 0, y: 24 },
+  initial: { opacity: 0.4, y: 24 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
 };
 
 const Index = () => {
@@ -93,12 +93,12 @@ const Index = () => {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Copy */}
             <motion.div 
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0.6, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.5 }}
               className="max-w-xl"
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.08] tracking-tight mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-[4rem] font-extrabold text-foreground leading-[1.08] tracking-tight mb-6">
                 The path to ownership is broken.
                 <br />
                 <span className="text-muted-foreground">We're rebuilding it.</span>
@@ -247,10 +247,10 @@ const Index = () => {
             {steps.map((step, index) => (
               <motion.div
                 key={step.number}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0.4, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
                 className="flex gap-5 p-6 lg:p-8 bg-card rounded-2xl border border-border card-premium"
               >
                 <div className="flex-shrink-0 relative">
@@ -295,10 +295,10 @@ const Index = () => {
             {differentiators.map((item, index) => (
               <motion.div
                 key={item.title}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0.4, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
                 className="p-8 lg:p-10 bg-card rounded-2xl border border-border card-premium"
               >
                 <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl bg-accent flex items-center justify-center mb-6 shadow-md">
@@ -338,10 +338,10 @@ const Index = () => {
             {featuredModels.map((model, index) => (
               <motion.div
                 key={model.slug}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0.4, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
               >
                 <Link
                   to={`/models/${model.slug}`}
@@ -414,10 +414,10 @@ const Index = () => {
             {pathCards.map((card, index) => (
               <motion.div
                 key={card.title}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0.4, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
               >
                 <Link
                   to={card.href}
