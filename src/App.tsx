@@ -20,6 +20,7 @@ import DesignStudio from "./pages/DesignStudio";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import GrandHavenSitePlan from "./pages/GrandHavenSitePlan";
 import BuildWizard from "./pages/BuildWizard";
+import Mission from "./pages/Mission";
 import Configurator from "./pages/Configurator";
 import QuoteSummary from "./pages/QuoteSummary";
 import SecureBankConnect from "./pages/SecureBankConnect";
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/models" element={<Models />} />
           <Route path="/models/:modelId" element={<ModelDetail />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/mission" element={<Mission />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/design-studio" element={<DesignStudio />} />

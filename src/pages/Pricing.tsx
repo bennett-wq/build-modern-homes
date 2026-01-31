@@ -107,16 +107,11 @@ export default function Pricing() {
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <span className="inline-block text-accent font-medium text-sm uppercase tracking-wider mb-4">
-              Transparent Pricing
-            </span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
-              Understanding Your Investment
+              Know your number before you commit.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              BaseMod package pricing includes everything you need—home, lot, 
-              site-built components, and site work. No hidden costs, just clear 
-              estimates to help you plan.
+              Homebuilding has been a guessing game for too long. We're changing that with upfront, all-in pricing designed to help you actually plan your life.
             </p>
           </motion.div>
         </div>

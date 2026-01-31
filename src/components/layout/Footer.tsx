@@ -3,13 +3,13 @@ import { Mail, Phone, MapPin } from "lucide-react";
 
 const footerLinks = {
   company: [
+    { label: "Our Mission", href: "/mission" },
     { label: "About BaseMod", href: "/about" },
-    { label: "The Development", href: "/development" },
     { label: "Contact Us", href: "/contact" },
   ],
   homes: [
     { label: "Home Models", href: "/models" },
-    { label: "Design Studio", href: "/design-studio" },
+    { label: "Communities", href: "/communities" },
     { label: "Pricing", href: "/pricing" },
   ],
 };
@@ -27,7 +27,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-primary-foreground/70 text-sm leading-relaxed mb-6">
-              Modern Modular Homes. Thoughtfully designed for people who want quality, speed, and attainability.
+              Rebuilding the path to ownership.
             </p>
           </div>
 
@@ -110,7 +110,7 @@ export function Footer() {
               © {new Date().getFullYear()} BaseMod Developments. All rights reserved.
             </p>
             <p className="text-primary-foreground/50 text-xs">
-              Modern modular homes built for quality and efficiency.
+              New communities, new models, and the work of making ownership possible again.
             </p>
           </div>
         </div>
