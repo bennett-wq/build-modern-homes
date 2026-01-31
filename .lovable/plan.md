@@ -1,183 +1,129 @@
 
-# Mobile Pricing Drawer Fix Plan
+
+# Mobile Pricing Drawer Fix: Show Pricing Before Build Type Selection
 
 ## Problem Identified
-On mobile (steps 4-8 of the /build wizard), the pricing display is extremely minimal:
-- Only shows "Starting from" + price
-- Missing: Monthly payment estimate ($X,XXX/mo)
-- Missing: "Explore Payments" button
-- Missing: "Get Pre-Qualified" CTA (critical conversion point)
-- Missing: Price breakdown and "What's included"
-- Potential z-index conflict with WizardStickyFooter (both use `fixed bottom-0 z-50`)
 
-Desktop users see the full pricing rail with all financing options, but mobile users are missing critical CTAs.
+On Step 4 of the /build wizard, the mobile pricing drawer shows empty content because:
 
----
+1. **`hasPricing` evaluates to `false`** when `buildType` is null
+2. This hides all pricing content and financing CTAs in the drawer
+3. Users see only "Home Package Estimate" title with Back/Continue buttons - no actual price or payment info
 
-## Solution: Mobile Pricing Drawer
-
-Create an enhanced mobile pricing experience using a bottom drawer pattern (using the existing `vaul` Drawer component) that:
-
-1. **Compact Bar (Always Visible)**: Shows price + monthly payment + tap-to-expand indicator
-2. **Expandable Drawer**: Full pricing breakdown, financing options, and CTAs when tapped
-3. **Properly Stacks**: Works with or replaces WizardStickyFooter on pricing steps
-
----
-
-## Implementation
-
-### Phase 1: Enhance MobilePricingBar Component
-
-Update `src/components/pricing/BuyerPricingDisplay.tsx` to replace the minimal `MobilePricingBar` with an enhanced version:
-
-**New Features:**
-- Add MonthlyPaymentBadge inline (compact format)
-- Add tap indicator ("Tap for details" or chevron up icon)
-- Add Drawer that opens to show:
-  - Full price breakdown (collapsible sections)
-  - "What's included" modal trigger
-  - BaseMod Financial section with monthly payment
-  - "Explore Payments" and "Get Pre-Qualified" buttons
-  - Disclaimers
-
-**Structure:**
-```text
-[Collapsed State - Fixed Bottom Bar]
-┌─────────────────────────────────────────────┐
-│ Starting from         │ Est. $1,145/mo  [↑] │
-│ $197,350  Preliminary │                     │
-└─────────────────────────────────────────────┘
-
-[Expanded State - Drawer]
-┌─────────────────────────────────────────────┐
-│ ─────────────────  (drag handle)            │
-│                                             │
-│ Starting from              [Preliminary]    │
-│ $197,350                                    │
-│ Typical Installed Allowance                 │
-│                                             │
-│ ┌─────────────────────────────────────────┐ │
-│ │ BaseMod Financial           6.875% APR  │ │
-│ │ Est. Monthly  $1,145/mo             (i) │ │
-│ │ [Explore Payments] [Get Pre-Qualified]  │ │
-│ └─────────────────────────────────────────┘ │
-│                                             │
-│ [▼ View price breakdown]                    │
-│ [▼ What's included]                         │
-│ [▼ Not included / site dependent]           │
-│                                             │
-│ Estimates exclude land unless selected.     │
-│ Final pricing confirmed via formal quote.   │
-└─────────────────────────────────────────────┘
+**Code location**: `src/hooks/useConfiguratorPricing.ts` line 178:
+```typescript
+hasPricing: Boolean(input.modelSlug && input.buildType && unifiedPricing.home.factoryQuoteTotal > 0)
 ```
 
-### Phase 2: Handle Footer Conflict
+## Solution
 
-On steps 4-8, when `showPricingRail` is true:
-- The enhanced mobile pricing bar should replace the navigation footer
-- Add back/continue navigation buttons INTO the mobile pricing drawer
-- Or: Stack the pricing bar above the footer with proper spacing
+Modify the `hasPricing` logic to allow pricing display when a model is selected, even if buildType hasn't been chosen yet. For Step 4, we should show a "preview" price based on a default buildType (e.g., 'xmod' since it's the more common choice).
 
-**Approach chosen**: Integrate navigation into the mobile pricing drawer footer area, eliminating the need for separate WizardStickyFooter on steps 4+.
+### Option A (Recommended): Fix at the Hook Level
 
-### Phase 3: Update Configurator.tsx Integration
+Update `useConfiguratorPricing.ts` to calculate pricing with a fallback buildType when none is selected, while still indicating the estimate is preliminary.
 
-Modify how the mobile pricing is rendered:
-- Pass `onBack` and `onContinue` props to mobile pricing component
-- Include navigation in the mobile drawer
-- Ensure proper safe-area padding
+**Changes to `src/hooks/useConfiguratorPricing.ts`:**
 
----
+1. **Line 91-101**: When `buildType` is null but `modelSlug` exists, use a default buildType ('xmod') for calculation instead of returning empty pricing
+
+2. **Line 178**: Update `hasPricing` condition:
+   ```typescript
+   // Before:
+   hasPricing: Boolean(input.modelSlug && input.buildType && unifiedPricing.home.factoryQuoteTotal > 0)
+   
+   // After:
+   hasPricing: Boolean(input.modelSlug && unifiedPricing.home.factoryQuoteTotal > 0)
+   ```
+
+### Implementation Details
+
+```typescript
+// src/hooks/useConfiguratorPricing.ts
+
+// Line 91-116: Update the calculation to use fallback buildType
+const unifiedPricing = useMemo(() => {
+  if (!input.modelSlug) {
+    // No model selected - return empty pricing
+    return engine.calculatePrice({
+      modelSlug: 'hawthorne',
+      buildType: 'xmod',
+      servicePackage: unifiedServicePackage,
+      selectedOptionIds: [],
+      lotPremium: 0,
+    });
+  }
+  
+  // Use selected buildType, or fallback to 'xmod' for preview pricing
+  const effectiveBuildType = input.buildType || 'xmod';
+  
+  return engine.calculatePrice({
+    modelSlug: input.modelSlug,
+    buildType: effectiveBuildType,
+    foundationType: 'crawl',
+    servicePackage: unifiedServicePackage,
+    selectedOptionIds: input.selectedOptionIds || [],
+    includeFeesAllowance: input.includeUtilityFees || input.includePermitsCosts,
+    includeSitework: unifiedServicePackage === 'installed',
+    includeSiteworkContingency: true,
+    lotPremium: input.lotPremium || 0,
+    lotNumber: input.lotNumber,
+    developmentName: input.developmentName,
+  });
+}, [/* deps */]);
+
+// Line 178: Update hasPricing to only require modelSlug
+const flags: BuyerPricingFlags = useMemo(() => ({
+  freightPending: unifiedPricing.freightPending,
+  basementSelectedRequiresQuote: false,
+  estimateConfidence,
+  hasPricing: Boolean(input.modelSlug && unifiedPricing.home.factoryQuoteTotal > 0),
+  pricingMode,
+}), [/* deps */]);
+```
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/pricing/BuyerPricingDisplay.tsx` | Replace MobilePricingBar with EnhancedMobilePricingDrawer including financing CTAs and drawer expansion |
-| `src/pages/Configurator.tsx` | Update mobile pricing render to pass navigation callbacks; hide WizardStickyFooter when mobile pricing is shown |
+| `src/hooks/useConfiguratorPricing.ts` | Update pricing calculation to use fallback buildType; update hasPricing condition to not require buildType |
 
----
+## UX Impact
 
-## Technical Details
+After this fix, on Step 4 (Build Type selection):
 
-### New MobilePricingBar Component Structure
+**Before:**
+- Mobile drawer shows: "Home Package Estimate" + disclaimers + Back/Continue
+- No price, no monthly payment, no financing CTAs
 
-```typescript
-// Key imports needed
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
-import { MonthlyPaymentBadge } from '@/components/financing/MonthlyPaymentBadge';
-import { FinancingCalculator } from '@/components/financing/FinancingCalculator';
-import { PreQualificationFlow } from '@/components/financing/PreQualificationFlow';
-
-// Props to add
-interface MobilePricingBarProps {
-  breakdown: BuyerFacingBreakdown;
-  flags: BuyerPricingFlags;
-  onAction?: () => void;
-  actionLabel?: string;
-  // New props for navigation integration
-  onBack?: () => void;
-  onContinue?: () => void;
-  canContinue?: boolean;
-  backLabel?: string;
-  continueLabel?: string;
-  showNavigation?: boolean;
-}
-```
-
-### Configurator Integration
-
-```typescript
-// In mobile render section (around line 560)
-{isMobile && showPricingRail && (
-  <BuyerPricingDisplay
-    breakdown={displayPricing.breakdown}
-    flags={pricingFlags}
-    variant="mobile"
-    showPlaceholder={false}
-    // New: Pass navigation props
-    onBack={prevStep}
-    onContinue={nextStep}
-    canContinue={/* step-specific logic */}
-    showNavigation={true}
-    // ... existing props
-  />
-)}
-
-// Conditionally hide WizardStickyFooter when mobile pricing handles navigation
-// This is handled within each step component
-```
-
----
-
-## Safe Area Handling
-
-The drawer must properly handle:
-- `pb-[env(safe-area-inset-bottom)]` for devices with home indicators
-- Proper z-index stacking (z-50 for bar, z-60 for drawer overlay)
-- Backdrop blur for premium feel
-
----
+**After:**
+- Mobile drawer shows: Full price (e.g., "$197,350")
+- Monthly payment estimate (e.g., "Est. $1,145/mo")
+- "BaseMod Financial" section with:
+  - "Explore Payments" button
+  - "Get Pre-Qualified" CTA
+- Price breakdown (collapsible)
+- Back/Continue navigation
 
 ## Acceptance Criteria
 
-- [ ] Mobile users see price + monthly payment estimate in collapsed bar
-- [ ] Tapping the bar opens a drawer with full pricing breakdown
-- [ ] "Explore Payments" button opens financing calculator
-- [ ] "Get Pre-Qualified" button opens pre-qualification flow
-- [ ] Navigation (Back/Continue) is accessible on mobile
-- [ ] Safe area padding works on iPhone with home indicator
-- [ ] No visual conflicts between pricing bar and navigation
-- [ ] Drawer has smooth open/close animations
-- [ ] All existing pricing logic unchanged
-
----
+- [ ] Price displays in mobile drawer on Step 4 before buildType is selected
+- [ ] Monthly payment estimate is visible
+- [ ] "Explore Payments" button works
+- [ ] "Get Pre-Qualified" CTA works
+- [ ] Price updates when buildType changes (MOD vs XMOD)
+- [ ] Navigation (Back/Continue) continues to work
+- [ ] No regressions on Steps 5-8
+- [ ] Desktop pricing rail still works correctly
 
 ## Testing Plan
 
-1. Test on mobile viewport (390x844) - iPhone 14 size
-2. Test on smaller mobile (320x568) - iPhone SE size
-3. Verify drawer opens and closes smoothly
-4. Verify "Get Pre-Qualified" flow works from drawer
-5. Verify back/continue navigation works on all steps 4-8
-6. Test on tablet viewport to ensure proper responsive behavior
+1. Navigate to /build
+2. Select intent (Build on My Land)
+3. Select location (I don't know yet)
+4. Select model (Hawthorne)
+5. **Verify Step 4**: Mobile drawer should show price and financing CTAs
+6. Select build type (XMOD)
+7. **Verify Step 5**: Price should update, financing still visible
+8. Continue through remaining steps to verify no regressions
+
