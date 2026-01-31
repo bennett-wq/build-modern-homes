@@ -716,10 +716,10 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col"
+      className="w-full h-full flex flex-col items-center justify-center"
     >
-      {/* Full-bleed hero container */}
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      {/* Full-bleed hero container with explicit aspect ratio */}
+      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Image fills the container */}
         <img
           src={displayedSrc}
@@ -826,9 +826,9 @@ function AspenPhotoPreview({ packageId }: AspenPhotoPreviewProps) {
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col"
+      className="w-full h-full flex flex-col items-center justify-center"
     >
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
@@ -1348,9 +1348,9 @@ function BelmontPhotoPreview({ packageId }: BelmontPhotoPreviewProps) {
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col"
+      className="w-full h-full flex flex-col items-center justify-center"
     >
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
@@ -1550,9 +1550,9 @@ function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewPro
       initial={{ opacity: 0.8, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="w-full h-full flex flex-col"
+      className="w-full h-full flex flex-col items-center justify-center"
     >
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative w-full max-w-3xl aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
