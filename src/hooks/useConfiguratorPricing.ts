@@ -89,8 +89,8 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
   
   // Calculate pricing using the unified engine
   const unifiedPricing = useMemo(() => {
-    if (!input.modelSlug || !input.buildType) {
-      // Return empty pricing when no model/build type selected
+    if (!input.modelSlug) {
+      // Return empty pricing when no model selected
       return engine.calculatePrice({
         modelSlug: 'hawthorne', // Fallback
         buildType: 'xmod',
@@ -100,9 +100,12 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
       });
     }
     
+    // Use selected buildType, or fallback to 'xmod' for preview pricing
+    const effectiveBuildType = input.buildType || 'xmod';
+    
     return engine.calculatePrice({
       modelSlug: input.modelSlug,
-      buildType: input.buildType,
+      buildType: effectiveBuildType,
       foundationType: 'crawl',
       servicePackage: unifiedServicePackage,
       selectedOptionIds: input.selectedOptionIds || [],
@@ -175,9 +178,10 @@ export function useConfiguratorPricing(input: ConfiguratorPricingInput): Configu
     freightPending: unifiedPricing.freightPending,
     basementSelectedRequiresQuote: false, // TODO: add basement detection
     estimateConfidence,
-    hasPricing: Boolean(input.modelSlug && input.buildType && unifiedPricing.home.factoryQuoteTotal > 0),
+    // Show pricing as soon as model is selected (uses fallback buildType for preview)
+    hasPricing: Boolean(input.modelSlug && unifiedPricing.home.factoryQuoteTotal > 0),
     pricingMode,
-  }), [unifiedPricing, estimateConfidence, input.modelSlug, input.buildType, pricingMode]);
+  }), [unifiedPricing, estimateConfidence, input.modelSlug, pricingMode]);
   
   // Get model from engine
   const model = useMemo(() => {
