@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, MapPin, Compass, Building2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { models } from "@/data/pricing-config";
@@ -8,61 +8,6 @@ import { brandMessaging } from "@/content/brandMessaging";
 
 // Featured models (first 4 with valid pricing)
 const featuredModels = models.filter(m => m.pricing.xmod).slice(0, 4);
-
-// Value props - minimal, no icons
-const valueProps = [
-  {
-    title: "Faster by design",
-    description: "Factory-built precision while site work happens in parallel.",
-  },
-  {
-    title: "Neighborhood-friendly",
-    description: "Garages, porches, and rooflines that appraise like site-built homes.",
-  },
-  {
-    title: "Transparent pricing",
-    description: "Real-time estimates as you design — no guessing games.",
-  },
-];
-
-// How it works - 5 steps, super brief
-const steps = [
-  { number: "1", title: "Choose a home" },
-  { number: "2", title: "Customize layout" },
-  { number: "3", title: "Finalize quote" },
-  { number: "4", title: "Factory + site prep" },
-  { number: "5", title: "Set, finish, close" },
-];
-
-// Path cards
-const pathCards = [
-  {
-    icon: MapPin,
-    title: "Build on My Land",
-    description: "Have land? We'll help you plan and build.",
-    href: "/build?intent=my-land",
-  },
-  {
-    icon: Compass,
-    title: "Find Land to Build",
-    description: "We'll help you find the right lot.",
-    href: "/build?intent=find-land",
-  },
-  {
-    icon: Building2,
-    title: "Build in a Community",
-    description: "Choose from curated BaseMod developments.",
-    href: "/developments",
-  },
-];
-
-// Modular benefits
-const modularBenefits = [
-  "Factory-built for quality & consistency",
-  "Finished on-site for curb appeal",
-  "Predictable timelines",
-  "Financing eligibility varies by program/lender",
-];
 
 const Index = () => {
   return (
@@ -116,59 +61,47 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Value Proposition - 3 minimal blocks */}
+      {/* Why Section */}
       <section className="py-24 lg:py-32 bg-background border-t border-border">
         <div className="container mx-auto px-6 lg:px-12">
-          <div className="grid md:grid-cols-3 gap-12 lg:gap-16 max-w-5xl mx-auto">
-            {valueProps.map((prop) => (
-              <div key={prop.title} className="text-center md:text-left">
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {prop.title}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {prop.description}
-                </p>
-              </div>
-            ))}
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-6">
+              {brandMessaging.home.sections.why.headline}
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              {brandMessaging.home.sections.why.body}
+            </p>
           </div>
         </div>
       </section>
 
-      {/* How It Works - 5 step flow */}
+      {/* How It Works */}
       <section className="py-24 lg:py-32 bg-secondary/50">
         <div className="container mx-auto px-6 lg:px-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center mb-16">
-            How it works
-          </h2>
-          
-          <div className="flex flex-wrap justify-center gap-4 lg:gap-8 max-w-4xl mx-auto">
-            {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center">
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-foreground text-background text-sm font-medium flex items-center justify-center">
-                    {step.number}
-                  </span>
-                  <span className="text-sm sm:text-base font-medium text-foreground whitespace-nowrap">
-                    {step.title}
-                  </span>
-                </div>
-                {index < steps.length - 1 && (
-                  <ArrowRight className="w-4 h-4 text-muted-foreground/40 mx-2 lg:mx-4 hidden sm:block" />
-                )}
-              </div>
-            ))}
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-10">
+              {brandMessaging.home.sections.howItWorks.headline}
+            </h2>
+            <ul className="space-y-4 text-left max-w-xl mx-auto">
+              {brandMessaging.home.sections.howItWorks.bullets.map((bullet, index) => (
+                <li key={index} className="flex items-start gap-3 text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
+                  {bullet}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* Featured Homes - Editorial, not grid heavy */}
+      {/* What We Build */}
       <section className="py-24 lg:py-32 bg-background">
         <div className="container mx-auto px-6 lg:px-12">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-4 text-center">
-            Browse homes
+            {brandMessaging.home.sections.whatWeBuild.headline}
           </h2>
-          <p className="text-muted-foreground text-center mb-16 max-w-md mx-auto">
-            Modern designs built for efficiency and curb appeal.
+          <p className="text-muted-foreground text-center mb-16 max-w-lg mx-auto">
+            {brandMessaging.home.sections.whatWeBuild.body}
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-6xl mx-auto">
@@ -214,58 +147,44 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Choose Your Path - 3 large calm cards */}
+      {/* Differentiators - 3 cards */}
       <section className="py-24 lg:py-32 bg-secondary/30">
         <div className="container mx-auto px-6 lg:px-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center mb-4">
-            Choose your path
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center mb-16">
+            {brandMessaging.home.sections.differentiators.headline}
           </h2>
-          <p className="text-muted-foreground text-center mb-16 max-w-md mx-auto">
-            Whether you have land or need to find it — we'll guide you.
-          </p>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {pathCards.map((card) => (
-              <Link
+            {brandMessaging.home.sections.differentiators.cards.map((card) => (
+              <div
                 key={card.title}
-                to={card.href}
-                className="group block p-8 lg:p-10 bg-card rounded-2xl border border-border hover:border-accent/30 hover:shadow-lg transition-all duration-200"
+                className="p-8 lg:p-10 bg-card rounded-2xl border border-border"
               >
-                <card.icon className="w-6 h-6 text-accent mb-6" />
                 <h3 className="text-xl font-semibold text-card-foreground mb-2">
                   {card.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">
-                  {card.description}
+                <p className="text-muted-foreground leading-relaxed">
+                  {card.body}
                 </p>
-                <span className="inline-flex items-center text-sm font-medium text-accent group-hover:gap-2 transition-all">
-                  Get a Quote
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </span>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Modular Innovation - Educational, brief */}
+      {/* Closing Section */}
       <section className="py-24 lg:py-32 bg-background border-t border-border">
         <div className="container mx-auto px-6 lg:px-12">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-6">
-              Why modular?
+              {brandMessaging.home.sections.closing.headline}
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-10">
-              Factory-built and modular homes combine factory precision with site-built finishing — delivering a home that looks, appraises, and performs like traditional construction.
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              {brandMessaging.home.sections.closing.body}
             </p>
-            <ul className="space-y-3 text-left max-w-sm mx-auto">
-              {modularBenefits.map((benefit) => (
-                <li key={benefit} className="flex items-start gap-3 text-muted-foreground">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                  {benefit}
-                </li>
-              ))}
-            </ul>
+            <p className="text-lg font-medium text-foreground">
+              {brandMessaging.home.sections.closing.closingLine}
+            </p>
           </div>
         </div>
       </section>
