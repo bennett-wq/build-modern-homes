@@ -349,12 +349,6 @@ const Index = () => {
                 >
                   {/* Image with zoom effect */}
                   <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted mb-4 image-zoom relative">
-                    {/* Price badge */}
-                    {model.pricing.xmod && (
-                      <div className="absolute top-3 right-3 bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium shadow-md z-10">
-                        From ${(model.pricing.xmod.factory_quote_total / 1000).toFixed(0)}k
-                      </div>
-                    )}
                     <img
                       src={model.heroImage || "/images/models/placeholders/hero-placeholder.svg"}
                       alt={`${model.name} exterior`}
