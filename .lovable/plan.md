@@ -1,81 +1,36 @@
 
-# Fix: Remove Extra Text from Mobile Footer
+# Fix: Remove Gap Between Pricing Bar and Footer
 
 ## Problem
-The `WizardStickyFooter` displays additional content on mobile that makes it taller than necessary:
-- Selection summary chips (e.g., "CrossMod®", "Home Only", "Options are optional")
-- "You can change this later" reassurance text
+The `InlineMobilePricing` component is positioned at `bottom-[80px]` but the footer is only ~64px tall (after removing the children section). This creates a visible ~16px gap between the pricing bar and the navigation footer.
 
-This creates a cramped experience where the pricing bar and footer compete for space.
+## Root Cause
+After removing the mobile children section from `WizardStickyFooter`, the footer height changed:
+- **Before**: ~80px (padding + children + buttons)
+- **After**: ~64px (padding + buttons only)
+
+The pricing bar's `bottom` offset was not updated to match.
 
 ## Solution
-Hide these elements on mobile only, keeping them visible on desktop where there's more room.
+Update the `bottom` positioning in `InlineMobilePricing` to match the actual footer height.
 
----
+### File: `src/components/pricing/BuyerPricingDisplay.tsx`
 
-## File Changes
-
-**File: `src/components/wizard/WizardStickyFooter.tsx`**
-
-### Change 1: Hide children (selection chips) on mobile
-Remove the mobile-only children section entirely (lines 94-108). The selection context is already visible in the step content above.
-
-### Change 2: Hide reassurance text on mobile
-Add `hidden sm:block` to the reassurance text (lines 188-191) so it only shows on larger screens.
-
----
-
-## Code Changes
-
+**Current (line 762):**
 ```tsx
-// Line 94-108: REMOVE the mobile children section entirely
-// DELETE:
-{/* Mobile: Show selection summary above buttons */}
-<div className="md:hidden mb-3">
-  <AnimatePresence mode="wait">
-    {children && (
-      <motion.div>
-        {children}
-      </motion.div>
-    )}
-  </AnimatePresence>
-</div>
-
-// Line 188-191: Add hidden sm:block to reassurance
-{showReassurance && (
-  <span className="hidden sm:block text-[10px] sm:text-[11px] text-muted-foreground/70">
-    You can change this later.
-  </span>
-)}
+'bottom-[80px] sm:bottom-[88px]',
 ```
 
----
-
-## Visual Impact
-
-**Before (Mobile):**
-```
-┌─────────────────────────────────┐
-│ ✓ CrossMod®                     │  ← Remove
-├─────────────────────────────────┤
-│ ← Back         Continue →       │
-│            "You can change..."  │  ← Remove
-└─────────────────────────────────┘
-  Height: ~120px
+**Updated:**
+```tsx
+'bottom-[64px] sm:bottom-[72px]',
 ```
 
-**After (Mobile):**
-```
-┌─────────────────────────────────┐
-│ ← Back         Continue →       │
-└─────────────────────────────────┘
-  Height: ~64px
-```
-
----
+## Calculation
+| Screen | Footer Padding | Button Height | Total | New Bottom Value |
+|--------|---------------|---------------|-------|------------------|
+| Mobile | py-3 (24px) | 40px | 64px | `bottom-[64px]` |
+| sm+ | py-4 (32px) | 40px | 72px | `sm:bottom-[72px]` |
 
 ## Result
-- Footer height reduced from ~120px to ~64px on mobile
-- Pricing bar (`InlineMobilePricing`) will have more breathing room
-- Desktop experience unchanged (selection chips still shown)
-- Consistent, clean mobile footer across all steps
+The pricing bar will sit flush against the footer with no visible gap, creating a seamless visual experience on Steps 4-8.
