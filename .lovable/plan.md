@@ -1,163 +1,237 @@
 
-# Mobile UX Fixes for Build Configurator Flows
 
-## Status: ✅ COMPLETE
+# Community Flow Enhancements - Mobile Pricing, Loading States & Micro-interactions
 
 ## Overview
-This plan addresses four critical mobile UX issues across the 8-step `/build` flow and 5-step Community flow (`/developments/*/build`). The desktop experiences work well - these fixes target mobile-specific problems.
+This plan implements four key enhancements to elevate the 5-step Community build flow (`/developments/*/build`) to exceptional product quality. These changes focus on mobile UX, visual polish, and micro-interactions.
 
 ---
 
-## Implemented Fixes
+## Current State Analysis
 
-### ✅ Fix #1: Live Preview Not Rendering on Mobile (8-Step Flow)
-**Solution:** Changed preview containers from `flex-1` to explicit `aspect-[16/10]` in all photo preview components:
-- HawthornePhotoPreview (line 722)
-- AspenPhotoPreview (line 831)
-- BelmontPhotoPreview (line 1353)
-- KeenelandPhotoPreview (line 1555)
+### What's Already Working
+- **Step 4 Review**: Already shows `BuyerPricingDisplay` with full breakdown (lines 227-255 in Step4Review.tsx)
+- **Model Cards**: Already have skeleton loading while images load (lines 185-186 in Step2Model.tsx)
+- **Selection Feedback**: Basic selection states exist with checkmark indicators
 
-### ✅ Fix #2: Pricing Drawer Hidden on Mobile (8-Step Flow)
-**Solution:** Created new `InlineMobilePricing` component that renders above the sticky footer (not fixed position), avoiding z-index conflicts. Features:
-- Collapsible price summary with expand/collapse
-- Monthly payment estimate visible when collapsed
-- Financing CTAs (Explore Payments / Get Pre-Qualified) in expanded view
-
-### ✅ Fix #3: Scroll Stuck on Mobile (Community Flow)
-**Solution:** Updated `BuildWizard.tsx`:
-- Main container uses conditional overflow: `overflow-y-auto` for Step 4 on mobile
-- Step 4 motion.div uses `min-h-full` instead of `absolute inset-0` on mobile
-
-### ✅ Fix #4: No Validation Feedback (Both Flows)
-**Solution:** Added validation state and error display to `Step3Design.tsx`:
-- `validationError` state tracks missing selections
-- `handleContinue` callback shows error and switches to relevant tab
-- Error message displays in footer with AlertCircle icon
-- Error clears automatically when user makes selection
+### What's Missing
+- No mobile pricing visibility on Steps 2-4 (Model, Build Type, Design)
+- Micro-interactions lack polish (no selection pulse, no price animation)
+- Progress step completion needs animated checkmark
 
 ---
 
-## Files Modified
+## Enhancement #1: Mobile Pricing Visibility
 
-| File | Changes |
-|------|---------|
-| `src/components/wizard/Step3Design.tsx` | Added aspect-[16/10] to 4 preview components, added validation state/feedback |
-| `src/pages/BuildWizard.tsx` | Fixed scroll containment for Step 4 on mobile |
-| `src/pages/Configurator.tsx` | Replaced fixed MobilePricingBar with InlineMobilePricing |
-| `src/components/pricing/BuyerPricingDisplay.tsx` | Added InlineMobilePricing component |
+**Files to Modify:**
+- `src/pages/BuildWizard.tsx`
+- `src/components/wizard/Step2Model.tsx`
+- `src/components/configurator/steps/StepBuildType.tsx`
+- `src/components/wizard/Step3Design.tsx`
 
----
+**Implementation Approach:**
 
-## Testing Checklist
+Add `InlineMobilePricing` component (already exists in BuyerPricingDisplay.tsx) to the mobile layout of Steps 2-4.
 
-### 8-Step Flow (`/build`) - Mobile
-| Step | Test | Expected |
-|------|------|----------|
-| 4-6 | Price visible | Dynamic price shown in collapsible bar ✅ |
-| 7 | Preview renders | Home image visible with aspect-[16/10] ✅ |
-| 7 | Can select Package | Color options accessible via tabs ✅ |
-| 7 | Can select Garage | Garage options accessible via tabs ✅ |
-| 7 | Validation works | Error message if Continue clicked without selections ✅ |
-
-### 5-Step Community Flow (`/developments/grand-haven/build`) - Mobile
-| Step | Test | Expected |
-|------|------|----------|
-| 4 | Can scroll to tabs | Package/Garage tabs reachable ✅ |
-| 4 | Can select Package | Color options accessible ✅ |
-| 4 | Can select Garage | Garage options accessible ✅ |
-| 4 | Preview updates | Image changes with selections ✅ |
-| 4 | Validation works | Error message if Review clicked without selections ✅ |
-
----
-
-### File: `src/pages/Configurator.tsx` (8-Step Flow)
-
-#### Fix #2: Mobile pricing visibility
-
-Option A implementation - Add a collapsible pricing bar in the footer area:
-
-Update the mobile rendering to show pricing above the step content footer:
+**Step2Model.tsx changes:**
 ```tsx
-{/* Mobile Pricing Summary - inline with content */}
-{isMobile && showPricingRail && (
-  <div className="bg-card border-t border-border px-4 py-3 mb-20">
-    <MobilePricingSummary
-      breakdown={displayPricing.breakdown}
+import { InlineMobilePricing } from '@/components/pricing/BuyerPricingDisplay';
+
+// Add props for pricing
+interface Step2ModelProps {
+  // ... existing props
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
+}
+
+// Add above WizardFooterSpacer (mobile only)
+{isMobile && buyerFacingBreakdown && pricingFlags && (
+  <div className="mt-4">
+    <InlineMobilePricing
+      breakdown={buyerFacingBreakdown}
       flags={pricingFlags}
     />
   </div>
 )}
 ```
 
-Create a new `MobilePricingSummary` component that shows:
-- All-in price (or "Starting from" based on mode)
-- Monthly payment estimate (collapsible)
-- "Explore Payments" / "Get Pre-Qualified" CTAs
-
-This avoids z-index conflicts by placing pricing inline with content rather than fixed.
+**BuildWizard.tsx changes:**
+Pass pricing props to Step2Model, StepBuildType, and Step3Design:
+```tsx
+<Step2Model
+  // ... existing props
+  buyerFacingBreakdown={pricing.breakdown}
+  pricingFlags={pricing.flags}
+/>
+```
 
 ---
 
-### File: `src/components/pricing/BuyerPricingDisplay.tsx`
+## Enhancement #2: Enhanced Skeleton Loading
 
-Create a new inline mobile variant for the 8-step flow:
+**Current State:** Step2Model already implements skeleton loading (lines 185-186)
+
+**Enhancement:** Add shimmer effect and consistent skeleton UI across all image containers.
+
+**Files to Modify:**
+- `src/components/wizard/Step2Model.tsx`
+
+**Changes:**
 ```tsx
-function InlineMobilePricing({
-  breakdown,
-  flags,
-}: {
-  breakdown: BuyerFacingBreakdown;
-  flags: BuyerPricingFlags;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  return (
-    <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <CollapsibleTrigger className="w-full">
-        <div className="flex items-center justify-between py-2">
-          <div>
-            <span className="text-xs text-muted-foreground">
-              {getPricingModeHeadline(flags.pricingMode)}
-            </span>
-            <p className="text-lg font-semibold text-foreground">
-              {formatPrice(breakdown.startingFromPrice)}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <MonthlyPaymentBadge purchasePrice={breakdown.startingFromPrice} />
-            <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
-          </div>
-        </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        {/* Compact breakdown + financing CTAs */}
-      </CollapsibleContent>
-    </Collapsible>
-  );
+// Update skeleton to use shimmer animation
+{!imageLoaded && (
+  <div className="absolute inset-0 bg-muted overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted-foreground/5 to-muted animate-shimmer" />
+  </div>
+)}
+```
+
+**Add CSS keyframe in index.css:**
+```css
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
 }
 ```
 
 ---
 
+## Enhancement #3: Review Page Pricing Card (Already Implemented)
+
+**Current State:** Step4Review.tsx already displays `BuyerPricingDisplay` prominently (lines 227-234).
+
+**Verification:** The pricing card is positioned:
+1. After the "Your Home Plan" summary card
+2. After the exterior preview
+3. Before the Next Step CTAs
+
+**No changes needed** - this acceptance criteria is already met.
+
+---
+
+## Enhancement #4: Micro-interactions
+
+### 4a. Selection Feedback Animation
+
+**Files to Modify:**
+- `src/components/wizard/Step2Model.tsx` (ModelCard)
+- `src/components/wizard/Step3Design.tsx` (package/garage selection)
+- `src/index.css`
+
+**Add CSS animation:**
+```css
+@keyframes selectPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.animate-select {
+  animation: selectPulse 200ms ease-out;
+}
+```
+
+**ModelCard enhancement:**
+```tsx
+<Card 
+  className={cn(
+    // ... existing classes
+    isSelected && 'animate-select'
+  )}
+>
+```
+
+### 4b. Progress Bar Checkmark Animation
+
+**Files to Modify:**
+- `src/pages/BuildWizard.tsx`
+
+**Wrap checkmark in motion.div:**
+```tsx
+{isComplete ? (
+  <motion.div
+    initial={{ scale: 0 }}
+    animate={{ scale: 1 }}
+    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+    className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center"
+  >
+    <Check className="h-3 w-3 text-white" />
+  </motion.div>
+) : (
+  <StepIcon className={cn(...)} />
+)}
+```
+
+### 4c. Price Update Animation
+
+**Current State:** `BuyerPricingDisplay` already animates price changes using `AnimatePresence` and `motion.div` (lines 355-367).
+
+**Enhancement:** Use `AnimatedPrice` component for smoother odometer-style animation.
+
+**Files to Modify:**
+- `src/components/pricing/BuyerPricingDisplay.tsx`
+
+**Changes:**
+```tsx
+import { AnimatedPrice } from '@/components/ui/animated-price';
+
+// Replace static price display with AnimatedPrice
+{flags.hasPricing ? (
+  <AnimatedPrice
+    value={breakdown.startingFromPrice}
+    className="text-3xl font-semibold text-foreground"
+  />
+) : (
+  // ... fallback
+)}
+```
+
+### 4d. Button Hover States
+
+**Files to Modify:**
+- `src/index.css`
+
+**Add global button micro-interaction:**
+```css
+.btn-micro {
+  transition: transform 200ms ease-out;
+}
+
+.btn-micro:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+.btn-micro:active:not(:disabled) {
+  transform: scale(0.98);
+}
+```
+
+Apply to primary action buttons in WizardStickyFooter.
+
+---
+
 ## Testing Checklist
 
-### 8-Step Flow (`/build`) - Mobile
-| Step | Test | Expected |
-|------|------|----------|
-| 4-6 | Price visible | Dynamic price shown in collapsible bar |
-| 7 | Preview renders | Home image visible with aspect-[16/10] |
-| 7 | Can select Package | Color options accessible via tabs |
-| 7 | Can select Garage | Garage options accessible via tabs |
-| 7 | Validation works | Error message if Continue clicked without selections |
+### Mobile (390x844)
+| Test | Expected |
+|------|----------|
+| Step 2 (Model) | Price bar visible below model grid |
+| Step 3 (Build Type) | Price bar visible |
+| Step 4 (Design) | Price bar visible |
+| Price updates | Animated odometer effect when model changes |
+| Model selection | Card pulses briefly on selection |
+| Progress bar | Checkmark animates in when step completes |
 
-### 5-Step Community Flow (`/developments/grand-haven/build`) - Mobile
-| Step | Test | Expected |
-|------|------|----------|
-| 4 | Can scroll to tabs | Package/Garage tabs reachable |
-| 4 | Can select Package | Color options accessible |
-| 4 | Can select Garage | Garage options accessible |
-| 4 | Preview updates | Image changes with selections |
-| 4 | Validation works | Error message if Review clicked without selections |
+### Desktop (1440x900)
+| Test | Expected |
+|------|----------|
+| No duplicate pricing | Existing sidebar/inline pricing only |
+| Review page | Pricing card prominent before CTAs |
+| Selection feedback | Cards scale subtly on selection |
 
 ---
 
@@ -165,16 +239,22 @@ function InlineMobilePricing({
 
 | File | Changes |
 |------|---------|
-| `src/components/wizard/Step3Design.tsx` | Fix preview aspect ratio, add validation feedback |
-| `src/pages/BuildWizard.tsx` | Fix scroll containment on mobile |
-| `src/pages/Configurator.tsx` | Add inline mobile pricing |
-| `src/components/pricing/BuyerPricingDisplay.tsx` | Add InlineMobilePricing component |
+| `src/pages/BuildWizard.tsx` | Pass pricing to steps, animate progress checkmarks |
+| `src/components/wizard/Step2Model.tsx` | Add InlineMobilePricing, selection animation |
+| `src/components/configurator/steps/StepBuildType.tsx` | Add InlineMobilePricing |
+| `src/components/wizard/Step3Design.tsx` | Add InlineMobilePricing |
+| `src/components/pricing/BuyerPricingDisplay.tsx` | Use AnimatedPrice component |
+| `src/index.css` | Add shimmer, selectPulse, btn-micro animations |
 
 ---
 
 ## What Will NOT Change
-- Desktop layouts (they work well)
-- Pricing calculation logic
-- Color/garage options available
-- Overall step flow structure
-- Any copy or messaging
+- Current lot selection experience
+- Progress bar design and navigation structure
+- Package/Garage tab functionality
+- Validation feedback system
+- Form state persistence (URL parameters)
+- CTA button placements and copy
+- Trust indicators (Financing, Appraisals badges)
+- Desktop layouts and existing pricing sidebar
+
