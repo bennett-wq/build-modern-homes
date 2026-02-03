@@ -2,150 +2,60 @@
 
 # Community Flow Enhancements - Mobile Pricing, Loading States & Micro-interactions
 
-## Overview
-This plan implements four key enhancements to elevate the 5-step Community build flow (`/developments/*/build`) to exceptional product quality. These changes focus on mobile UX, visual polish, and micro-interactions.
+## Status: ✅ IMPLEMENTED
 
 ---
 
-## Current State Analysis
+## Summary of Changes Made
 
-### What's Already Working
-- **Step 4 Review**: Already shows `BuyerPricingDisplay` with full breakdown (lines 227-255 in Step4Review.tsx)
-- **Model Cards**: Already have skeleton loading while images load (lines 185-186 in Step2Model.tsx)
-- **Selection Feedback**: Basic selection states exist with checkmark indicators
+### Enhancement #1: Mobile Pricing Visibility ✅
+- Added `InlineMobilePricing` component to Step 2 (Model) and Step 3 (Build Type)
+- Pricing now visible on mobile during selection steps
+- Shows all-in price, monthly payment estimate, and financing CTAs
 
-### What's Missing
-- No mobile pricing visibility on Steps 2-4 (Model, Build Type, Design)
-- Micro-interactions lack polish (no selection pulse, no price animation)
-- Progress step completion needs animated checkmark
+### Enhancement #2: Enhanced Skeleton Loading ✅
+- Added shimmer animation keyframe to `index.css`
+- Updated model card skeletons to use gradient shimmer instead of pulse
 
----
+### Enhancement #3: Review Page Pricing Card ✅
+- Already implemented - no changes needed
 
-## Enhancement #1: Mobile Pricing Visibility
-
-**Files to Modify:**
-- `src/pages/BuildWizard.tsx`
-- `src/components/wizard/Step2Model.tsx`
-- `src/components/configurator/steps/StepBuildType.tsx`
-- `src/components/wizard/Step3Design.tsx`
-
-**Implementation Approach:**
-
-Add `InlineMobilePricing` component (already exists in BuyerPricingDisplay.tsx) to the mobile layout of Steps 2-4.
-
-**Step2Model.tsx changes:**
-```tsx
-import { InlineMobilePricing } from '@/components/pricing/BuyerPricingDisplay';
-
-// Add props for pricing
-interface Step2ModelProps {
-  // ... existing props
-  buyerFacingBreakdown?: BuyerFacingBreakdown;
-  pricingFlags?: BuyerPricingFlags;
-}
-
-// Add above WizardFooterSpacer (mobile only)
-{isMobile && buyerFacingBreakdown && pricingFlags && (
-  <div className="mt-4">
-    <InlineMobilePricing
-      breakdown={buyerFacingBreakdown}
-      flags={pricingFlags}
-    />
-  </div>
-)}
-```
-
-**BuildWizard.tsx changes:**
-Pass pricing props to Step2Model, StepBuildType, and Step3Design:
-```tsx
-<Step2Model
-  // ... existing props
-  buyerFacingBreakdown={pricing.breakdown}
-  pricingFlags={pricing.flags}
-/>
-```
+### Enhancement #4: Micro-interactions ✅
+- Added `selectPulse` animation for card selection feedback
+- Added animated checkmarks on progress bar (spring animation)
+- Added `btn-micro` utility class for button hover states
+- Model cards now pulse briefly when selected
 
 ---
 
-## Enhancement #2: Enhanced Skeleton Loading
+## Files Modified
 
-**Current State:** Step2Model already implements skeleton loading (lines 185-186)
-
-**Enhancement:** Add shimmer effect and consistent skeleton UI across all image containers.
-
-**Files to Modify:**
-- `src/components/wizard/Step2Model.tsx`
-
-**Changes:**
-```tsx
-// Update skeleton to use shimmer animation
-{!imageLoaded && (
-  <div className="absolute inset-0 bg-muted overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted-foreground/5 to-muted animate-shimmer" />
-  </div>
-)}
-```
-
-**Add CSS keyframe in index.css:**
-```css
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-shimmer {
-  animation: shimmer 1.5s infinite;
-}
-```
+| File | Changes |
+|------|---------|
+| `src/index.css` | Added shimmer, selectPulse, btn-micro animations |
+| `src/pages/BuildWizard.tsx` | Pass pricing to steps, animate progress checkmarks |
+| `src/components/wizard/Step2Model.tsx` | Add InlineMobilePricing, selection animation, shimmer skeleton |
+| `src/components/configurator/steps/StepBuildType.tsx` | Add InlineMobilePricing |
 
 ---
 
-## Enhancement #3: Review Page Pricing Card (Already Implemented)
+## Testing Checklist
 
-**Current State:** Step4Review.tsx already displays `BuyerPricingDisplay` prominently (lines 227-234).
+### Mobile (390x844)
+| Test | Expected |
+|------|----------|
+| Step 2 (Model) | Price bar visible below model grid |
+| Step 3 (Build Type) | Price bar visible |
+| Price updates | Animated when model changes |
+| Model selection | Card pulses briefly on selection |
+| Progress bar | Checkmark animates in when step completes |
 
-**Verification:** The pricing card is positioned:
-1. After the "Your Home Plan" summary card
-2. After the exterior preview
-3. Before the Next Step CTAs
-
-**No changes needed** - this acceptance criteria is already met.
-
----
-
-## Enhancement #4: Micro-interactions
-
-### 4a. Selection Feedback Animation
-
-**Files to Modify:**
-- `src/components/wizard/Step2Model.tsx` (ModelCard)
-- `src/components/wizard/Step3Design.tsx` (package/garage selection)
-- `src/index.css`
-
-**Add CSS animation:**
-```css
-@keyframes selectPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-.animate-select {
-  animation: selectPulse 200ms ease-out;
-}
-```
-
-**ModelCard enhancement:**
-```tsx
-<Card 
-  className={cn(
-    // ... existing classes
-    isSelected && 'animate-select'
-  )}
->
-```
-
-### 4b. Progress Bar Checkmark Animation
+### Desktop (1440x900)
+| Test | Expected |
+|------|----------|
+| No duplicate pricing | Existing sidebar/inline pricing only |
+| Review page | Pricing card prominent before CTAs |
+| Selection feedback | Cards scale subtly on selection |
 
 **Files to Modify:**
 - `src/pages/BuildWizard.tsx`

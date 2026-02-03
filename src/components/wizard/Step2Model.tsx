@@ -12,6 +12,8 @@ import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
 import { FinancingSidebarModule, FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoLink, AppraisalSidebarModule } from '@/components/appraisal/AppraisalBadge';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
+import { InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { getModelHeroImage, HERO_PLACEHOLDER } from '@/lib/model-images';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +26,9 @@ interface Step2ModelProps {
   // For financing modal
   developmentSlug?: string;
   lotId?: number | null;
+  // For mobile pricing display
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
 }
 
 export function Step2Model({
@@ -34,6 +39,8 @@ export function Step2Model({
   isMobile,
   developmentSlug,
   lotId,
+  buyerFacingBreakdown,
+  pricingFlags,
 }: Step2ModelProps) {
   // Get development to check for conforming model restrictions
   const development = developmentSlug ? getDevelopmentBySlug(developmentSlug) : null;
@@ -106,6 +113,16 @@ export function Step2Model({
           </div>
         )}
 
+        {/* Mobile Pricing Summary */}
+        {isMobile && buyerFacingBreakdown && pricingFlags && (
+          <div className="mt-4">
+            <InlineMobilePricing
+              breakdown={buyerFacingBreakdown}
+              flags={pricingFlags}
+            />
+          </div>
+        )}
+
         {/* Safe bottom padding for sticky footer */}
         <WizardFooterSpacer />
       </div>
@@ -164,7 +181,7 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
         'overflow-hidden cursor-pointer group transition-all duration-200',
         'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
         isSelected 
-          ? 'ring-2 ring-accent border-accent shadow-lg' 
+          ? 'ring-2 ring-accent border-accent shadow-lg animate-select' 
           : 'hover:shadow-md hover:border-accent/40 hover:-translate-y-0.5'
       )}
       onClick={onSelect}
@@ -181,9 +198,11 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
     >
       {/* Image with skeleton loading - aspect-video for premium 16:9 feel */}
       <div className="aspect-video bg-muted relative overflow-hidden rounded-t-2xl">
-        {/* Loading skeleton - no layout shift */}
+        {/* Loading skeleton with shimmer - no layout shift */}
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
+          <div className="absolute inset-0 bg-muted overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted-foreground/10 to-muted animate-shimmer" />
+          </div>
         )}
         
         <img 

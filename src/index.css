@@ -264,4 +264,38 @@
     @apply animate-pulse bg-gradient-to-r from-muted via-muted-foreground/5 to-muted;
     background-size: 200% 100%;
   }
+
+  /* Shimmer animation for loading states */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Selection pulse animation for cards */
+  @keyframes selectPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+
+  .animate-select {
+    animation: selectPulse 200ms ease-out;
+  }
+
+  /* Button micro-interactions */
+  .btn-micro {
+    @apply transition-transform duration-200 ease-out;
+  }
+
+  .btn-micro:hover:not(:disabled) {
+    transform: scale(1.02);
+  }
+
+  .btn-micro:active:not(:disabled) {
+    transform: scale(0.98);
+  }
 }
