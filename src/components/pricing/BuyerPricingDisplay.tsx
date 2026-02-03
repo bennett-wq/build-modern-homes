@@ -734,9 +734,138 @@ function MobilePricingBar({
   );
 }
 
+/**
+ * Inline mobile pricing summary - collapsible bar for wizard flows
+ * Renders above sticky footer without z-index conflicts
+ */
+function InlineMobilePricing({
+  breakdown,
+  flags,
+  className = '',
+}: {
+  breakdown: BuyerFacingBreakdown;
+  flags: BuyerPricingFlags;
+  className?: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showFinancingCalculator, setShowFinancingCalculator] = useState(false);
+  const [showPreQualFlow, setShowPreQualFlow] = useState(false);
+
+  return (
+    <>
+      <div className={`bg-card border-t border-border ${className}`}>
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          <CollapsibleTrigger className="w-full px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {getPricingModeHeadline(flags.pricingMode)}
+                  </span>
+                  <PreliminaryBadge />
+                </div>
+                {flags.hasPricing ? (
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={breakdown.startingFromPrice}
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-lg font-semibold text-foreground"
+                    >
+                      {formatPrice(breakdown.startingFromPrice)}
+                    </motion.p>
+                  </AnimatePresence>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Select a model</p>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {flags.hasPricing && (
+                  <MonthlyPaymentBadge
+                    purchasePrice={breakdown.startingFromPrice}
+                    downPaymentPercent={5}
+                    className="text-xs"
+                  />
+                )}
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+              </div>
+            </div>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <div className="px-4 pb-4 space-y-3">
+              {/* Financing CTAs */}
+              {flags.hasPricing && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowFinancingCalculator(true);
+                    }}
+                  >
+                    <Calculator className="h-3 w-3 mr-1.5" />
+                    Explore Payments
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 text-xs bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPreQualFlow(true);
+                    }}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1.5" />
+                    Get Pre-Qualified
+                  </Button>
+                </div>
+              )}
+              
+              {/* Disclaimer */}
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Preliminary estimate. Final pricing confirmed via formal written quote and site review.
+              </p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+
+      {/* Financing Calculator Dialog */}
+      <Dialog open={showFinancingCalculator} onOpenChange={setShowFinancingCalculator}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-auto p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>BaseMod Financial Calculator</DialogTitle>
+            <DialogDescription>
+              Calculate your estimated monthly payments
+            </DialogDescription>
+          </DialogHeader>
+          <FinancingCalculator
+            purchasePrice={breakdown.startingFromPrice}
+            onGetPreQualified={() => {
+              setShowFinancingCalculator(false);
+              setShowPreQualFlow(true);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Pre-Qualification Flow */}
+      <PreQualificationFlow
+        open={showPreQualFlow}
+        onOpenChange={setShowPreQualFlow}
+        purchasePrice={breakdown.startingFromPrice}
+      />
+    </>
+  );
+}
+
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
 export default BuyerPricingDisplay;
-export { CompactPricingCard, MobilePricingBar, WhatsIncludedModal, PreliminaryBadge };
+export { CompactPricingCard, MobilePricingBar, InlineMobilePricing, WhatsIncludedModal, PreliminaryBadge };
