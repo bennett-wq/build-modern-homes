@@ -758,8 +758,8 @@ function InlineMobilePricing({
       <div className={cn(
         // Fixed positioning above footer
         'fixed left-0 right-0 z-40',
-        // Position above WizardStickyFooter (approx 80px on mobile)
-        'bottom-[80px] sm:bottom-[88px]',
+        // Position above WizardStickyFooter (~64px on mobile after children removal)
+        'bottom-[64px] sm:bottom-[72px]',
         // Enhanced styling - cleaner, more prominent
         'bg-card border-t border-border',
         'shadow-[0_-4px_20px_rgba(0,0,0,0.1)]',
