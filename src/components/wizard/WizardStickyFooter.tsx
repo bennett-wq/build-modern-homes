@@ -91,22 +91,6 @@ export function WizardStickyFooter({
       )}
     >
       <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-        {/* Mobile: Show selection summary above buttons */}
-        <div className="md:hidden mb-3">
-          <AnimatePresence mode="wait">
-            {children && (
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                transition={{ duration: 0.15 }}
-              >
-                {children}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
         <div className="flex items-center justify-between gap-3 sm:gap-4">
           {/* Back Button */}
           {!hideBack && onBack ? (
@@ -186,7 +170,7 @@ export function WizardStickyFooter({
               <ArrowRight className="ml-1.5 sm:ml-2 h-4 sm:h-5 w-4 sm:w-5" />
             </Button>
             {showReassurance && (
-              <span className="text-[10px] sm:text-[11px] text-muted-foreground/70">
+              <span className="hidden sm:block text-[10px] sm:text-[11px] text-muted-foreground/70">
                 You can change this later.
               </span>
             )}
