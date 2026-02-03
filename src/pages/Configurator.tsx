@@ -375,7 +375,7 @@ export default function Configurator() {
             // Two-column layout for steps 4+
             <div className={isMobile ? '' : 'grid lg:grid-cols-[1fr_360px] gap-8'}>
               {/* Step Content */}
-              <div className={isMobile ? 'pb-24' : ''}>
+              <div className={isMobile ? 'pb-40' : ''}>
                 
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -562,11 +562,11 @@ export default function Configurator() {
         
         {/* Mobile Pricing Summary - Inline above footer */}
         {/* Step 4 forces supply_only display for MOD/XMOD comparison */}
+        {/* Mobile Pricing Summary - Portal-based fixed positioning above footer */}
         {isMobile && showPricingRail && (
           <InlineMobilePricing
             breakdown={displayPricing.breakdown}
             flags={pricingFlags}
-            className="mb-20"
           />
         )}
       </div>

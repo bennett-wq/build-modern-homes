@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronDown, 
@@ -38,6 +39,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { InlineInclusionsAccordion } from './InclusionsAccordion';
 import { MonthlyPaymentBadge } from '@/components/financing/MonthlyPaymentBadge';
 import { FinancingCalculator } from '@/components/financing/FinancingCalculator';
@@ -751,9 +753,17 @@ function InlineMobilePricing({
   const [showFinancingCalculator, setShowFinancingCalculator] = useState(false);
   const [showPreQualFlow, setShowPreQualFlow] = useState(false);
 
-  return (
+  const pricingContent = (
     <>
-      <div className={`bg-card border-t border-border ${className}`}>
+      <div className={cn(
+        // Fixed positioning above footer
+        'fixed left-0 right-0 z-40',
+        // Position above WizardStickyFooter (approx 80px on mobile)
+        'bottom-[80px] sm:bottom-[88px]',
+        // Styling
+        'bg-card border-t border-border shadow-[0_-2px_10px_rgba(0,0,0,0.05)]',
+        className
+      )}>
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <CollapsibleTrigger className="w-full px-4 py-3">
             <div className="flex items-center justify-between">
@@ -861,6 +871,9 @@ function InlineMobilePricing({
       />
     </>
   );
+
+  // Use portal to escape transform contexts and ensure fixed positioning works
+  return createPortal(pricingContent, document.body);
 }
 
 // ============================================================================
