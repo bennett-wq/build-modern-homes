@@ -760,16 +760,18 @@ function InlineMobilePricing({
         'fixed left-0 right-0 z-40',
         // Position above WizardStickyFooter (approx 80px on mobile)
         'bottom-[80px] sm:bottom-[88px]',
-        // Styling
-        'bg-card border-t border-border shadow-[0_-2px_10px_rgba(0,0,0,0.05)]',
+        // Enhanced styling - cleaner, more prominent
+        'bg-card border-t border-border',
+        'shadow-[0_-4px_20px_rgba(0,0,0,0.1)]',
         className
       )}>
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-          <CollapsibleTrigger className="w-full px-4 py-3">
+          <CollapsibleTrigger className="w-full px-4 py-4">
             <div className="flex items-center justify-between">
+              {/* Left: Price info - larger, cleaner */}
               <div className="text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium text-muted-foreground">
                     {getPricingModeHeadline(flags.pricingMode)}
                   </span>
                   <PreliminaryBadge />
@@ -782,7 +784,7 @@ function InlineMobilePricing({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 5 }}
                       transition={{ duration: 0.15 }}
-                      className="text-lg font-semibold text-foreground"
+                      className="text-2xl font-semibold text-foreground tracking-tight"
                     >
                       {formatPrice(breakdown.startingFromPrice)}
                     </motion.p>
@@ -791,53 +793,59 @@ function InlineMobilePricing({
                   <p className="text-sm text-muted-foreground">Select a model</p>
                 )}
               </div>
+              
+              {/* Right: Monthly estimate + expand */}
               <div className="flex items-center gap-3">
                 {flags.hasPricing && (
-                  <MonthlyPaymentBadge
-                    purchasePrice={breakdown.startingFromPrice}
-                    downPaymentPercent={5}
-                    className="text-xs"
-                  />
+                  <div className="text-right">
+                    <MonthlyPaymentBadge
+                      purchasePrice={breakdown.startingFromPrice}
+                      downPaymentPercent={5}
+                      className="text-sm font-medium"
+                    />
+                  </div>
                 )}
-                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                <ChevronDown className={cn(
+                  'w-5 h-5 text-muted-foreground transition-transform duration-200',
+                  isExpanded && 'rotate-180'
+                )} />
               </div>
             </div>
           </CollapsibleTrigger>
           
           <CollapsibleContent>
-            <div className="px-4 pb-4 space-y-3">
-              {/* Financing CTAs */}
+            {/* Expanded content: financing CTAs + disclaimer */}
+            <div className="px-4 pb-4 space-y-3 border-t border-border/50 pt-3">
               {flags.hasPricing && (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 text-xs"
+                    className="flex-1 text-xs h-9"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowFinancingCalculator(true);
                     }}
                   >
-                    <Calculator className="h-3 w-3 mr-1.5" />
+                    <Calculator className="h-3.5 w-3.5 mr-1.5" />
                     Explore Payments
                   </Button>
                   <Button
                     size="sm"
-                    className="flex-1 text-xs bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                    className="flex-1 text-xs h-9 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowPreQualFlow(true);
                     }}
                   >
-                    <Sparkles className="h-3 w-3 mr-1.5" />
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                     Get Pre-Qualified
                   </Button>
                 </div>
               )}
               
-              {/* Disclaimer */}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Preliminary estimate. Final pricing confirmed via formal written quote and site review.
+                Preliminary estimate. Final pricing confirmed via formal quote.
               </p>
             </div>
           </CollapsibleContent>
