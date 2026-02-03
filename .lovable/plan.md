@@ -1,32 +1,61 @@
 
-# Fix: Mobile Pricing Visibility (Steps 4-8 in 8-Step Flow)
 
-## Status: IMPLEMENTED ✅
+# Update Grand Haven Lot Polygons
 
-## Summary
+## Overview
+Add the polygon coordinate data you provided to enable the interactive site plan map for Grand Haven. The lot records already exist with metadata (acreage, premium, zoning, etc.) but have empty `polygon: []` arrays.
 
-Updated `InlineMobilePricing` to use `createPortal` with fixed positioning (`bottom-[80px] z-40`) so it remains visible above `WizardStickyFooter` on mobile during Steps 4-8.
+---
 
-## Changes Made
+## What Will Change
 
-### `src/components/pricing/BuyerPricingDisplay.tsx`
-- Added `createPortal` import from `react-dom`
-- Added `cn` import from `@/lib/utils`
-- Updated `InlineMobilePricing` to render via portal to `document.body`
-- Applied fixed positioning: `fixed left-0 right-0 bottom-[80px] sm:bottom-[88px] z-40`
-- Added shadow for visual separation: `shadow-[0_-2px_10px_rgba(0,0,0,0.05)]`
+**File:** `src/data/lots/grand-haven.ts`
 
-### `src/pages/Configurator.tsx`
-- Increased mobile content padding from `pb-24` to `pb-40` to account for pricing bar + footer
-- Removed `className="mb-20"` from InlineMobilePricing (no longer needed with portal)
+Each lot will receive its polygon coordinates. For example:
 
-## Visual Stack (Mobile)
-
-```text
-| Step Content (scrollable, pb-40)  |
-|-----------------------------------|
-| InlineMobilePricing (z-40)        |  <-- Fixed, collapsible
-|-----------------------------------|
-| WizardStickyFooter (z-50)         |  <-- Fixed, Back/Continue
--------------------------------------
+**Before (Lot 1):**
+```ts
+polygon: [],
 ```
+
+**After (Lot 1):**
+```ts
+polygon: [
+  { x: 10.55, y: 72.03 },
+  { x: 14.22, y: 72.03 },
+  { x: 14.37, y: 87.15 },
+  { x: 11.01, y: 87.15 },
+  { x: 10.4, y: 72.03 },
+],
+```
+
+---
+
+## Summary of Polygon Data
+
+| Lot | Polygon Points | Phase |
+|-----|---------------|-------|
+| 1 | 5 points | 2 |
+| 2 | 5 points | 2 |
+| 3 | 5 points | 2 |
+| 4 | 5 points | 2 |
+| 5 | 4 points | 2 |
+| 6 | 4 points | 2 |
+| 7 | 4 points | 2 |
+| 8 | 4 points | 2 |
+| 9 | 4 points | 3 |
+| 10 | 4 points | 3 |
+| 11 | 4 points | 3 |
+| 12 | 9 points (large estate) | 3 |
+| 13 | 6 points (large estate) | 3 |
+| 14 | Empty (Future Waterfront - TBD) | 3 |
+| 15 | 4 points | 1 |
+| 16 | 4 points | 1 |
+| 17 | 4 points | 1 |
+| 18 | 10 points (large estate) | 1 |
+
+---
+
+## Result
+After this update, the interactive site plan at `/developments/grand-haven` will render clickable lot polygons overlaid on the site plan image, enabling lot selection in the Community build wizard.
+
