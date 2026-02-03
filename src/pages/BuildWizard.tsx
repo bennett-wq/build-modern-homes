@@ -306,8 +306,11 @@ export default function BuildWizard() {
         </div>
       </header>
 
-      {/* Main Content - fixed height prevents layout shift */}
-      <main className="flex-1 overflow-hidden relative">
+      {/* Main Content - allow scroll on mobile for Step 4 (Design) */}
+      <main className={cn(
+        "flex-1 relative",
+        currentStep === 4 && isMobile ? "overflow-y-auto" : "overflow-hidden"
+      )}>
         <AnimatePresence mode="wait" initial={false}>
           {currentStep === 1 && (
             <motion.div
@@ -382,7 +385,9 @@ export default function BuildWizard() {
               animate="animate"
               exit="exit"
               transition={stepTransition}
-              className="absolute inset-0"
+              className={cn(
+                isMobile ? "min-h-full" : "absolute inset-0"
+              )}
             >
               <Step3Design
                 selectedPackageId={selection.packageId}

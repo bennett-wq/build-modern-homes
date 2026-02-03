@@ -19,7 +19,7 @@ import { useConfiguratorPricing } from '@/hooks/useConfiguratorPricing';
 import type { BuildIntent } from '@/data/pricing-config';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { StepIndicator, type Step } from '@/components/configurator/StepIndicator';
-import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import { BuyerPricingDisplay, InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { ResumePrompt } from '@/components/configurator/ResumePrompt';
 import { StepIntent } from '@/components/configurator/steps/StepIntent';
 import { StepLocation } from '@/components/configurator/steps/StepLocation';
@@ -560,22 +560,13 @@ export default function Configurator() {
           )}
         </main>
         
-        {/* Mobile Pricing Bar - Only show on steps 4+ */}
+        {/* Mobile Pricing Summary - Inline above footer */}
         {/* Step 4 forces supply_only display for MOD/XMOD comparison */}
         {isMobile && showPricingRail && (
-          <BuyerPricingDisplay
+          <InlineMobilePricing
             breakdown={displayPricing.breakdown}
             flags={pricingFlags}
-            variant="mobile"
-            showPlaceholder={false}
-            onSwitchToInstalled={
-              // Same logic as desktop: no upsell on Step 4, only on Step 5+ if supply_only selected
-              isStep4 
-                ? undefined 
-                : (servicePackage === 'supply_only' 
-                    ? () => setServicePackage('delivered_installed')
-                    : undefined)
-            }
+            className="mb-20"
           />
         )}
       </div>

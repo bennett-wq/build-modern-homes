@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle, Maximize2 } from 'lucide-react';
+import { ArrowLeft, Palette, DoorOpen, Check, Eye, ShieldCheck, ClipboardCheck, Sparkles, Info, HelpCircle, Maximize2, AlertCircle } from 'lucide-react';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { EXTERIOR_COPY, getPackageDescription, getGarageDescription } from '@/content/exteriorMicrocopy';
 import { exteriorPackages, garageDoors, ExteriorPackage, GarageDoor } from '@/data/packages';
@@ -127,6 +127,30 @@ export function Step3Design({
   const [showAppraisalDrawer, setShowAppraisalDrawer] = useState(false);
   const [showFullscreenPreview, setShowFullscreenPreview] = useState(false);
   const [previewImageSrc, setPreviewImageSrc] = useState<string>('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Clear validation error when selections change
+  useEffect(() => {
+    if (validationError) {
+      setValidationError(null);
+    }
+  }, [selectedPackageId, selectedGarageDoorId]);
+
+  // Handle continue with validation feedback
+  const handleContinue = useCallback(() => {
+    if (!canProceed) {
+      if (!selectedPackageId) {
+        setValidationError('Please select an exterior package');
+        setActiveTab('package');
+      } else if (!selectedGarageDoorId) {
+        setValidationError('Please select a garage door style');
+        setActiveTab('garage');
+      }
+      return;
+    }
+    setValidationError(null);
+    onNext();
+  }, [canProceed, selectedPackageId, selectedGarageDoorId, onNext]);
 
   // Auto-select first garage door if none selected when entering step
   useEffect(() => {
@@ -413,13 +437,20 @@ export function Step3Design({
       {/* Sticky Footer */}
       <WizardStickyFooter
         onBack={onBack}
-        onContinue={onNext}
-        canContinue={!!canProceed}
+        onContinue={handleContinue}
+        canContinue={true}
         continueLabel="Review Your Build"
-        pulseOnReady={`${selectedPackageId}-${selectedGarageDoorId}`}
+        pulseOnReady={canProceed ? `${selectedPackageId}-${selectedGarageDoorId}` : undefined}
       >
+        {/* Validation error message */}
+        {validationError && (
+          <div className="flex items-center gap-1.5 text-destructive text-xs animate-in fade-in slide-in-from-bottom-1 duration-200">
+            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
         {/* Selection summary */}
-        {(selectedPackage || selectedDoor) && (
+        {!validationError && (selectedPackage || selectedDoor) && (
           <div className="flex items-center gap-3">
             {selectedPackage && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
@@ -718,8 +749,8 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="w-full h-full flex flex-col"
     >
-      {/* Full-bleed hero container */}
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      {/* Full-bleed hero container - explicit aspect ratio for mobile */}
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Image fills the container */}
         <img
           src={displayedSrc}
@@ -828,7 +859,7 @@ function AspenPhotoPreview({ packageId }: AspenPhotoPreviewProps) {
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="w-full h-full flex flex-col"
     >
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
@@ -1350,7 +1381,7 @@ function BelmontPhotoPreview({ packageId }: BelmontPhotoPreviewProps) {
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="w-full h-full flex flex-col"
     >
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
@@ -1552,7 +1583,7 @@ function KeenelandPhotoPreview({ packageId, garageId }: KeenelandPhotoPreviewPro
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="w-full h-full flex flex-col"
     >
-      <div className="relative flex-1 w-full bg-muted rounded-xl overflow-hidden shadow-lg">
+      <div className="relative w-full aspect-[16/10] bg-muted rounded-xl overflow-hidden shadow-lg">
         {/* Crossfade container */}
         <AnimatePresence mode="wait">
           <motion.img
