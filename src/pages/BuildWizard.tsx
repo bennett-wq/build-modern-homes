@@ -272,9 +272,14 @@ export default function BuildWizard() {
                     )}
                   >
                     {isComplete ? (
-                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                        className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center"
+                      >
                         <Check className="h-3 w-3 text-white" />
-                      </div>
+                      </motion.div>
                     ) : (
                       <StepIcon className={cn(
                         'h-4 w-4',
@@ -351,6 +356,8 @@ export default function BuildWizard() {
                 isMobile={isMobile}
                 developmentSlug={slug}
                 lotId={selection.lotId}
+                buyerFacingBreakdown={pricing.breakdown}
+                pricingFlags={pricing.flags}
               />
             </motion.div>
           )}
@@ -372,6 +379,9 @@ export default function BuildWizard() {
                   onSelectBuildType={setBuildType}
                   onNext={() => setCurrentStep(4)}
                   onBack={() => setCurrentStep(2)}
+                  isMobile={isMobile}
+                  buyerFacingBreakdown={pricing.breakdown}
+                  pricingFlags={pricing.flags}
                 />
               </div>
             </motion.div>

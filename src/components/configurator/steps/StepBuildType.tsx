@@ -22,6 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { type ModelConfig, type BuildType } from '@/data/pricing-config';
 import { WizardFooterSpacer, WizardStickyFooter } from '@/components/wizard/WizardStickyFooter';
+import { InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { cn } from '@/lib/utils';
 
 interface StepBuildTypeProps {
@@ -30,6 +32,9 @@ interface StepBuildTypeProps {
   onSelectBuildType: (type: BuildType) => void;
   onNext: () => void;
   onBack: () => void;
+  isMobile?: boolean;
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
 }
 
 interface BuildTypeDetail {
@@ -135,6 +140,9 @@ export function StepBuildType({
   onSelectBuildType,
   onNext,
   onBack,
+  isMobile,
+  buyerFacingBreakdown,
+  pricingFlags,
 }: StepBuildTypeProps) {
   const [expandedInfo, setExpandedInfo] = useState<BuildType | null>(null);
   const isFirstRender = useRef(true);
@@ -229,6 +237,16 @@ export function StepBuildType({
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </motion.div>
+
+        {/* Mobile Pricing Summary */}
+        {isMobile && buyerFacingBreakdown && pricingFlags && (
+          <div className="mt-4">
+            <InlineMobilePricing
+              breakdown={buyerFacingBreakdown}
+              flags={pricingFlags}
+            />
+          </div>
+        )}
 
         <WizardFooterSpacer />
         <WizardStickyFooter
@@ -431,7 +449,16 @@ export function StepBuildType({
           </div>
         </div>
       </motion.div>
-      
+      {/* Mobile Pricing Summary */}
+      {isMobile && buyerFacingBreakdown && pricingFlags && (
+        <div className="mt-4">
+          <InlineMobilePricing
+            breakdown={buyerFacingBreakdown}
+            flags={pricingFlags}
+          />
+        </div>
+      )}
+
       <WizardFooterSpacer />
       <WizardStickyFooter
         onBack={onBack}
