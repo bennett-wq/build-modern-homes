@@ -1,170 +1,131 @@
 
+# Fix: Mobile Pricing Visibility (Steps 4-8 in 8-Step Flow)
 
-# Community Flow Enhancements - Mobile Pricing, Loading States & Micro-interactions
+## Problem Analysis
 
-## Status: ✅ IMPLEMENTED
+The `InlineMobilePricing` component already exists and is rendered in `Configurator.tsx` (lines 565-571), but it's positioned incorrectly:
 
----
+**Current State:**
+- Rendered after `</main>` at the bottom of the page
+- Uses `mb-20` for margin but has NO fixed/sticky positioning
+- Scrolls away as users interact with step content
+- Users cannot see pricing while making selections
 
-## Summary of Changes Made
+**Desired State:**
+- Sticky pricing bar visible at all times on mobile during Steps 4-8
+- Positioned directly above the `WizardStickyFooter`
+- Collapsible to show/hide breakdown details
 
-### Enhancement #1: Mobile Pricing Visibility ✅
-- Added `InlineMobilePricing` component to Step 2 (Model) and Step 3 (Build Type)
-- Pricing now visible on mobile during selection steps
-- Shows all-in price, monthly payment estimate, and financing CTAs
+## Technical Approach
 
-### Enhancement #2: Enhanced Skeleton Loading ✅
-- Added shimmer animation keyframe to `index.css`
-- Updated model card skeletons to use gradient shimmer instead of pulse
+### Option: Portal-based Sticky Pricing Bar
 
-### Enhancement #3: Review Page Pricing Card ✅
-- Already implemented - no changes needed
+Since `WizardStickyFooter` uses `createPortal` to render at `document.body` with `fixed bottom-0 z-50`, the cleanest fix is to:
 
-### Enhancement #4: Micro-interactions ✅
-- Added `selectPulse` animation for card selection feedback
-- Added animated checkmarks on progress bar (spring animation)
-- Added `btn-micro` utility class for button hover states
-- Model cards now pulse briefly when selected
+1. **Upgrade `InlineMobilePricing`** to use the same portal approach
+2. **Position it** with `fixed bottom-[height-of-footer]` so it stacks above the footer
+3. **Use lower z-index** (z-40) to layer properly under the footer
 
----
+### File Changes
 
-## Files Modified
+#### File: `src/components/pricing/BuyerPricingDisplay.tsx`
 
-| File | Changes |
-|------|---------|
-| `src/index.css` | Added shimmer, selectPulse, btn-micro animations |
-| `src/pages/BuildWizard.tsx` | Pass pricing to steps, animate progress checkmarks |
-| `src/components/wizard/Step2Model.tsx` | Add InlineMobilePricing, selection animation, shimmer skeleton |
-| `src/components/configurator/steps/StepBuildType.tsx` | Add InlineMobilePricing |
+Update the `InlineMobilePricing` component to use portal rendering:
 
----
-
-## Testing Checklist
-
-### Mobile (390x844)
-| Test | Expected |
-|------|----------|
-| Step 2 (Model) | Price bar visible below model grid |
-| Step 3 (Build Type) | Price bar visible |
-| Price updates | Animated when model changes |
-| Model selection | Card pulses briefly on selection |
-| Progress bar | Checkmark animates in when step completes |
-
-### Desktop (1440x900)
-| Test | Expected |
-|------|----------|
-| No duplicate pricing | Existing sidebar/inline pricing only |
-| Review page | Pricing card prominent before CTAs |
-| Selection feedback | Cards scale subtly on selection |
-
-**Files to Modify:**
-- `src/pages/BuildWizard.tsx`
-
-**Wrap checkmark in motion.div:**
 ```tsx
-{isComplete ? (
-  <motion.div
-    initial={{ scale: 0 }}
-    animate={{ scale: 1 }}
-    transition={{ type: "spring", stiffness: 500, damping: 25 }}
-    className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center"
-  >
-    <Check className="h-3 w-3 text-white" />
-  </motion.div>
-) : (
-  <StepIcon className={cn(...)} />
-)}
+function InlineMobilePricing({
+  breakdown,
+  flags,
+  className = '',
+}: {
+  breakdown: BuyerFacingBreakdown;
+  flags: BuyerPricingFlags;
+  className?: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showFinancingCalculator, setShowFinancingCalculator] = useState(false);
+  const [showPreQualFlow, setShowPreQualFlow] = useState(false);
+
+  const pricingContent = (
+    <>
+      <div className={cn(
+        // Fixed positioning above footer
+        'fixed left-0 right-0 z-40',
+        // Position above WizardStickyFooter (approx 80px on mobile)
+        'bottom-[80px] sm:bottom-[88px]',
+        // Styling
+        'bg-card border-t border-border shadow-[0_-2px_10px_rgba(0,0,0,0.05)]',
+        className
+      )}>
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          {/* ... existing content ... */}
+        </Collapsible>
+      </div>
+      
+      {/* Dialogs remain the same */}
+    </>
+  );
+
+  // Use portal to escape transform contexts
+  return createPortal(pricingContent, document.body);
+}
 ```
 
-### 4c. Price Update Animation
+#### File: `src/pages/Configurator.tsx`
 
-**Current State:** `BuyerPricingDisplay` already animates price changes using `AnimatePresence` and `motion.div` (lines 355-367).
+Adjust the main content padding to account for both the footer AND the pricing bar:
 
-**Enhancement:** Use `AnimatedPrice` component for smoother odometer-style animation.
-
-**Files to Modify:**
-- `src/components/pricing/BuyerPricingDisplay.tsx`
-
-**Changes:**
 ```tsx
-import { AnimatedPrice } from '@/components/ui/animated-price';
+// Line 378 - Update mobile padding
+<div className={isMobile ? 'pb-40' : ''}>
+  {/* Step content - now has extra padding for pricing bar */}
+```
 
-// Replace static price display with AnimatedPrice
-{flags.hasPricing ? (
-  <AnimatedPrice
-    value={breakdown.startingFromPrice}
-    className="text-3xl font-semibold text-foreground"
+Also update the InlineMobilePricing render location (already outside main, which is correct for portal):
+```tsx
+// Lines 563-571 remain the same, component handles its own positioning
+{isMobile && showPricingRail && (
+  <InlineMobilePricing
+    breakdown={displayPricing.breakdown}
+    flags={pricingFlags}
   />
-) : (
-  // ... fallback
 )}
 ```
 
-### 4d. Button Hover States
+### Visual Stack (Mobile)
 
-**Files to Modify:**
-- `src/index.css`
-
-**Add global button micro-interaction:**
-```css
-.btn-micro {
-  transition: transform 200ms ease-out;
-}
-
-.btn-micro:hover:not(:disabled) {
-  transform: scale(1.02);
-}
-
-.btn-micro:active:not(:disabled) {
-  transform: scale(0.98);
-}
+```text
+| Step Content (scrollable)     |
+|-------------------------------|
+| InlineMobilePricing (z-40)    |  <-- Fixed, collapsible
+|-------------------------------|
+| WizardStickyFooter (z-50)     |  <-- Fixed, Back/Continue
+---------------------------------
 ```
 
-Apply to primary action buttons in WizardStickyFooter.
+## Acceptance Criteria
 
----
-
-## Testing Checklist
-
-### Mobile (390x844)
-| Test | Expected |
-|------|----------|
-| Step 2 (Model) | Price bar visible below model grid |
-| Step 3 (Build Type) | Price bar visible |
-| Step 4 (Design) | Price bar visible |
-| Price updates | Animated odometer effect when model changes |
-| Model selection | Card pulses briefly on selection |
-| Progress bar | Checkmark animates in when step completes |
-
-### Desktop (1440x900)
-| Test | Expected |
-|------|----------|
-| No duplicate pricing | Existing sidebar/inline pricing only |
-| Review page | Pricing card prominent before CTAs |
-| Selection feedback | Cards scale subtly on selection |
-
----
+| Criteria | Expected |
+|----------|----------|
+| Price bar visible on Steps 4-8 | Dynamic price shown in sticky bar |
+| Position | Fixed above the sticky footer |
+| Collapsible | Tap to expand/collapse breakdown |
+| Monthly payment | Shows `~$X,XXX/mo` badge |
+| Financing CTAs | "Explore Payments" and "Get Pre-Qualified" buttons visible when expanded |
+| Price updates | Animates when selections change |
+| No overlap | Footer and pricing bar don't overlap |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/BuildWizard.tsx` | Pass pricing to steps, animate progress checkmarks |
-| `src/components/wizard/Step2Model.tsx` | Add InlineMobilePricing, selection animation |
-| `src/components/configurator/steps/StepBuildType.tsx` | Add InlineMobilePricing |
-| `src/components/wizard/Step3Design.tsx` | Add InlineMobilePricing |
-| `src/components/pricing/BuyerPricingDisplay.tsx` | Use AnimatedPrice component |
-| `src/index.css` | Add shimmer, selectPulse, btn-micro animations |
-
----
+| `src/components/pricing/BuyerPricingDisplay.tsx` | Update `InlineMobilePricing` to use portal with fixed positioning |
+| `src/pages/Configurator.tsx` | Increase mobile content padding to `pb-40` |
 
 ## What Will NOT Change
-- Current lot selection experience
-- Progress bar design and navigation structure
-- Package/Garage tab functionality
-- Validation feedback system
-- Form state persistence (URL parameters)
-- CTA button placements and copy
-- Trust indicators (Financing, Appraisals badges)
-- Desktop layouts and existing pricing sidebar
 
+- Desktop layout (pricing rail on right side works correctly)
+- Pricing calculation logic
+- The `WizardStickyFooter` component
+- Step navigation flow
+- Any copy or messaging
