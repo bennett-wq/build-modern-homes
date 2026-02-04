@@ -14,6 +14,8 @@ import { MapPin, AlertCircle, X, TrendingUp, Sparkles, Check, ChevronUp, List } 
 import { Lot } from '@/data/lots/grand-haven';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { AnimatedPriceCompact } from '@/components/ui/animated-price';
+import { InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -72,6 +74,9 @@ interface Step1LotProps {
   baseSitework?: number;
   baseFeesAllowance?: number;
   modelName?: string;
+  // Pricing bar props for mobile
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
 }
 
 export function Step1Lot({
@@ -85,6 +90,8 @@ export function Step1Lot({
   baseSitework = 114533,
   baseFeesAllowance = 9631,
   modelName = 'Hawthorne',
+  buyerFacingBreakdown,
+  pricingFlags,
 }: Step1LotProps) {
   const selectedLot = lots.find(l => l.id === selectedLotId);
   const canProceed = selectedLot && selectedLot.status === 'available';
@@ -384,6 +391,14 @@ export function Step1Lot({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Mobile Pricing Bar - positioned above sticky footer */}
+      {isMobile && selectedLot && buyerFacingBreakdown && pricingFlags && (
+        <InlineMobilePricing
+          breakdown={buyerFacingBreakdown}
+          flags={pricingFlags}
+        />
+      )}
 
       {/* Sticky Footer - Enhanced with clear lot details */}
       <WizardStickyFooter

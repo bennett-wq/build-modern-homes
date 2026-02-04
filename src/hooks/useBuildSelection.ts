@@ -26,7 +26,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
   const [justSaved, setJustSaved] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize from URL params first, then localStorage
+  // Initialize from URL params first, then localStorage (only if URL has params)
   const initialSelection = useMemo((): BuildSelection => {
     const lotParam = searchParams.get('lot');
     const modelParam = searchParams.get('model');
@@ -34,28 +34,36 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     const packageParam = searchParams.get('package');
     const garageParam = searchParams.get('garage');
 
-    // Check localStorage for existing selection
-    const stored = localStorage.getItem(STORAGE_KEY);
+    // Check if ANY URL params exist - determines if we load localStorage
+    // Fresh entry (no params) = start with empty selection
+    // Shareable link (has params) = merge with localStorage for resumption
+    const hasUrlParams = !!(lotParam || modelParam || buildTypeParam || packageParam || garageParam);
+
+    // Only load localStorage if URL has params (shareable link scenario)
     let storedSelection: Partial<BuildSelection> = {};
-    if (stored) {
-      try {
-        storedSelection = JSON.parse(stored);
-      } catch {
-        // Invalid JSON, ignore
+    if (hasUrlParams) {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          storedSelection = JSON.parse(stored);
+        } catch {
+          // Invalid JSON, ignore
+        }
       }
     }
 
     // URL params take priority over localStorage
     // Normalize model slugs for backward compatibility (hawthorn → hawthorne)
-    const rawModelSlug = modelParam || storedSelection.modelSlug || null;
-    const rawBuildType = buildTypeParam || storedSelection.buildType || null;
+    // Fresh entry (no params) returns empty selection for all fields
+    const rawModelSlug = modelParam || (hasUrlParams ? storedSelection.modelSlug : null) || null;
+    const rawBuildType = buildTypeParam || (hasUrlParams ? storedSelection.buildType : null) || null;
     return {
       developmentSlug,
-      lotId: lotParam ? parseInt(lotParam, 10) : (storedSelection.lotId ?? null),
+      lotId: lotParam ? parseInt(lotParam, 10) : (hasUrlParams ? storedSelection.lotId ?? null : null),
       modelSlug: normalizeModelSlug(rawModelSlug),
       buildType: (rawBuildType === 'xmod' || rawBuildType === 'mod') ? rawBuildType : null,
-      packageId: packageParam || storedSelection.packageId || null,
-      garageDoorId: garageParam || storedSelection.garageDoorId || null,
+      packageId: packageParam || (hasUrlParams ? storedSelection.packageId : null) || null,
+      garageDoorId: garageParam || (hasUrlParams ? storedSelection.garageDoorId : null) || null,
     };
   }, [developmentSlug, searchParams]);
 
