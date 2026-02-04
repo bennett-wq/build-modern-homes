@@ -11,6 +11,7 @@ import { LotDetailsPanel } from '@/components/siteplan/LotDetailsPanel';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots, Lot } from '@/data/lots/grand-haven';
 import { stJamesBayLots } from '@/data/lots/st-james-bay';
+import { ypsilantiLots } from '@/data/lots/ypsilanti';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,9 @@ export default function GrandHavenSitePlan() {
   const initialLots = useMemo(() => {
     if (slug === 'st-james-bay') {
       return stJamesBayLots;
+    }
+    if (slug === 'ypsilanti') {
+      return ypsilantiLots;
     }
     return grandHavenLots;
   }, [slug]);
