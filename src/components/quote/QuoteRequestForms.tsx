@@ -34,6 +34,9 @@ import {
   ArrowRight,
   Loader2,
   CheckCircle2,
+  Calendar,
+  DollarSign,
+  FileText,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -611,6 +614,8 @@ interface NextStepCardsProps {
   pricingFlags?: BuyerPricingFlags;
   pricingMode: PricingMode;
   className?: string;
+  onScheduleCall?: () => void;
+  onGetPreQualified?: () => void;
 }
 
 export function NextStepCards({
@@ -619,11 +624,46 @@ export function NextStepCards({
   pricingFlags,
   pricingMode,
   className = '',
+  onScheduleCall,
+  onGetPreQualified,
 }: NextStepCardsProps) {
   const [showBuildOnMyLand, setShowBuildOnMyLand] = useState(false);
   const [showFindLand, setShowFindLand] = useState(false);
+  const [showCommunityQuote, setShowCommunityQuote] = useState(false);
 
-  const cards = [
+  // Detect community flow: has both development and lot selected
+  const isCommunityFlow = !!(selection.developmentSlug && selection.lotId);
+
+  // Community-specific cards
+  const communityCards = [
+    {
+      id: 'schedule-call',
+      icon: Calendar,
+      title: 'Schedule Consultation',
+      description: 'Meet with an advisor to finalize your home plan and discuss next steps.',
+      cta: 'Book a Call',
+      onClick: onScheduleCall,
+    },
+    {
+      id: 'get-prequalified',
+      icon: DollarSign,
+      title: 'Get Pre-Qualified',
+      description: 'Check your financing eligibility and see estimated monthly payments.',
+      cta: 'Check Eligibility',
+      onClick: onGetPreQualified,
+    },
+    {
+      id: 'request-quote',
+      icon: FileText,
+      title: 'Request Final Quote',
+      description: 'Lock in your pricing and receive a detailed breakdown for your selected lot.',
+      cta: 'Get Quote',
+      onClick: () => setShowCommunityQuote(true),
+    },
+  ];
+
+  // Standard cards (for non-community flows)
+  const standardCards = [
     {
       id: 'build-on-my-land',
       icon: Home,
@@ -650,10 +690,14 @@ export function NextStepCards({
     },
   ];
 
+  const cards = isCommunityFlow ? communityCards : standardCards;
+
   return (
     <>
       <div className={`space-y-4 ${className}`}>
-        <h3 className="text-lg font-semibold text-foreground">Take the Next Step</h3>
+        <h3 className="text-lg font-semibold text-foreground">
+          {isCommunityFlow ? 'Ready to Move Forward?' : 'Take the Next Step'}
+        </h3>
         
         <div className="grid gap-3 sm:grid-cols-3">
           {cards.map((card, index) => (
@@ -663,7 +707,7 @@ export function NextStepCards({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05, duration: 0.2 }}
             >
-              {card.href ? (
+              {'href' in card && card.href ? (
                 <a
                   href={card.href}
                   className="block h-full p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all group"
@@ -683,6 +727,7 @@ export function NextStepCards({
         </div>
       </div>
 
+      {/* Standard flow forms */}
       <BuildOnMyLandForm
         open={showBuildOnMyLand}
         onOpenChange={setShowBuildOnMyLand}
@@ -695,6 +740,16 @@ export function NextStepCards({
       <FindLandForm
         open={showFindLand}
         onOpenChange={setShowFindLand}
+        selection={selection}
+        buyerFacingBreakdown={buyerFacingBreakdown}
+        pricingFlags={pricingFlags}
+        pricingMode={pricingMode}
+      />
+
+      {/* Community flow quote form */}
+      <CommunityQuoteForm
+        open={showCommunityQuote}
+        onOpenChange={setShowCommunityQuote}
         selection={selection}
         buyerFacingBreakdown={buyerFacingBreakdown}
         pricingFlags={pricingFlags}
@@ -719,5 +774,168 @@ function CardContent({ card }: { card: { icon: React.ElementType; title: string;
         <ArrowRight className="w-4 h-4" />
       </span>
     </div>
+  );
+}
+
+// ============================================================================
+// COMMUNITY QUOTE FORM
+// ============================================================================
+
+interface CommunityQuoteFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selection: SelectionSummary;
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
+  pricingMode: PricingMode;
+}
+
+export function CommunityQuoteForm({
+  open,
+  onOpenChange,
+  selection,
+  buyerFacingBreakdown,
+  pricingFlags,
+  pricingMode,
+}: CommunityQuoteFormProps) {
+  const [step, setStep] = useState<'form' | 'confirmation'>('form');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [quoteId, setQuoteId] = useState('');
+  
+  const [contact, setContact] = useState<ContactInfo>({ name: '', email: '', phone: '' });
+  const [timeline, setTimeline] = useState<TimelineType>('unknown');
+  const [financingInterest, setFinancingInterest] = useState(true);
+  const [notes, setNotes] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const id = generateQuoteId();
+    const quote: QuoteRequest = {
+      id,
+      type: 'community',
+      createdAt: new Date().toISOString(),
+      contact,
+      communityDetails: {
+        developmentSlug: selection.developmentSlug || '',
+        lotId: String(selection.lotId || ''),
+        timeline,
+        financingInterest,
+        notes,
+      },
+      selection,
+      buyerFacingBreakdown,
+      pricingFlags,
+      pricingMode,
+      status: 'pending',
+    };
+    
+    saveQuoteRequest(quote);
+    setQuoteId(id);
+    setIsSubmitting(false);
+    setStep('confirmation');
+  };
+
+  const handleClose = () => {
+    onOpenChange(false);
+    setTimeout(() => {
+      setStep('form');
+      setContact({ name: '', email: '', phone: '' });
+      setTimeline('unknown');
+      setFinancingInterest(true);
+      setNotes('');
+    }, 200);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
+        <AnimatePresence mode="wait">
+          {step === 'confirmation' ? (
+            <ConfirmationScreen quoteId={quoteId} onClose={handleClose} />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Request Final Quote
+                </DialogTitle>
+                <DialogDescription>
+                  Lock in pricing for your selected lot and home design.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmit} className="mt-4 space-y-6">
+                <ContactFields contact={contact} onChange={setContact} />
+
+                <div className="border-t pt-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Purchase Timeline</Label>
+                    <Select
+                      value={timeline}
+                      onValueChange={(v) => setTimeline(v as TimelineType)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="When are you looking to purchase?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="asap">As soon as possible</SelectItem>
+                        <SelectItem value="3-6-months">3-6 months</SelectItem>
+                        <SelectItem value="6-12-months">6-12 months</SelectItem>
+                        <SelectItem value="12-plus-months">12+ months</SelectItem>
+                        <SelectItem value="unknown">Just exploring</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="financing-interest"
+                      checked={financingInterest}
+                      onCheckedChange={(checked) => setFinancingInterest(!!checked)}
+                    />
+                    <Label htmlFor="financing-interest" className="text-sm">
+                      I'm interested in learning about financing options
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="community-notes">Questions or Comments</Label>
+                  <Textarea
+                    id="community-notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Any questions about the lot, home, or process..."
+                    rows={3}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      Request Quote
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </DialogContent>
+    </Dialog>
   );
 }

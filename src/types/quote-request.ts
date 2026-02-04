@@ -7,7 +7,7 @@ import type { PricingMode } from '@/data/pricing-layers';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 
-export type QuoteRequestType = 'build-on-my-land' | 'find-land' | 'basemod-community';
+export type QuoteRequestType = 'build-on-my-land' | 'find-land' | 'basemod-community' | 'community';
 
 export type UtilityType = 'public' | 'well' | 'septic' | 'unknown';
 export type FoundationType = 'crawl' | 'basement' | 'unknown';
@@ -43,11 +43,20 @@ export interface FindLandDetails {
   notes?: string;
 }
 
-// BaseMod Community specific fields
+// BaseMod Community specific fields (for general interest)
 export interface CommunityInterestDetails {
   preferredCommunity?: string;
   preferredLotId?: number;
   timeline: TimelineType;
+  notes?: string;
+}
+
+// Community Quote specific fields (user already selected lot)
+export interface CommunityQuoteDetails {
+  developmentSlug: string;
+  lotId: string;
+  timeline: TimelineType;
+  financingInterest: boolean;
   notes?: string;
 }
 
@@ -79,6 +88,7 @@ export interface QuoteRequest {
   buildOnMyLandDetails?: BuildOnMyLandDetails;
   findLandDetails?: FindLandDetails;
   communityInterestDetails?: CommunityInterestDetails;
+  communityDetails?: CommunityQuoteDetails;
   
   // Selection summary
   selection: SelectionSummary;
