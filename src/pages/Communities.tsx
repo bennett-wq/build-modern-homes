@@ -2,7 +2,8 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, ArrowRight, Bell, Building2, DollarSign, Home } from 'lucide-react';
+import { MapPin, ArrowRight, Bell, Building2, Home } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Layout } from '@/components/layout/Layout';
 import { Section, SectionHeader } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
@@ -159,19 +160,13 @@ function CommunityCard({ development }: { development: Development }) {
               </div>
             )}
             
-            <div className="flex flex-col gap-2 pt-2">
+            <div className="pt-2">
               {isActive ? (
-                <>
-                  <Button onClick={handleGetAllInPrice} className="w-full">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Get All-In Price
-                  </Button>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link to={`/developments/${development.slug}`}>
-                      View Community
-                    </Link>
-                  </Button>
-                </>
+                <Button onClick={handleGetAllInPrice} className="w-full">
+                  <Home className="mr-2 h-4 w-4" />
+                  Explore Available Lots
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               ) : (
                 <Button asChild variant="outline" className="w-full">
                   <Link to={`/developments/${development.slug}`}>
@@ -189,14 +184,15 @@ function CommunityCard({ development }: { development: Development }) {
 }
 
 export default function Communities() {
+  const isMobile = useIsMobile();
   const activeDevelopments = developments.filter(d => d.status === 'active');
   const upcomingDevelopments = developments.filter(d => d.status === 'coming-soon');
   const soldOutDevelopments = developments.filter(d => d.status === 'sold-out');
 
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="relative py-24 lg:py-32 bg-secondary">
+      {/* Hero Section - Compressed for mobile */}
+      <section className="relative py-6 sm:py-12 lg:py-24 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -204,20 +200,31 @@ export default function Communities() {
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <div className="flex items-center gap-2 text-accent mb-4">
-              <Building2 size={20} />
-              <span className="text-sm font-medium uppercase tracking-wider">Our Communities</span>
+            {/* Hide label on mobile */}
+            {!isMobile && (
+              <div className="flex items-center gap-2 text-accent mb-4">
+                <Building2 size={20} />
+                <span className="text-sm font-medium uppercase tracking-wider">Our Communities</span>
+              </div>
+            )}
+            
+            {/* Compact heading with count badge */}
+            <div className="flex items-center gap-3 flex-wrap mb-2 sm:mb-4">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground">
+                Communities
+              </h1>
+              <Badge className="bg-accent/10 text-accent border-accent/20">
+                {activeDevelopments.length} Active
+              </Badge>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground mb-6">
-              BaseMod<br />Communities
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-4">
-              Explore our carefully planned residential communities across the Midwest. 
-              Get an all-in price that includes your lot, home, and site work.
+            
+            {/* Short one-liner description */}
+            <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed mb-3 sm:mb-4">
+              All-in pricing on available lots
             </p>
             
-            {/* Trust Signals */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Trust Signals - Hide on mobile */}
+            <div className="hidden sm:flex flex-col sm:flex-row gap-3">
               <FinancingBadge variant="inline" className="text-muted-foreground" />
               <span className="hidden sm:inline text-muted-foreground/50">•</span>
               <AppraisalBadge variant="inline" className="text-muted-foreground" />

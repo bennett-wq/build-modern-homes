@@ -161,8 +161,8 @@ export function Step1Lot({
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
               {phase1Count > 0 
-                ? `${phase1Count} lots available now`
-                : 'Select a lot to see your all-in price'}
+                ? `${phase1Count} ready now of ${availableLots.length} total`
+                : `${availableLots.length} lots available`}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -231,7 +231,9 @@ export function Step1Lot({
             <div className="px-4 py-3 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Quick Select</h3>
-                <p className="text-xs text-muted-foreground">{availableLots.length} available</p>
+                <p className="text-xs text-muted-foreground">
+                  {phase1Count > 0 ? `${phase1Count} ready now` : `${availableLots.length} available`}
+                </p>
               </div>
               <Button 
                 variant="ghost" 

@@ -3,9 +3,10 @@ import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { BedDouble, Bath, Maximize, FileText, Check, ShieldCheck, Home as HomeIcon } from 'lucide-react';
+import { BedDouble, Bath, Maximize, FileText, Check, CheckCircle, Home as HomeIcon } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
@@ -239,13 +240,24 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
           )}
         </AnimatePresence>
         
-        {/* Conforming badge */}
+        {/* FHA/VA Eligible badge with tooltip */}
         {isConforming && (
-          <div className="absolute top-3 left-3 pointer-events-none">
-            <Badge className="bg-green-600 text-white border-0 text-xs font-medium shadow-md">
-              <ShieldCheck className="h-3 w-3 mr-1" />
-              Conforming
-            </Badge>
+          <div className="absolute top-3 left-3 pointer-events-auto">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className="bg-green-600 text-white border-0 text-xs font-medium shadow-md cursor-help">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    FHA/VA Eligible
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[200px]">
+                  <p className="text-xs">
+                    Qualifies for FHA, VA, and conventional financing with lower down payments
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
       </div>
@@ -259,7 +271,7 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
           {model.description}
         </p>
         
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
           <span className="flex items-center gap-1.5">
             <Maximize className="h-3.5 w-3.5" />
             {model.sqft.toLocaleString()} sf
@@ -271,6 +283,14 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
           <span className="flex items-center gap-1.5">
             <Bath className="h-3.5 w-3.5" />
             {model.baths} ba
+          </span>
+        </div>
+        
+        {/* Base price display */}
+        <div className="flex items-center justify-between mb-3 pt-2 border-t border-border/50">
+          <span className="text-xs text-muted-foreground">Base price</span>
+          <span className="font-semibold text-accent">
+            From ${model.price.toLocaleString()}
           </span>
         </div>
 
