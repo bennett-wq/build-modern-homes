@@ -326,6 +326,8 @@ export function Step4Review({
               buyerFacingBreakdown={buyerFacingBreakdown}
               pricingFlags={flags}
               pricingMode={flags.pricingMode}
+              onScheduleCall={() => setShowScheduleModal(true)}
+              onGetPreQualified={() => setShowPreQualFlow(true)}
             />
           </motion.div>
 
