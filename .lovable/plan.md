@@ -1,251 +1,302 @@
 
-# Communities Flow UX Improvements
+# Lot Selection Premium Redesign - Implementation Plan
 
-## Overview
-This plan addresses 5 fixes to bring the Communities flow (/developments/[slug]/build) up to the quality of the 8-step configurator. Fix #1 is already implemented; this plan covers Fixes #2-5.
+## Executive Summary
 
----
-
-## FIX #2: Add Price Range to Community Cards
-
-### Problem
-The `/communities` page shows community cards without any pricing information (mobile or desktop).
-
-### Solution
-Add lot count and price range calculation to `CommunityCard` component using the lots database.
-
-### Files to Modify
-
-**src/pages/Communities.tsx**
-- Import `useLotsBySlug` hook to fetch lots for each community
-- Calculate min/max all-in prices from lot premiums + base home package
-- Display price range in card: "{lotsCount} lots - From ${min} - ${max}"
-
-### Implementation Details
-
-```text
-CommunityCard component changes:
-1. Fetch lots: const { lots } = useLotsBySlug(development.slug)
-2. Calculate price range:
-   - Base price = ~$253,000 (default Hawthorne XMOD all-in)
-   - Min = base + min(lot.premium)
-   - Max = base + max(lot.premium)
-3. Add to card content:
-   <p className="text-sm text-muted-foreground">
-     {availableLots.length} lots - From ${min.toLocaleString()} - ${max.toLocaleString()}
-   </p>
-```
+After analyzing the codebase, I found that several fixes are **already partially implemented** but there's one **critical bug** that causes the issues the user is experiencing. This plan addresses all 6 fixes with priority on the root cause.
 
 ---
 
-## FIX #3: Keep Pricing Bar Visible on Step 4 (Design Exterior)
+## Analysis Findings
 
-### Problem
-`Step3Design` component (Design Exterior step) does not receive pricing props and doesn't render the `InlineMobilePricing` component.
-
-### Solution
-Pass pricing props from `BuildWizard` to `Step3Design` and render `InlineMobilePricing` on mobile.
-
-### Files to Modify
-
-**src/pages/BuildWizard.tsx** (lines 402-413)
-- Add `buyerFacingBreakdown` and `pricingFlags` props to `Step3Design`
-
-**src/components/wizard/Step3Design.tsx**
-- Add props interface: `buyerFacingBreakdown?: BuyerFacingBreakdown` and `pricingFlags?: BuyerPricingFlags`
-- Import `InlineMobilePricing` from `@/components/pricing/BuyerPricingDisplay`
-- Render `InlineMobilePricing` when `isMobile && buyerFacingBreakdown && pricingFlags`
-
-### Implementation Details
-
-```text
-BuildWizard.tsx - Step 4 render:
-<Step3Design
-  selectedPackageId={selection.packageId}
-  selectedGarageDoorId={selection.garageDoorId}
-  onSelectPackage={setPackage}
-  onSelectGarageDoor={setGarageDoor}
-  onNext={() => setCurrentStep(5)}
-  onBack={() => setCurrentStep(3)}
-  isMobile={isMobile}
-  developmentSlug={slug}
-  lotId={selection.lotId}
-  modelSlug={selection.modelSlug}
-  buyerFacingBreakdown={pricing.breakdown}   // ADD
-  pricingFlags={pricing.flags}                // ADD
-/>
-
-Step3Design.tsx - Add before closing div:
-{isMobile && buyerFacingBreakdown && pricingFlags && (
-  <InlineMobilePricing
-    breakdown={buyerFacingBreakdown}
-    flags={pricingFlags}
-  />
-)}
-```
+| Fix | Status | Root Cause |
+|-----|--------|------------|
+| #1 Entry Points | **CRITICAL BUG** | `useBuildSelection` loads from localStorage, not just URL |
+| #2 Mobile Split-Screen | Partially Done | Missing pricing bar on Step 1 |
+| #3 Desktop Lot List | Done | Cards already show all-in prices |
+| #4 Map-Sidebar Sync | Done | Single source of truth exists |
+| #5 Pricing Bar All Steps | Partial | Missing on Step 1 only |
+| #6 Review Step CTAs | Done | Community flow detection exists |
 
 ---
 
-## FIX #4: Improve Mobile Lot Selection Layout
+## FIX #1: Entry Points Pre-Selection Bug (CRITICAL)
 
-### Problem
-On mobile, Step 1 (Lot Selection) shows a full-screen map with a "Browse" button that opens a drawer covering the entire map. Users cannot see map and lot list simultaneously.
+### Root Cause
+`useBuildSelection.ts` (lines 37-59) loads saved selections from `localStorage` even when navigating fresh:
 
-### Solution
-Redesign mobile layout to show:
-1. Site plan map at ~45% viewport height
-2. Horizontal scrolling lot pill selector below map
-3. Keep detailed drawer accessible via "Browse All" button
-
-### Files to Modify
-
-**src/components/wizard/Step1Lot.tsx**
-
-### Implementation Details
-
-```text
-Mobile Layout Structure (lines 130-165):
-<div className={cn(
-  'flex-1 overflow-hidden relative',
-  isMobile ? 'flex flex-col' : 'flex'
-)}>
-  {/* Site Plan - reduced height on mobile */}
-  <div className={cn(
-    'relative bg-muted',
-    isMobile ? 'h-[45vh] shrink-0' : 'flex-1'  // CHANGE: was flex-1
-  )}>
-    <FixedSitePlanViewer ... />
-  </div>
-
-  {/* NEW: Horizontal Lot Scroll - Mobile only */}
-  {isMobile && (
-    <div className="shrink-0 border-t border-border bg-card">
-      <div className="px-4 py-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Quick Select</h3>
-        <Button variant="ghost" size="sm" onClick={() => setMobileListOpen(true)}>
-          Browse All
-        </Button>
-      </div>
-      <div className="px-4 pb-4 overflow-x-auto">
-        <div className="flex gap-2" style={{ width: 'max-content' }}>
-          {lots.filter(l => l.status === 'available').map(lot => (
-            <LotPill 
-              key={lot.id}
-              lot={lot}
-              isSelected={lot.id === selectedLotId}
-              onClick={() => handleLotClick(lot)}
-              allInPrice={calculateAllIn(lot)}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  )}
-
-  {/* Existing desktop sidebar unchanged */}
-  {!isMobile && (
-    <div className="w-96 border-l ...">
-      <LotListPanel ... />
-    </div>
-  )}
-</div>
+```typescript
+// Current behavior - problematic
+const stored = localStorage.getItem(STORAGE_KEY);
+// ...merges with URL params
 ```
 
-**New LotPill subcomponent:**
+When a user clicks "Get All-In Price" with a clean URL (`/developments/slug/build`), the hook loads their **previous session's selections** and `BuildWizard.tsx` auto-advances to Review.
+
+### Solution
+Modify `useBuildSelection.ts` to ONLY use localStorage when URL has explicit params:
+
 ```text
-function LotPill({ lot, isSelected, onClick, allInPrice }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex flex-col items-center px-4 py-3 rounded-xl border min-w-[100px]',
-        'transition-all duration-150',
-        isSelected 
-          ? 'bg-accent/20 border-accent shadow-md' 
-          : 'bg-card border-border hover:border-accent/50'
-      )}
-    >
-      <span className="font-bold text-foreground">{lot.label}</span>
-      <span className="text-xs text-muted-foreground">${(allInPrice/1000).toFixed(0)}K</span>
-      {isSelected && <Check className="h-4 w-4 text-accent mt-1" />}
-    </button>
-  );
+File: src/hooks/useBuildSelection.ts
+
+Changes:
+1. Check if ANY URL params exist before loading localStorage
+2. If URL is clean (no params), start fresh with empty selection
+3. Only merge localStorage when URL has explicit params (shareable link scenario)
+```
+
+### Implementation
+
+```typescript
+// New logic (lines 30-60)
+const hasUrlParams = 
+  searchParams.has('lot') || 
+  searchParams.has('model') || 
+  searchParams.has('buildType') ||
+  searchParams.has('package') ||
+  searchParams.has('garage');
+
+// Only load localStorage if URL has params (resuming from shared link)
+let storedSelection: Partial<BuildSelection> = {};
+if (hasUrlParams) {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      storedSelection = JSON.parse(stored);
+    } catch {
+      // Invalid JSON, ignore
+    }
+  }
 }
+
+// Fresh start when no URL params
+return {
+  developmentSlug,
+  lotId: lotParam ? parseInt(lotParam, 10) : (hasUrlParams ? storedSelection.lotId ?? null : null),
+  modelSlug: normalizeModelSlug(modelParam || (hasUrlParams ? storedSelection.modelSlug : null)),
+  buildType: hasUrlParams ? ((rawBuildType === 'xmod' || rawBuildType === 'mod') ? rawBuildType : null) : null,
+  packageId: packageParam || (hasUrlParams ? storedSelection.packageId : null) || null,
+  garageDoorId: garageParam || (hasUrlParams ? storedSelection.garageDoorId : null) || null,
+};
 ```
+
+### Acceptance Criteria
+- Clicking "Get All-In Price" lands on Step 1 with nothing selected
+- Shared links with params still work (resume from shared state)
+- User selections persist during active session
 
 ---
 
-## FIX #5: Show All-In Estimate on ALL Lot Cards
+## FIX #2: Mobile Pricing Bar on Step 1
 
-### Problem
-`PremiumLotCard` only shows the all-in estimate on hover or when selected. Users can't compare prices without hovering each lot.
+### Current State
+Step 1 (`Step1Lot.tsx`) has the split-screen layout but no persistent pricing bar. It only shows a temporary "celebration overlay" on selection.
 
 ### Solution
-Always show the all-in estimate section on available lots (remove conditional animation).
+Add `InlineMobilePricing` component to Step 1, similar to Steps 2-4.
 
-### Files to Modify
-
-**src/components/wizard/PremiumLotCard.tsx** (lines 247-268)
-
-### Implementation Details
+### Implementation
 
 ```text
-Current (line 249-250):
-initial={isSelected ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
-animate={isSelected || isHovered ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
+File: src/components/wizard/Step1Lot.tsx
 
-Change to:
-// Always visible for available lots
-{estimatedAllIn !== undefined && isAvailable && (
-  <div className="pt-3 border-t border-border/50">
-    <div className="flex items-center justify-between bg-accent/5 rounded-lg p-2.5">
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-md bg-accent/20 flex items-center justify-center">
-          <Sparkles className="h-3.5 w-3.5 text-accent" />
-        </div>
-        <span className="text-xs font-medium text-muted-foreground">Est. all-in from</span>
-      </div>
-      <span className="text-base font-bold text-foreground">
-        <AnimatedPriceCompact value={estimatedAllIn} />
-      </span>
-    </div>
-  </div>
-)}
+1. Add new props to interface:
+   - buyerFacingBreakdown?: BuyerFacingBreakdown
+   - pricingFlags?: BuyerPricingFlags
+
+2. Import InlineMobilePricing from BuyerPricingDisplay
+
+3. Add pricing bar rendering before WizardStickyFooter (around line 386):
+   {isMobile && selectedLot && buyerFacingBreakdown && pricingFlags && (
+     <InlineMobilePricing
+       breakdown={buyerFacingBreakdown}
+       flags={pricingFlags}
+     />
+   )}
+
+File: src/pages/BuildWizard.tsx
+
+4. Pass pricing props to Step1Lot:
+   <Step1Lot
+     lots={lots}
+     selectedLotId={selection.lotId}
+     sitePlanImagePath={development.sitePlanImagePath}
+     onSelectLot={setLot}
+     onNext={() => setCurrentStep(2)}
+     isMobile={isMobile}
+     buyerFacingBreakdown={pricing.breakdown}  // ADD
+     pricingFlags={pricing.flags}               // ADD
+   />
+```
+
+### Mobile Layout Result
+
+```text
++----------------------------------+
+| < Back    [Progress 1 of 5]      |
+| Choose Your Homesite             |
++----------------------------------+
+|                                  |
+|      [SITE PLAN - 45vh]          |
+|                                  |
++----------------------------------+
+| Quick Select           Browse All|
+| [Lot 1] [Lot 10] [Lot 15] →      |  <- Horizontal scroll
++----------------------------------+
+| Starting from $315,399  $2,546/mo|  <- NEW: Pricing bar
++----------------------------------+
+|         [Continue →]             |
++----------------------------------+
 ```
 
 ---
 
-## Summary of Changes
+## FIX #3: Desktop Lot Cards (Already Implemented)
 
-| Fix | File | Change Type | Effort |
-|-----|------|-------------|--------|
-| #2 | Communities.tsx | Add price range calculation and display | Medium |
-| #3 | BuildWizard.tsx | Pass pricing props to Step3Design | Small |
-| #3 | Step3Design.tsx | Add InlineMobilePricing render | Small |
-| #4 | Step1Lot.tsx | Redesign mobile layout with lot pills | Large |
-| #5 | PremiumLotCard.tsx | Always show all-in estimate | Small |
+### Status: DONE
+
+After analysis, the desktop lot list already implements all requirements:
+
+1. `LotListPanel.tsx` (line 276-288) passes `estimatedAllIn` to every card
+2. `PremiumLotCard.tsx` (lines 246-261) always shows all-in for available lots (no hover required)
+3. Cards include search, filter, and price range summary
+
+**No changes required** - this was fixed in a previous update.
+
+---
+
+## FIX #4: Map-Sidebar State Sync (Already Implemented)
+
+### Status: DONE
+
+The codebase uses a single source of truth:
+
+1. `Step1Lot.tsx` maintains single `selectedLotId` state
+2. Both `FixedSitePlanViewer` and `LotListPanel` receive same `selectedLotId` prop
+3. Both call same `onSelectLot` handler which updates state
+4. Footer receives same `selectedLot` derived from state
+
+**No changes required** - state sync is working correctly.
+
+---
+
+## FIX #5: Pricing Bar Visibility (Partial - Step 1 Only)
+
+### Current Coverage
+
+| Step | Pricing Bar | Status |
+|------|-------------|--------|
+| 1 - Lot Selection | Missing | FIX NEEDED |
+| 2 - Model Selection | Present | Done |
+| 3 - Build Type | Present | Done |
+| 4 - Design Exterior | Present | Done (previous fix) |
+| 5 - Review | Present | Done |
+
+### Solution
+Covered by FIX #2 above - adding `InlineMobilePricing` to Step 1.
+
+---
+
+## FIX #6: Review Step CTAs (Already Implemented)
+
+### Status: DONE
+
+`QuoteRequestForms.tsx` (lines 634-693) already detects community flow and shows appropriate CTAs:
+
+```typescript
+// Already implemented
+const isCommunityFlow = !!(selection.developmentSlug && selection.lotId);
+
+const communityCards = [
+  { id: 'schedule-call', title: 'Schedule Consultation', ... },
+  { id: 'get-prequalified', title: 'Get Pre-Qualified', ... },
+  { id: 'request-quote', title: 'Request Final Quote', ... },
+];
+
+const cards = isCommunityFlow ? communityCards : standardCards;
+```
+
+**No changes required** - this was implemented in a previous update.
+
+---
+
+## Summary of Required Changes
+
+| File | Change | Effort |
+|------|--------|--------|
+| `src/hooks/useBuildSelection.ts` | Prevent localStorage loading on fresh entry | Medium |
+| `src/components/wizard/Step1Lot.tsx` | Add pricing bar props and render | Small |
+| `src/pages/BuildWizard.tsx` | Pass pricing props to Step1Lot | Small |
+
+---
+
+## Technical Details
+
+### File: src/hooks/useBuildSelection.ts
+
+```text
+Lines 30-60: Update initialSelection logic
+
+Before:
+- Always loads localStorage and merges with URL params
+
+After:
+- Check if URL has any params using searchParams.has()
+- If no params (fresh entry), return empty selection
+- If params exist (shared link), merge with localStorage
+```
+
+### File: src/components/wizard/Step1Lot.tsx
+
+```text
+Line 63-75: Update props interface
+- Add buyerFacingBreakdown?: BuyerFacingBreakdown
+- Add pricingFlags?: BuyerPricingFlags
+
+Line 13: Add import
+- import { InlineMobilePricing } from '@/components/pricing/BuyerPricingDisplay'
+
+Line 386 (before WizardStickyFooter): Add render
+- Conditional InlineMobilePricing for mobile when lot selected
+```
+
+### File: src/pages/BuildWizard.tsx
+
+```text
+Lines 330-338: Update Step1Lot props
+- Add buyerFacingBreakdown={pricing.breakdown}
+- Add pricingFlags={pricing.flags}
+```
 
 ---
 
 ## Testing Checklist
 
-### Mobile (390x844):
-- [ ] /communities shows price range on all community cards
-- [ ] Lot selection shows map AND horizontal lot pills together
-- [ ] Pricing bar visible on Design Exterior step (Step 4)
-- [ ] All lot cards show all-in estimate without hover
+### Entry Points (Critical)
+- [ ] Clear browser localStorage before testing
+- [ ] Click "Get All-In Price" on /communities card
+- [ ] Verify lands on Step 1 with NO selections
+- [ ] Verify URL is `/developments/slug/build` (no params)
+- [ ] Make selections through to Review
+- [ ] Refresh page - verify returns to Step 1 (not Review)
+- [ ] Share link works - opens with saved selections
 
-### Desktop (1440x900):
-- [ ] No regressions to existing desktop experience
-- [ ] Price range visible on community cards
-- [ ] Pricing bar visible on all steps
-- [ ] All lot cards show all-in estimate
+### Mobile (390x844)
+- [ ] Step 1 shows map (45vh) + horizontal lot pills
+- [ ] Pricing bar visible after selecting lot
+- [ ] Pricing updates when selecting different lots
+- [ ] Continue button enabled after lot selection
+
+### Desktop (1440x900)
+- [ ] All lot cards show all-in price (no hover needed)
+- [ ] Selecting lot in sidebar updates map
+- [ ] Selecting lot on map scrolls to card in sidebar
+- [ ] 3-4 cards visible without scrolling
 
 ---
 
-## Implementation Order
+## Priority Order
 
-1. **FIX #3** - Pricing bar on Design step (quick, high impact)
-2. **FIX #5** - All-in on all lot cards (quick, high impact)
-3. **FIX #2** - Price range on community cards (medium effort)
-4. **FIX #4** - Mobile lot selection redesign (larger effort)
+1. **FIX #1** - Entry points (CRITICAL - root cause of user confusion)
+2. **FIX #2 + #5** - Step 1 pricing bar (high impact, quick implementation)
+3. Verify #3, #4, #6 are working (already implemented)
