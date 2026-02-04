@@ -243,29 +243,22 @@ export const PremiumLotCard = memo(forwardRef<HTMLButtonElement, PremiumLotCardP
             </div>
           )}
 
-          {/* All-in price preview - Always show for selected, fade in on hover */}
-          {estimatedAllIn !== undefined && isAvailable && (
-            <motion.div
-              initial={isSelected ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
-              animate={isSelected || isHovered ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-3 border-t border-border/50">
-                <div className="flex items-center justify-between bg-accent/5 rounded-lg p-2.5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-accent/20 flex items-center justify-center">
-                      <Sparkles className="h-3.5 w-3.5 text-accent" />
-                    </div>
-                    <span className="text-xs font-medium text-muted-foreground">All-In Estimate</span>
-                  </div>
-                  <span className="text-base font-bold text-foreground">
-                    <AnimatedPriceCompact value={estimatedAllIn} />
-                  </span>
-                </div>
+      {/* All-in price preview - Always visible for available lots */}
+      {estimatedAllIn !== undefined && isAvailable && (
+        <div className="pt-3 border-t border-border/50">
+          <div className="flex items-center justify-between bg-accent/5 rounded-lg p-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-accent/20 flex items-center justify-center">
+                <Sparkles className="h-3.5 w-3.5 text-accent" />
               </div>
-            </motion.div>
-          )}
+              <span className="text-xs font-medium text-muted-foreground">Est. all-in from</span>
+            </div>
+            <span className="text-base font-bold text-foreground">
+              <AnimatedPriceCompact value={estimatedAllIn} />
+            </span>
+          </div>
+        </div>
+      )}
 
           {/* Unavailable message */}
           {status !== 'available' && status !== 'sold' && (

@@ -10,11 +10,55 @@ import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { LotPricingPreview, LotPricingBadge } from '@/components/wizard/LotPricingPreview';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, AlertCircle, X, TrendingUp, Sparkles, Check, ChevronUp } from 'lucide-react';
+import { MapPin, AlertCircle, X, TrendingUp, Sparkles, Check, ChevronUp, List } from 'lucide-react';
 import { Lot } from '@/data/lots/grand-haven';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { AnimatedPriceCompact } from '@/components/ui/animated-price';
 import { cn } from '@/lib/utils';
+
+// ============================================================================
+// LotPill Component - Compact horizontal scrolling selector for mobile
+// ============================================================================
+
+interface LotPillProps {
+  lot: Lot;
+  isSelected: boolean;
+  onClick: () => void;
+  allInPrice: number;
+}
+
+function LotPill({ lot, isSelected, onClick, allInPrice }: LotPillProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'flex flex-col items-center px-4 py-3 rounded-xl border min-w-[100px]',
+        'transition-all duration-150 touch-manipulation',
+        isSelected 
+          ? 'bg-accent/20 border-accent shadow-md ring-2 ring-accent/40' 
+          : 'bg-card border-border hover:border-accent/50 active:scale-95'
+      )}
+    >
+      <span className="font-bold text-foreground text-sm">{lot.label}</span>
+      <span className="text-xs text-muted-foreground mt-0.5">
+        ${(allInPrice / 1000).toFixed(0)}K
+      </span>
+      {isSelected && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="mt-1"
+        >
+          <Check className="h-4 w-4 text-accent" strokeWidth={3} />
+        </motion.div>
+      )}
+    </button>
+  );
+}
+
+// ============================================================================
+// Main Step1Lot Component
+// ============================================================================
 
 interface Step1LotProps {
   lots: Lot[];
@@ -49,11 +93,21 @@ export function Step1Lot({
   const [showPricingPreview, setShowPricingPreview] = useState(false);
   const [justSelected, setJustSelected] = useState(false);
 
+  // Calculate all-in price for any lot
+  const calculateAllIn = useCallback((lot: Lot) => {
+    return baseHomePackage + baseSitework + baseFeesAllowance + (lot.premium || 0);
+  }, [baseHomePackage, baseSitework, baseFeesAllowance]);
+
   // Calculate all-in price for selected lot
   const allInPrice = useMemo(() => {
     if (!selectedLot?.premium) return null;
-    return baseHomePackage + baseSitework + baseFeesAllowance + selectedLot.premium;
-  }, [selectedLot, baseHomePackage, baseSitework, baseFeesAllowance]);
+    return calculateAllIn(selectedLot);
+  }, [selectedLot, calculateAllIn]);
+
+  // Get available lots for quick selector
+  const availableLots = useMemo(() => {
+    return lots.filter(l => l.status === 'available');
+  }, [lots]);
 
   // Get phase 1 lots count for highlighting
   const phase1Count = useMemo(() => {
@@ -131,10 +185,10 @@ export function Step1Lot({
         'flex-1 overflow-hidden relative',
         isMobile ? 'flex flex-col' : 'flex'
       )}>
-        {/* Site Plan - fixed frame that never moves */}
+        {/* Site Plan - reduced height on mobile to show lot pills */}
         <div className={cn(
           'relative bg-muted',
-          isMobile ? 'flex-1' : 'flex-1'
+          isMobile ? 'h-[45vh] shrink-0' : 'flex-1'
         )}>
           <FixedSitePlanViewer
             sitePlanImagePath={sitePlanImagePath}
@@ -163,6 +217,40 @@ export function Step1Lot({
             </div>
           )}
         </div>
+
+        {/* Mobile: Horizontal Lot Quick-Select */}
+        {isMobile && availableLots.length > 0 && (
+          <div className="shrink-0 border-t border-border bg-card">
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Quick Select</h3>
+                <p className="text-xs text-muted-foreground">{availableLots.length} available</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setMobileListOpen(true)}
+                className="text-muted-foreground"
+              >
+                <List className="h-4 w-4 mr-1.5" />
+                Browse All
+              </Button>
+            </div>
+            <div className="px-4 pb-4 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2" style={{ width: 'max-content' }}>
+                {availableLots.map(lot => (
+                  <LotPill
+                    key={lot.id}
+                    lot={lot}
+                    isSelected={lot.id === selectedLotId}
+                    onClick={() => handleLotClick(lot)}
+                    allInPrice={calculateAllIn(lot)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Lot List - Desktop sidebar */}
         {!isMobile && (

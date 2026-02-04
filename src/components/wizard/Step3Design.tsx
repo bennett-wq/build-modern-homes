@@ -55,6 +55,8 @@ import {
 import { FinancingModal } from '@/components/financing/FinancingModal';
 import { AppraisalInfoDrawer } from '@/components/appraisal/AppraisalBadge';
 import { ExteriorPreviewModal } from '@/components/wizard/ExteriorPreviewModal';
+import { InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
+import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { cn } from '@/lib/utils';
 
 interface Step3DesignProps {
@@ -69,6 +71,9 @@ interface Step3DesignProps {
   developmentSlug?: string;
   lotId?: number | null;
   modelSlug?: string | null;
+  // For pricing bar on mobile
+  buyerFacingBreakdown?: BuyerFacingBreakdown;
+  pricingFlags?: BuyerPricingFlags;
 }
 
 export function Step3Design({
@@ -82,6 +87,8 @@ export function Step3Design({
   developmentSlug,
   lotId,
   modelSlug,
+  buyerFacingBreakdown,
+  pricingFlags,
 }: Step3DesignProps) {
   const normalizedModel = normalizeModelSlug(modelSlug);
   const usePhotoPreview = isPhotoBasedModel(modelSlug);
@@ -494,6 +501,14 @@ export function Step3Design({
           </div>
         )}
       </WizardStickyFooter>
+
+      {/* Mobile Pricing Bar */}
+      {isMobile && buyerFacingBreakdown && pricingFlags && (
+        <InlineMobilePricing
+          breakdown={buyerFacingBreakdown}
+          flags={pricingFlags}
+        />
+      )}
 
       {/* Financing Modal */}
       <FinancingModal
