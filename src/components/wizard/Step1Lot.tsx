@@ -394,12 +394,43 @@ export function Step1Lot({
         </AnimatePresence>
       </div>
 
-      {/* Mobile Pricing Bar - positioned above sticky footer */}
-      {isMobile && selectedLot && buyerFacingBreakdown && pricingFlags && (
-        <InlineMobilePricing
-          breakdown={buyerFacingBreakdown}
-          flags={pricingFlags}
-        />
+      {/* Mobile Lot Pricing Bar - custom layout for Step 1 */}
+      {isMobile && selectedLot && (
+        <div className={cn(
+          'fixed left-0 right-0 z-40 bottom-[64px]',
+          'bg-card border-t border-border',
+          'shadow-[0_-4px_20px_rgba(0,0,0,0.1)]',
+          'px-4 py-4'
+        )}>
+          <div className="flex items-center justify-between">
+            {/* Left: Lot Premium */}
+            <div className="text-left">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-medium text-muted-foreground">Lot Premium</span>
+                <Badge variant="secondary" className="text-xs">Selected</Badge>
+              </div>
+              <p className="text-2xl font-semibold text-foreground tracking-tight">
+                ${(selectedLot.premium || 0).toLocaleString()}
+              </p>
+            </div>
+            
+            {/* Right: Est. All-In in blue card */}
+            {allInPrice && (
+              <div className="bg-accent/10 dark:bg-accent/20 rounded-lg px-4 py-2 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-accent" />
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground block">Est. All-in from</span>
+                  <p className="font-semibold text-accent">
+                    ${allInPrice.toLocaleString()}*
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            *Final price varies by model selection
+          </p>
+        </div>
       )}
 
       {/* Sticky Footer - Enhanced with clear lot details */}

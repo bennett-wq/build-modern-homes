@@ -263,56 +263,43 @@ export function Step4Review({
             </div>
           </motion.div>
 
-          {/* Share Link */}
+          {/* Share Your Build - Button Only */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05, duration: 0.2 }}
           >
-            <Card className="shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <Share2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <input
-                    type="text"
-                    value={shareableUrl}
-                    readOnly
-                    aria-label="Shareable link"
-                    className="flex-1 text-sm bg-transparent border-none outline-none text-muted-foreground truncate"
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleCopyLink}
-                    className="shrink-0 transition-colors"
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2 h-12"
+              onClick={handleCopyLink}
+            >
+              <AnimatePresence mode="wait">
+                {copied ? (
+                  <motion.div
+                    key="check"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    className="flex items-center gap-2"
                   >
-                    <AnimatePresence mode="wait">
-                      {copied ? (
-                        <motion.div
-                          key="check"
-                          initial={{ scale: 0.5, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.5, opacity: 0 }}
-                          transition={{ duration: 0.1 }}
-                        >
-                          <Check className="h-4 w-4 text-green-600" />
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="copy"
-                          initial={{ scale: 0.5, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.5, opacity: 0 }}
-                          transition={{ duration: 0.1 }}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    <Check className="h-4 w-4 text-green-600" />
+                    <span className="text-green-600 font-medium">Link Copied!</span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="share"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span>Share Your Build</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Button>
           </motion.div>
 
           {/* Next Step Conversion Cards */}
