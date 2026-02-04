@@ -1,8 +1,8 @@
 // Communities Listing Page - Entry point for "Get All-In Price"
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, ArrowRight, Bell, Building2, DollarSign } from 'lucide-react';
+import { MapPin, ArrowRight, Bell, Building2, DollarSign, Home } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Section, SectionHeader } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { FinancingBadge } from '@/components/financing/FinancingBadge';
 import { AppraisalBadge } from '@/components/appraisal/AppraisalBadge';
 import { developments, Development } from '@/data/developments';
+import { useLotsBySlug } from '@/hooks/useLots';
 import { cn } from '@/lib/utils';
+
+// Base all-in price (default Hawthorne XMOD) for community pricing calculation
+const BASE_ALL_IN_PRICE = 253649;
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -58,6 +62,27 @@ function CommunityCard({ development }: { development: Development }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const hasSitePlanImage = development.sitePlanImagePath && development.sitePlanImagePath.length > 0;
+  
+  // Fetch lots for pricing info
+  const { lots, isLoading: lotsLoading } = useLotsBySlug(development.slug);
+  
+  // Calculate price range from lots
+  const priceRange = useMemo(() => {
+    if (!lots || lots.length === 0) return null;
+    
+    const availableLots = lots.filter(l => l.status === 'available');
+    if (availableLots.length === 0) return null;
+    
+    const premiums = availableLots.map(l => l.premium || 0);
+    const minPremium = Math.min(...premiums);
+    const maxPremium = Math.max(...premiums);
+    
+    return {
+      count: availableLots.length,
+      min: BASE_ALL_IN_PRICE + minPremium,
+      max: BASE_ALL_IN_PRICE + maxPremium,
+    };
+  }, [lots]);
   
   const handleGetAllInPrice = () => {
     // Navigate to BuildWizard with community context
@@ -115,9 +140,23 @@ function CommunityCard({ development }: { development: Development }) {
             </h3>
             
             {development.description && (
-              <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-2">
+              <p className="text-muted-foreground text-sm leading-relaxed mb-2 line-clamp-2">
                 {development.description}
               </p>
+            )}
+            
+            {/* Price Range */}
+            {priceRange && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                <Home className="h-4 w-4 text-accent" />
+                <span className="font-medium text-foreground">
+                  {priceRange.count} {priceRange.count === 1 ? 'lot' : 'lots'}
+                </span>
+                <span>•</span>
+                <span>
+                  From ${priceRange.min.toLocaleString()} – ${priceRange.max.toLocaleString()}
+                </span>
+              </div>
             )}
             
             <div className="flex flex-col gap-2 pt-2">

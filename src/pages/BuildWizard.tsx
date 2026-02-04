@@ -410,6 +410,8 @@ export default function BuildWizard() {
                 developmentSlug={slug}
                 lotId={selection.lotId}
                 modelSlug={selection.modelSlug}
+                buyerFacingBreakdown={pricing.breakdown}
+                pricingFlags={pricing.flags}
               />
             </motion.div>
           )}
