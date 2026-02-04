@@ -33,8 +33,8 @@ const STEPS = [
   { id: 1, name: 'Pick a Lot', shortName: 'Lot', icon: MapPin },
   { id: 2, name: 'Pick a Model', shortName: 'Model', icon: Home },
   { id: 3, name: 'Build Type', shortName: 'Type', icon: Layers },
-  { id: 4, name: 'Design Exterior', shortName: 'Design', icon: Palette },
-  { id: 5, name: 'Review', shortName: 'Review', icon: ClipboardCheck },
+  { id: 4, name: 'Design Exterior', shortName: 'Style', icon: Palette },
+  { id: 5, name: 'Review', shortName: 'Done', icon: ClipboardCheck },
 ];
 
 // Prevent layout shift during step transitions
@@ -263,7 +263,7 @@ export default function BuildWizard() {
                     aria-current={isActive ? 'step' : undefined}
                     aria-label={`Step ${step.id}: ${step.name}${isComplete ? ' (completed)' : ''}`}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                      'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                       isActive && 'bg-accent text-accent-foreground shadow-sm',
                       isComplete && 'bg-green-500/10 text-green-600 hover:bg-green-500/15 cursor-pointer',
@@ -286,14 +286,11 @@ export default function BuildWizard() {
                         isActive ? 'text-accent-foreground' : 'text-current'
                       )} />
                     )}
-                    <span className={cn(
-                      'hidden sm:inline',
-                      isMobile && 'sm:hidden'
-                    )}>
-                      {isMobile ? step.shortName : step.name}
-                    </span>
-                    {isMobile && (
-                      <span className="sm:hidden text-xs">{step.shortName}</span>
+                    {/* Mobile: only show label on active step */}
+                    {isMobile ? (
+                      isActive && <span className="text-xs">{step.shortName}</span>
+                    ) : (
+                      <span className="hidden sm:inline">{step.name}</span>
                     )}
                   </button>
                   
