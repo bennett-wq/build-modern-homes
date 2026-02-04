@@ -334,6 +334,8 @@ export default function BuildWizard() {
                 onSelectLot={setLot}
                 onNext={() => setCurrentStep(2)}
                 isMobile={isMobile}
+                buyerFacingBreakdown={pricing.breakdown}
+                pricingFlags={pricing.flags}
               />
             </motion.div>
           )}
