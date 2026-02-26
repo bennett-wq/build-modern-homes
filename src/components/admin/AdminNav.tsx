@@ -5,11 +5,12 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { 
-  DollarSign, 
-  TrendingUp, 
+import {
+  DollarSign,
+  TrendingUp,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  Target
 } from 'lucide-react';
 
 interface NavItem {
@@ -29,6 +30,12 @@ const navItems: NavItem[] = [
     label: 'Leads',
     href: '/admin/leads',
     icon: TrendingUp,
+  },
+  {
+    label: 'Acquisition',
+    href: '/admin/acquisition',
+    icon: Target,
+    adminOnly: true,
   },
   {
     label: 'Team',
