@@ -3,17 +3,18 @@ import { ScoreBadge } from '../shared/ScoreBadge';
 import { ModelFitBadge } from '../shared/ModelFitBadge';
 import { ActionBadge } from '../shared/ActionBadge';
 import { PriceDisplay } from '../shared/PriceDisplay';
-import type { MockMlsListing, MockAcquisitionScore } from '@/data/homematch/mock-acquisition-data';
-import { getFittingModelsCount } from '@/data/homematch/mock-acquisition-data';
+import type { MockMlsListing, MockAcquisitionScore, MockModelFit } from '@/hooks/useAcquisitionData';
+import { getFittingModelsCountFromData } from '@/hooks/useAcquisitionData';
 
 interface AcquisitionTableProps {
   listings: MockMlsListing[];
   scores: MockAcquisitionScore[];
+  modelFits: MockModelFit[];
   onSelectListing: (listingId: string) => void;
   selectedListingId: string | null;
 }
 
-export function AcquisitionTable({ listings, scores, onSelectListing, selectedListingId }: AcquisitionTableProps) {
+export function AcquisitionTable({ listings, scores, modelFits, onSelectListing, selectedListingId }: AcquisitionTableProps) {
   const getScore = (listingId: string) => scores.find(s => s.listing_id === listingId);
 
   return (
@@ -34,7 +35,7 @@ export function AcquisitionTable({ listings, scores, onSelectListing, selectedLi
         <TableBody>
           {listings.map(listing => {
             const score = getScore(listing.id);
-            const fitsCount = getFittingModelsCount(listing.id);
+            const fitsCount = getFittingModelsCountFromData(modelFits, listing.id);
             if (!score) return null;
 
             return (

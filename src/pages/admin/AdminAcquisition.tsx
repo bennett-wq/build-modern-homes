@@ -1,20 +1,24 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAcquisitionData } from '@/hooks/useAcquisitionData';
 import { AdminShell } from '@/components/admin/AdminShell';
 import { AcquisitionStats } from '@/components/homematch/tab3/AcquisitionStats';
 import { AcquisitionFilters, type AcquisitionFilterState } from '@/components/homematch/tab3/AcquisitionFilters';
 import { AcquisitionTable } from '@/components/homematch/tab3/AcquisitionTable';
 import { AcquisitionDetailDrawer } from '@/components/homematch/tab3/AcquisitionDetailDrawer';
-import { mockListings, mockAcquisitionScores } from '@/data/homematch/mock-acquisition-data';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Target } from 'lucide-react';
-
-const MUNICIPALITIES = [...new Set(mockListings.map(l => l.municipality))].sort();
+import { Loader2, Target, Database, FileSpreadsheet } from 'lucide-react';
 
 export default function AdminAcquisition() {
   const navigate = useNavigate();
   const { user, isAdmin, hasAccess, isLoading: authLoading, signOut } = useAdminAuth();
+  const { listings: allListings, scores: allScores, modelFits, zoningDistricts, dataSource, isLoading: dataLoading } = useAcquisitionData();
+
+  const MUNICIPALITIES = useMemo(
+    () => [...new Set(allListings.map(l => l.municipality))].sort(),
+    [allListings]
+  );
 
   const [filters, setFilters] = useState<AcquisitionFilterState>({
     municipality: 'all',
@@ -42,8 +46,8 @@ export default function AdminAcquisition() {
 
   // Filter and sort listings
   const filteredData = useMemo(() => {
-    let listings = [...mockListings];
-    let scores = [...mockAcquisitionScores];
+    let listings = [...allListings];
+    let scores = [...allScores];
 
     // Filter by municipality
     if (filters.municipality !== 'all') {
@@ -109,7 +113,7 @@ export default function AdminAcquisition() {
     }
 
     return { listings, scores };
-  }, [filters]);
+  }, [filters, allListings, allScores]);
 
   const handleSelectListing = (listingId: string) => {
     setSelectedListingId(listingId);
@@ -139,40 +143,60 @@ export default function AdminAcquisition() {
       headerActions={
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-xs">Tab 3</Badge>
-          <Badge variant="outline" className="text-xs">Mock Data</Badge>
+          <Badge variant="outline" className="text-xs flex items-center gap-1">
+            {dataSource === 'live' ? (
+              <><Database className="h-3 w-3" /> Live Data</>
+            ) : (
+              <><FileSpreadsheet className="h-3 w-3" /> Mock Data</>
+            )}
+          </Badge>
         </div>
       }
     >
       <div className="space-y-6 max-w-[1400px]">
-        {/* Stats */}
-        <AcquisitionStats listings={filteredData.listings} scores={filteredData.scores} />
+        {dataLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+            <span className="text-sm text-muted-foreground">Loading acquisition data...</span>
+          </div>
+        ) : (
+          <>
+            {/* Stats */}
+            <AcquisitionStats listings={filteredData.listings} scores={filteredData.scores} />
 
-        {/* Filters */}
-        <AcquisitionFilters
-          filters={filters}
-          onFilterChange={setFilters}
-          municipalities={MUNICIPALITIES}
-        />
+            {/* Filters */}
+            <AcquisitionFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              municipalities={MUNICIPALITIES}
+            />
 
-        {/* Results count */}
-        <p className="text-sm text-muted-foreground">
-          Showing {filteredData.listings.length} of {mockListings.length} opportunities
-        </p>
+            {/* Results count */}
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredData.listings.length} of {allListings.length} opportunities
+            </p>
 
-        {/* Table */}
-        <AcquisitionTable
-          listings={filteredData.listings}
-          scores={filteredData.scores}
-          onSelectListing={handleSelectListing}
-          selectedListingId={selectedListingId}
-        />
+            {/* Table */}
+            <AcquisitionTable
+              listings={filteredData.listings}
+              scores={filteredData.scores}
+              modelFits={modelFits}
+              onSelectListing={handleSelectListing}
+              selectedListingId={selectedListingId}
+            />
 
-        {/* Detail Drawer */}
-        <AcquisitionDetailDrawer
-          listingId={selectedListingId}
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-        />
+            {/* Detail Drawer */}
+            <AcquisitionDetailDrawer
+              listingId={selectedListingId}
+              open={drawerOpen}
+              onClose={() => setDrawerOpen(false)}
+              listings={allListings}
+              scores={allScores}
+              modelFits={modelFits}
+              zoningDistricts={zoningDistricts}
+            />
+          </>
+        )}
       </div>
     </AdminShell>
   );

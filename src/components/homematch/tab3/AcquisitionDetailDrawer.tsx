@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScoreBadge } from '../shared/ScoreBadge';
@@ -8,32 +8,47 @@ import { ConfidenceBadge } from '../shared/ConfidenceBadge';
 import { ActionBadge } from '../shared/ActionBadge';
 import { PriceDisplay, PriceRangeDisplay } from '../shared/PriceDisplay';
 import {
-  getListingById,
-  getModelFitsForListing,
-  getAcquisitionScore,
-  getZoningForMunicipality,
+  getListingByIdFromData,
+  getModelFitsForListingFromData,
+  getScoreForListing,
+  getZoningForMunicipalityFromData,
+  type MockMlsListing,
+  type MockAcquisitionScore,
   type MockModelFit,
-} from '@/data/homematch/mock-acquisition-data';
+  type MockZoningDistrict,
+} from '@/hooks/useAcquisitionData';
 import { MapPin, Calendar, TrendingDown, Ruler, Home, DollarSign } from 'lucide-react';
 
 interface AcquisitionDetailDrawerProps {
   listingId: string | null;
   open: boolean;
   onClose: () => void;
+  listings: MockMlsListing[];
+  scores: MockAcquisitionScore[];
+  modelFits: MockModelFit[];
+  zoningDistricts: MockZoningDistrict[];
 }
 
-export function AcquisitionDetailDrawer({ listingId, open, onClose }: AcquisitionDetailDrawerProps) {
+export function AcquisitionDetailDrawer({
+  listingId,
+  open,
+  onClose,
+  listings,
+  scores,
+  modelFits,
+  zoningDistricts,
+}: AcquisitionDetailDrawerProps) {
   if (!listingId) return null;
 
-  const listing = getListingById(listingId);
-  const score = getAcquisitionScore(listingId);
-  const modelFits = getModelFitsForListing(listingId);
-  const zoning = listing ? getZoningForMunicipality(listing.municipality) : undefined;
+  const listing = getListingByIdFromData(listings, listingId);
+  const score = getScoreForListing(scores, listingId);
+  const listingModelFits = getModelFitsForListingFromData(modelFits, listingId);
+  const zoning = listing ? getZoningForMunicipalityFromData(zoningDistricts, listing.municipality) : undefined;
 
   if (!listing || !score) return null;
 
-  const fittingModels = modelFits.filter(f => f.fit_status !== 'no_fit');
-  const nonFittingModels = modelFits.filter(f => f.fit_status === 'no_fit');
+  const fittingModels = listingModelFits.filter(f => f.fit_status !== 'no_fit');
+  const nonFittingModels = listingModelFits.filter(f => f.fit_status === 'no_fit');
   const priceDropPct = listing.original_list_price > listing.list_price
     ? ((listing.original_list_price - listing.list_price) / listing.original_list_price * 100).toFixed(0)
     : null;
@@ -326,7 +341,7 @@ export function AcquisitionDetailDrawer({ listingId, open, onClose }: Acquisitio
   );
 }
 
-// ─── Sub-components ──────────────────────
+// --- Sub-components ---
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (

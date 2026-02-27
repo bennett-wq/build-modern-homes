@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import type { MockAcquisitionScore, MockMlsListing } from '@/data/homematch/mock-acquisition-data';
+import type { MockAcquisitionScore, MockMlsListing } from '@/hooks/useAcquisitionData';
 
 interface AcquisitionStatsProps {
   listings: MockMlsListing[];
