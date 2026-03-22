@@ -24,7 +24,7 @@ interface UseBuildSelectionOptions {
 export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [justSaved, setJustSaved] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize from URL params first, then localStorage (only if URL has params)
   const initialSelection = useMemo((): BuildSelection => {

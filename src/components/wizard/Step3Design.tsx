@@ -617,7 +617,7 @@ function HawthornePhotoPreview({ packageId, garageId }: HawthornePhotoPreviewPro
   const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Refs for debouncing and abort control
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingAbortRef = useRef<boolean>(false);
   const currentGarageRef = useRef<string | null>(garageId);
   
