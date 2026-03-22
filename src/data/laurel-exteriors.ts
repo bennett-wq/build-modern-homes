@@ -82,9 +82,6 @@ export function getLaurelHeroImage(
 ): string {
   // If no selection made, return the canonical default (garage two-door)
   if (!garageType) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Laurel Hero] No garage selection, using default:', LAUREL_DEFAULT_HERO);
-    }
     return LAUREL_DEFAULT_HERO;
   }
 
@@ -96,11 +93,6 @@ export function getLaurelHeroImage(
   }
   
   const heroPath = variant.garageImages[garageType];
-  
-  // DEV-ONLY: Warn if hero image path is unexpected
-  if (process.env.NODE_ENV === 'development' && !heroPath) {
-    console.warn('[Laurel Hero] Missing hero image for garage type:', garageType);
-  }
   
   // NEVER fall back to no-garage - use the explicit default
   return heroPath || LAUREL_DEFAULT_HERO;
