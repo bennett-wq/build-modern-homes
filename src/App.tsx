@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { usePricingConfig } from "@/state/usePricingConfig";
+import { SHOW_COMMUNITIES } from "@/config/featureFlags";
 import { RouteChangeScrollUnlock } from "@/components/RouteChangeScrollUnlock";
 import Index from "./pages/Index";
 import Developments from "./pages/Developments";
@@ -55,14 +56,24 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/build" element={<Configurator />} />
-          <Route path="/communities" element={<Communities />} />
+          {SHOW_COMMUNITIES ? (
+            <>
+              <Route path="/communities" element={<Communities />} />
+              <Route path="/developments" element={<Developments />} />
+              <Route path="/developments/:slug" element={<DevelopmentDetail />} />
+              <Route path="/developments/:slug/site-plan" element={<SitePlanFullScreen />} />
+              <Route path="/developments/:slug/build" element={<BuildWizard />} />
+              <Route path="/development" element={<Navigate to="/developments" replace />} />
+            </>
+          ) : (
+            <>
+              <Route path="/communities" element={<Navigate to="/" replace />} />
+              <Route path="/developments" element={<Navigate to="/" replace />} />
+              <Route path="/developments/*" element={<Navigate to="/" replace />} />
+              <Route path="/development" element={<Navigate to="/" replace />} />
+            </>
+          )}
           <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/developments" element={<Developments />} />
-          <Route path="/developments/:slug" element={<DevelopmentDetail />} />
-          <Route path="/developments/:slug/site-plan" element={<SitePlanFullScreen />} />
-          <Route path="/developments/:slug/build" element={<BuildWizard />} />
-          {/* Legacy route redirect */}
-          <Route path="/development" element={<Navigate to="/developments" replace />} />
           <Route path="/models" element={<Models />} />
           <Route path="/models/:modelId" element={<ModelDetail />} />
           <Route path="/pricing" element={<Pricing />} />

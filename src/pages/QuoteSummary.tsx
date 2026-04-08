@@ -116,9 +116,9 @@ export default function QuoteSummary() {
               This quote may have expired or the link is invalid.
             </p>
             <Button asChild>
-              <Link to="/developments">
+              <Link to="/models">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Browse Developments
+                Browse Homes
               </Link>
             </Button>
           </div>
@@ -148,7 +148,7 @@ export default function QuoteSummary() {
           >
             <div className="flex items-center gap-3 mb-4">
               <Button asChild variant="ghost" size="sm">
-                <Link to="/developments">
+                <Link to="/models">
                   <ArrowLeft className="mr-1 h-4 w-4" />
                   Back
                 </Link>

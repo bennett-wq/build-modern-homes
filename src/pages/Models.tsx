@@ -58,7 +58,7 @@ export default function Models() {
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link to="/communities">Browse Communities</Link>
+                  <Link to="/how-it-works">How It Works</Link>
                 </Button>
               </div>
 
