@@ -10,6 +10,7 @@ import { Maximize2, List, X } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots, Lot } from '@/data/lots/grand-haven';
 import { stJamesBayLots } from '@/data/lots/st-james-bay';
+import { ypsilantiLots } from '@/data/lots/ypsilanti';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +37,9 @@ export function InteractiveSitePlan({
     }
     if (developmentSlug === 'st-james-bay') {
       return stJamesBayLots;
+    }
+    if (developmentSlug === 'ypsilanti') {
+      return ypsilantiLots;
     }
     return [];
   }, [developmentSlug]);
