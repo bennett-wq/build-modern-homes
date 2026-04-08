@@ -14,7 +14,7 @@ import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
-export default function GrandHavenSitePlan() {
+export default function SitePlanFullScreen() {
   const { slug = 'grand-haven' } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const isEditMode = searchParams.get('edit') === '1';
@@ -52,11 +52,10 @@ export default function GrandHavenSitePlan() {
     );
   }
 
-  // Editor Mode - Full screen, fixed map (no zoom/pan)
+  // Editor Mode
   if (isEditMode) {
     return (
       <div className="h-screen flex flex-col bg-background">
-        {/* Editor Header */}
         <div className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to={`/developments/${slug}/site-plan`} className="text-muted-foreground hover:text-foreground">
@@ -72,7 +71,6 @@ export default function GrandHavenSitePlan() {
           </Button>
         </div>
         
-        {/* Editor Content - Fixed map, no zoom/pan */}
         <FixedSitePlanEditor
           sitePlanImagePath={development.sitePlanImagePath}
           initialLots={lots}
@@ -83,10 +81,9 @@ export default function GrandHavenSitePlan() {
     );
   }
 
-  // Normal Viewing Mode - Full screen experience
+  // Normal Viewing Mode
   return (
     <Layout>
-      {/* Header */}
       <section className="bg-secondary py-6">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -114,7 +111,6 @@ export default function GrandHavenSitePlan() {
         </div>
       </section>
 
-      {/* Site Plan Viewer */}
       <section className="relative">
         <div className="container mx-auto px-4 lg:px-8 py-6">
           <motion.div
@@ -127,7 +123,6 @@ export default function GrandHavenSitePlan() {
               'flex',
               isMobile ? 'flex-col' : 'flex-row'
             )}>
-              {/* Fixed Site Plan Viewer */}
               <div 
                 className={cn(
                   'relative',
@@ -145,7 +140,6 @@ export default function GrandHavenSitePlan() {
                   className="h-full"
                 />
                 
-                {/* Details Panel (overlay - doesn't shift layout) */}
                 {selectedLot && (
                   <LotDetailsPanel
                     lot={selectedLot}
@@ -156,7 +150,6 @@ export default function GrandHavenSitePlan() {
                 )}
               </div>
 
-              {/* Lot List Panel - Desktop */}
               {!isMobile && (
                 <LotListPanel
                   lots={lots}
@@ -170,7 +163,6 @@ export default function GrandHavenSitePlan() {
               )}
             </div>
 
-            {/* Mobile Lot List */}
             {isMobile && (
               <LotListPanel
                 lots={lots}
@@ -186,7 +178,6 @@ export default function GrandHavenSitePlan() {
         </div>
       </section>
 
-      {/* Info Section */}
       <section className="py-12 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
