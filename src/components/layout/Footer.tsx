@@ -11,7 +11,6 @@ const footerLinks = {
   ],
   homes: [
     { label: "Home Models", href: "/models" },
-    { label: "Communities", href: "/communities" },
     { label: "Pricing", href: "/pricing" },
   ],
 };

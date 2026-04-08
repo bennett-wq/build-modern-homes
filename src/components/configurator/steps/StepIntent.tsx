@@ -8,6 +8,7 @@ import { MapPin, Search, Building2, ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BuildIntent } from '@/data/pricing-config';
 import { cn } from '@/lib/utils';
+import { SHOW_COMMUNITIES } from '@/config/featureFlags';
 
 const intentOptions: {
   id: BuildIntent;
@@ -83,8 +84,8 @@ export function StepIntent({ selectedIntent, onSelectIntent, onNext }: StepInten
         </motion.p>
       </div>
       
-      <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-        {intentOptions.map((option, index) => {
+      <div className={cn("grid gap-4 max-w-4xl mx-auto", SHOW_COMMUNITIES ? "md:grid-cols-3" : "md:grid-cols-2")}>
+        {intentOptions.filter(o => SHOW_COMMUNITIES || o.id !== 'basemod-community').map((option, index) => {
           const isSelected = selectedIntent === option.id;
           const Icon = option.icon;
           

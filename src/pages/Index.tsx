@@ -70,12 +70,6 @@ const pathCards = [
     description: "We'll help you find the right lot.",
     href: "/build?intent=find-land",
   },
-  {
-    icon: Building2,
-    title: "Build in a Community",
-    description: "Choose from curated BaseMod developments.",
-    href: "/developments",
-  },
 ];
 
 const fadeInUp = {
