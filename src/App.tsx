@@ -18,7 +18,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import DesignStudio from "./pages/DesignStudio";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import GrandHavenSitePlan from "./pages/GrandHavenSitePlan";
+import SitePlanFullScreen from "./pages/SitePlanFullScreen";
 import BuildWizard from "./pages/BuildWizard";
 import Mission from "./pages/Mission";
 import Configurator from "./pages/Configurator";
@@ -59,7 +59,7 @@ const App = () => (
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/developments" element={<Developments />} />
           <Route path="/developments/:slug" element={<DevelopmentDetail />} />
-          <Route path="/developments/:slug/site-plan" element={<GrandHavenSitePlan />} />
+          <Route path="/developments/:slug/site-plan" element={<SitePlanFullScreen />} />
           <Route path="/developments/:slug/build" element={<BuildWizard />} />
           {/* Legacy route redirect */}
           <Route path="/development" element={<Navigate to="/developments" replace />} />
