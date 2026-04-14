@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { SHOW_COMMUNITIES } from "@/config/featureFlags";
 
 const footerLinks = {
   company: [
@@ -12,6 +13,7 @@ const footerLinks = {
   homes: [
     { label: "Home Models", href: "/models" },
     { label: "Pricing", href: "/pricing" },
+    ...(SHOW_COMMUNITIES ? [{ label: "Communities", href: "/communities" }] : []),
   ],
 };
 
