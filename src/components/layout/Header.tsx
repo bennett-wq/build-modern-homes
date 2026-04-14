@@ -6,12 +6,17 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getQuoteRequests } from "@/types/quote-request";
 import { hasInProgressBuild, getLatestQuoteId } from "@/hooks/useConfiguratorState";
+import { SHOW_COMMUNITIES } from "@/config/featureFlags";
 
-const navItems = [
+const baseNavItems = [
   { label: "Homes", href: "/models" },
   { label: "Our Mission", href: "/mission" },
   { label: "How It Works", href: "/how-it-works" },
 ];
+
+const navItems = SHOW_COMMUNITIES
+  ? [{ label: "Communities", href: "/communities" }, ...baseNavItems]
+  : baseNavItems;
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
