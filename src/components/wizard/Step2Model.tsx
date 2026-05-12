@@ -28,6 +28,8 @@ interface Step2ModelProps {
   // For financing modal
   developmentSlug?: string;
   lotId?: number | null;
+  // Selected homesite context for guidance
+  selectedLot?: ComponentLot | null;
   // For mobile pricing display
   buyerFacingBreakdown?: BuyerFacingBreakdown;
   pricingFlags?: BuyerPricingFlags;
@@ -41,6 +43,7 @@ export function Step2Model({
   isMobile,
   developmentSlug,
   lotId,
+  selectedLot,
   buyerFacingBreakdown,
   pricingFlags,
 }: Step2ModelProps) {
