@@ -185,7 +185,9 @@ function mapStaticLotsToDbFormat(staticLots: Array<{
     acreage: lot.acreage || null,
     net_acreage: lot.netAcreage || null,
     premium: lot.premium || 0,
-    polygon_coordinates: lot.polygon || [],
+    polygon_coordinates: lot.polygon && lot.polygon.length > 0
+      ? { type: 'image-xy' as const, points: lot.polygon }
+      : null,
     restrictions: {},
     notes: lot.notes || null,
     created_at: new Date().toISOString(),
