@@ -237,9 +237,10 @@ interface ModelCardProps {
   isSelected: boolean;
   onSelect: () => void;
   isConforming?: boolean;
+  hasSelectedLot?: boolean;
 }
 
-function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps) {
+function ModelCard({ model, isSelected, onSelect, isConforming, hasSelectedLot }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   
   // Use canonical hero image path from model-images utility
