@@ -333,8 +333,30 @@ function ModelCard({ model, isSelected, onSelect, isConforming, hasSelectedLot }
       </div>
 
       <CardContent className="p-4">
-        <div className="mb-2">
+        <div className="mb-2 flex items-start justify-between gap-2">
           <h3 className="font-semibold text-foreground text-base">The {model.name}</h3>
+          {hasSelectedLot && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 border-accent/40 bg-accent/5 text-[10px] font-medium text-foreground cursor-help"
+                  >
+                    <Info className="h-2.5 w-2.5 mr-1" aria-hidden="true" />
+                    Site-fit review
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[220px]">
+                  <p className="text-xs">
+                    Final placement on your homesite is verified by BaseMod
+                    after you continue. We confirm setbacks, orientation, and
+                    civil requirements as part of your site plan.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
         
         <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
