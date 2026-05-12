@@ -32,24 +32,110 @@ Everything else on the community page stays as-is for this plan.
 
 ## Critical context — single state owner for `?lot=` URL param
 
-**There are currently TWO writers to the `?lot=` URL search param**:
+**Today, the live `setSearchParams` writers in `src/` are**:
 
-1. `useBuildSelection` ([src/hooks/useBuildSelection.ts:99,152,164](src/hooks/useBuildSelection.ts)) — writes `lotId.toString()` where `lotId: number | null`
-2. `useConfiguratorStore` ([src/state/useConfiguratorStore.ts:241,407](src/state/useConfiguratorStore.ts)) — writes UUID strings where `lotId: string | null`
+Actual `grep -rn "setSearchParams" src/` result (call sites only, excluding `useSearchParams` declarations):
 
-These conflict (different ID types, last-write-wins). **As part of this plan**, pick `useConfiguratorStore` as the canonical source of truth for `lotId`:
+```
+src/hooks/useBuildSelection.ts:105   setSearchParams(newParams, { replace: true })
+src/hooks/useConfiguratorState.ts:361 setSearchParams({})    ← inside resetBuild, imperative empty-object wipe
+```
 
-- New `LotDetailsPanel` CTA, `MapboxLotPicker` click handler, and any new component must write via `useConfiguratorStore.getState().setLotId(uuid)`.
-- Update `useBuildSelection.setLot(lotId: number | null)` to be a thin wrapper that calls `useConfiguratorStore.getState().setLotId(String(lotId))` — keeps existing build-flow call sites working without a wider refactor.
-- URL contract becomes `?lot={uuid}` (string), not `?lot={int}`.
-- All `setSearchParams` writers (the new `useSitePlanFilters` AND the lot writer) must use the **functional form** to avoid clobbering each other's params:
-  ```ts
-  setSearchParams(prev => {
-    const next = new URLSearchParams(prev);
-    next.set('lot', lotId);
-    return next;
-  });
-  ```
+So there are **two** live writers in the repo, but only one is in scope for this Mapbox plan:
+
+1. **In-scope live writer for the community build flow** — `useBuildSelection`'s sync effect ([src/hooks/useBuildSelection.ts:93-106](src/hooks/useBuildSelection.ts)) calls `setSearchParams(newParams, { replace: true })` with the lot id converted via `.toString()`, where `lotId: number | null`. This is the only writer that writes the build-flow keys (`lot`, `model`, `buildType`, `package`, `garage`) on community detail pages — the surface this plan modifies.
+2. **Out-of-scope live writer for the legacy `/build` configurator** — `useConfiguratorState.resetBuild` ([src/hooks/useConfiguratorState.ts:361](src/hooks/useConfiguratorState.ts)) calls `setSearchParams({})` (imperative empty-object form) to nuke every URL param when the user clicks "Start over." This is on a separate configurator flow rooted at `/build`, not the community detail pages. **Do not modify `useConfiguratorState.resetBuild` as part of this plan** — its callers and behavior contract aren't audited here. The only thing to verify is that Step 5's new filter UI is not mounted on any route that can fire `resetBuild`. If a follow-up plan ever shares URL state between `/build` and `/developments/:slug`, `resetBuild` must be reworked to delete only its owned keys, not wipe everything.
+3. **Shareable-URL serializer (not a live writer)** — `useConfiguratorStore.getShareableUrl` ([src/state/useConfiguratorStore.ts:399-418](src/state/useConfiguratorStore.ts)) builds a `URLSearchParams` object locally and returns a concatenated URL *string* for copy-to-clipboard / share UIs. It does NOT mutate the browser URL.
+4. **State owner (no URL effect)** — `useConfiguratorStore` ([src/state/useConfiguratorStore.ts:52,241](src/state/useConfiguratorStore.ts)) holds `lotId: string | null` (UUID) as in-memory state via `setLotId`. No URL effect.
+
+So the conflict relevant to this plan isn't "two URL writers." It's "the in-scope URL writer (`useBuildSelection`) writes numeric IDs while the canonical state owner (`useConfiguratorStore`) holds UUIDs." The legacy `resetBuild` writer exists but is on a separate flow and is explicitly out of scope. **As part of this plan**, pick `useConfiguratorStore` as the canonical source of truth for `lotId`. The change to `useBuildSelection` is NOT a one-line wrapper — it has to retire numeric URL handling end-to-end. Three coordinated edits in [src/hooks/useBuildSelection.ts](src/hooks/useBuildSelection.ts):
+
+**A. Widen the `lotId` type.** The interface at line 9-16 declares `lotId: number | null`. Change to `lotId: string | null`. This will cascade type errors through call sites — fix each by accepting the UUID string and removing any numeric arithmetic on lot IDs.
+
+**B. Retire `parseInt` in the URL hydration (line 62).** Current:
+```ts
+lotId: lotParam ? parseInt(lotParam, 10) : (hasUrlParams ? storedSelection.lotId ?? null : null),
+```
+A UUID like `7f1b9e35-f415-48a6-bad0-d738ae598d79` returns `7` from `parseInt`, then later `parseInt('lovable')` returns `NaN`, and downstream comparisons silently fail. Replace with a UUID-shape guard so legacy numeric URLs (`?lot=42`) are ignored rather than silently corrupted:
+
+```ts
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const lotId =
+  lotParam && UUID_RE.test(lotParam)
+    ? lotParam
+    : (hasUrlParams ? storedSelection.lotId ?? null : null);
+```
+
+Legacy `?lot=42` URLs in users' bookmarks or shared links will silently degrade to "no lot selected" — that's the right behavior since there's no numeric → UUID map. Don't try to migrate them.
+
+**C. Fix the URL writer (lines 99, 152, 164).** Current writes `selection.lotId.toString()` — for `lotId: string | null` that becomes `selection.lotId` directly. Replace each occurrence:
+```ts
+if (selection.lotId !== null) newParams.set('lot', selection.lotId);
+```
+
+**D. The `setLot` wrapper (line 108-110).** Conservative dual-write — update **both** local `selection` state (so the existing URL-sync effect at line 93-106 fires with the new value) AND `useConfiguratorStore` (so the store is the canonical source of truth for downstream consumers). Use an explicit ternary because `String(null)` returns the literal string `"null"`, which would corrupt the URL:
+
+```ts
+const setLot = useCallback((lotId: string | null) => {
+  setSelectionState(prev => ({ ...prev, lotId }));            // local; drives URL effect
+  useConfiguratorStore.getState().setLotId(
+    lotId === null ? null : lotId                              // canonical store; pass-through
+  );
+  triggerSaveIndicator();
+}, [triggerSaveIndicator]);
+```
+
+Do not drop the local `setSelectionState` write unless a follow-up plan refactors `useBuildSelection` to derive `lotId` from the store via `useConfiguratorStore(state => state.lotId)` AND introduces a dedicated URL-sync hook to replace the existing effect. Until that refactor lands, the existing local-state-drives-URL flow stays intact — dual-write is the safe path.
+
+**E. URL writer coordination — explicit ownership model.**
+
+**Today (current repo):** the repo has **two** live `setSearchParams` writers: `useBuildSelection` ([src/hooks/useBuildSelection.ts:105](src/hooks/useBuildSelection.ts)) and `useConfiguratorState.resetBuild` ([src/hooks/useConfiguratorState.ts:361](src/hooks/useConfiguratorState.ts)). Only `useBuildSelection` is in scope for this Mapbox/community build-flow plan — see the ownership matrix below for the full picture and `resetBuild`'s out-of-scope status.
+
+**After Step 5 lands:** there may be **multiple** live URL writers. That is allowed only if every writer obeys both of these rules:
+
+1. **Functional update form.** Every `setSearchParams` call uses `setSearchParams(prev => next)` (where `next` is built from `new URLSearchParams(prev)`), never the imperative `setSearchParams(newParams)`. The imperative form silently wipes every param the writer doesn't re-emit.
+2. **Clearly named key ownership.** Each writer owns a disjoint set of query-string keys. A writer must `set` / `delete` keys it owns, and must NOT read or modify any key it does not own.
+
+**Ownership matrix:**
+
+| Writer | Owns these query-string keys | In scope for this plan? |
+|---|---|---|
+| `useBuildSelection` (existing, retrofitted to functional form in step C above) | `lot`, `model`, `buildType`, `package`, `garage` | Yes — modified by this plan |
+| `useSitePlanFilters` (new) | `status`, `fits`, `priceMin`, `priceMax`, `sizeMin`, `sizeMax` | Yes — created by this plan |
+| `FullscreenSitePlan` open/close handler (new) | `fullscreen` | Yes — created by this plan |
+| `useConfiguratorStore.getShareableUrl` | **none** — pure serializer, never calls `setSearchParams` | Not a URL writer |
+| `useConfiguratorState.resetBuild` ([src/hooks/useConfiguratorState.ts:361](src/hooks/useConfiguratorState.ts)) | wipes all keys via `setSearchParams({})` | **No — legacy `/build` flow only.** Do not modify. Step 5's new filter UI must not be mounted on any route that mounts `useConfiguratorState`. |
+
+`useSitePlanFilters` **does** call `setSearchParams`, but only via the functional form and only on its six owned keys. The earlier draft of this plan that said "useSitePlanFilters does not call setSearchParams itself" was wrong — it contradicted Step 5's own description of the hook. Treat the ownership matrix above as canonical; ignore any phrasing elsewhere that implies a single-writer model. **The repo as a whole has more than one URL writer today** (`useBuildSelection` plus `useConfiguratorState.resetBuild`); this plan only governs the writers it creates or modifies, listed in the "In scope" column above.
+
+**Required transformation for `useBuildSelection.ts:105`** (replace the imperative call with a functional updater that only touches its owned keys):
+
+```ts
+// Replace line 105:
+setSearchParams(prev => {
+  const next = new URLSearchParams(prev);
+  // Only mutate keys this hook owns: lot, model, buildType, package, garage.
+  // Leave every other key (status, fits, priceMin, priceMax, sizeMin, sizeMax,
+  // fullscreen, anything else) untouched.
+  if (selection.lotId !== null) next.set('lot', selection.lotId);
+  else next.delete('lot');
+  if (selection.modelSlug) next.set('model', selection.modelSlug);
+  else next.delete('model');
+  if (selection.buildType) next.set('buildType', selection.buildType);
+  else next.delete('buildType');
+  if (selection.packageId) next.set('package', selection.packageId);
+  else next.delete('package');
+  if (selection.garageDoorId) next.set('garage', selection.garageDoorId);
+  else next.delete('garage');
+  return next;
+}, { replace: true });
+```
+
+`useSitePlanFilters` writers follow the same pattern but `set`/`delete` only the six filter keys, and the fullscreen toggle `set`/`delete`s only `fullscreen`. None of them reads or modifies a key it doesn't own.
+
+**F. Shareable URL serializer.** If `useConfiguratorStore.getShareableUrl` ([src/state/useConfiguratorStore.ts:399-418](src/state/useConfiguratorStore.ts)) needs to emit new filter params (`status`, `fits`, `priceMin`, etc.) in the shareable string, update its body to include them. It still does not call `setSearchParams`; it remains a pure serializer.
+
+**G. Legacy data check.** Verify that no Supabase rows use numeric lot IDs anywhere — `quotes.lot_id`, `financing_applications.quote_id` chains. If any do, they're already broken because `lots.id` is `uuid`. Spot-check before flipping the type.
 
 ## Step 1 — Add Mapbox dependency and access token
 
@@ -273,7 +359,7 @@ Create:
 | `src/components/siteplan/SitePlanFilters.tsx` | Chip row: status multi-toggle, fits-model dropdown, price range slider, lot size range slider. State synced to URL via `useSearchParams`. |
 | `src/components/siteplan/FullscreenSitePlan.tsx` | shadcn `Dialog` that fills the viewport. Renders the same `MapboxLotPicker` + `LotListPanel` + `LotDetailsPanel` as the embedded view. Triggered by `?fullscreen=1`. Close via Esc / X / outside-click. **Important: shadcn `DialogContent` defaults to `max-w-lg` centered. Override with `className="max-w-none w-screen h-screen rounded-none p-0 gap-0"` to actually fill the viewport. Mapbox also requires its container to have an explicit pixel height — wrap the map in a flex parent with `flex-1` + `min-h-0`.** |
 | `src/hooks/useLotFit.ts` | `(lot, conformingModels) => Model[]`. Computes which models fit based on lot acreage + restrictions vs. model footprint (length × width + setbacks). **Memoize via `useMemo` keyed on stable IDs, not array identity** — callers (especially TanStack Query) return new array references every render, which would defeat a naive memo. Use a key like `[lot.id, conformingModels.map(m => m.id).join(',')]`. **NULL-dimension rule: if either `model.length` OR `model.width` is NULL on the model row, EXCLUDE that model from the fit set (don't silently approve). Show a "More homes coming soon" note in `LotDetailsPanel` when the fit set is empty so users aren't confused.** |
-| `src/hooks/useSitePlanFilters.ts` | URL-param-backed filter state. Wraps `useSearchParams` with typed getters/setters. Computes `filteredLotIds` set. |
+| `src/hooks/useSitePlanFilters.ts` | URL-param-backed filter state. Wraps `useSearchParams`. **Owns exactly six query-string keys: `status`, `fits`, `priceMin`, `priceMax`, `sizeMin`, `sizeMax`.** Every setter calls `setSearchParams(prev => next)` (functional form), reads/mutates only those six keys, and leaves all other params (`lot`, `model`, `buildType`, `package`, `garage`, `fullscreen`, anything else) untouched. See the ownership matrix in section E for the full multi-writer coordination model. Computes `filteredLotIds` set from the parsed values. |
 
 Update:
 

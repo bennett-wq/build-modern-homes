@@ -12,6 +12,18 @@ dist
 dist-ssr
 *.local
 
+# Env files — never stage; each developer/env supplies their own.
+# Root .env is already tracked in git history; this ignore rule only
+# prevents future re-adds after it is untracked.
+.env
+.env.*
+!.env.example
+
+# Claude Code / Superpowers agent state. Generated locally; worktrees can
+# contain their own .env files and conversation context — must never be staged.
+.claude/
+.superpowers/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
