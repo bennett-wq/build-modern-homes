@@ -117,7 +117,7 @@ export function Step2Model({
             )}
             {selectedLot.availability && (
               <Badge variant="outline" className="text-[10px] font-medium">
-                {selectedLot.availability}
+                Available {selectedLot.availability}
               </Badge>
             )}
             {selectedLot.requiresWellSeptic && (
@@ -135,7 +135,7 @@ export function Step2Model({
                     aria-label="About site-fit review"
                   >
                     <Info className="h-3 w-3" aria-hidden="true" />
-                    Site-fit verified by BaseMod
+                    BaseMod site-fit review
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[240px]">
@@ -338,14 +338,16 @@ function ModelCard({ model, isSelected, onSelect, isConforming, hasSelectedLot }
           {hasSelectedLot && (
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Badge
-                    variant="outline"
-                    className="shrink-0 border-accent/40 bg-accent/5 text-[10px] font-medium text-foreground cursor-help"
+                <TooltipTrigger asChild>
+                  <span
+                    tabIndex={0}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    className="inline-flex shrink-0 items-center rounded-full border border-accent/40 bg-accent/5 px-2.5 py-0.5 text-[10px] font-medium text-foreground cursor-help"
                   >
                     <Info className="h-2.5 w-2.5 mr-1" aria-hidden="true" />
                     Site-fit review
-                  </Badge>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[220px]">
                   <p className="text-xs">

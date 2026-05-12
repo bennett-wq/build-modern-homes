@@ -130,12 +130,12 @@ function PreliminaryBadge() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge 
-            variant="secondary"
-            className="text-xs cursor-help"
+          <span
+            tabIndex={0}
+            className="inline-flex items-center rounded-full border border-transparent bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground cursor-help transition-colors hover:bg-secondary/80"
           >
             Preliminary
-          </Badge>
+          </span>
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-xs max-w-48">

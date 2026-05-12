@@ -176,6 +176,8 @@ function mapStaticLotsToDbFormat(staticLots: Array<{
   premium?: number;
   notes?: string;
   phase?: number;
+  availability?: string;
+  requiresWellSeptic?: boolean;
 }>, developmentId: string): Lot[] {
   return staticLots.map((lot) => ({
     id: lot.id.toString(),
@@ -188,7 +190,7 @@ function mapStaticLotsToDbFormat(staticLots: Array<{
     polygon_coordinates: lot.polygon && lot.polygon.length > 0
       ? { type: 'image-xy' as const, points: lot.polygon }
       : null,
-    restrictions: {},
+    restrictions: lot.requiresWellSeptic ? { notes: 'Well & septic required' } : {},
     notes: lot.notes || null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

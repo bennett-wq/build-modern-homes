@@ -54,6 +54,11 @@ function mapDbLotToComponentLot(dbLot: DbLot, index: number): ComponentLot {
   // Extract phase from notes (e.g., "Phase 1 - Available Now")
   const phaseMatch = dbLot.notes?.match(/Phase (\d+)/i);
   const phase = phaseMatch ? parseInt(phaseMatch[1], 10) : undefined;
+  const availabilityMatch = dbLot.notes?.match(/Available\s+(.+)$/i);
+  const availability = availabilityMatch ? availabilityMatch[1].trim() : undefined;
+  const requiresWellSeptic = /well|septic/i.test(
+    `${dbLot.notes ?? ''} ${dbLot.restrictions?.notes ?? ''}`,
+  );
   
   // Extract numeric lot number from label (e.g., "Lot 16" -> 16)
   const lotNumMatch = dbLot.lot_number.match(/\d+/);
@@ -71,6 +76,8 @@ function mapDbLotToComponentLot(dbLot: DbLot, index: number): ComponentLot {
     premium: dbLot.premium || 0,
     notes: dbLot.notes || undefined,
     phase,
+    availability,
+    requiresWellSeptic,
   };
 }
 
