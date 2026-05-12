@@ -30,6 +30,27 @@ Bold / contrast: charcoal `#1A1A1A` base map style, brass `#A17345` lot fills, b
 
 Everything else on the community page stays as-is for this plan.
 
+## Critical context — single state owner for `?lot=` URL param
+
+**There are currently TWO writers to the `?lot=` URL search param**:
+
+1. `useBuildSelection` ([src/hooks/useBuildSelection.ts:99,152,164](src/hooks/useBuildSelection.ts)) — writes `lotId.toString()` where `lotId: number | null`
+2. `useConfiguratorStore` ([src/state/useConfiguratorStore.ts:241,407](src/state/useConfiguratorStore.ts)) — writes UUID strings where `lotId: string | null`
+
+These conflict (different ID types, last-write-wins). **As part of this plan**, pick `useConfiguratorStore` as the canonical source of truth for `lotId`:
+
+- New `LotDetailsPanel` CTA, `MapboxLotPicker` click handler, and any new component must write via `useConfiguratorStore.getState().setLotId(uuid)`.
+- Update `useBuildSelection.setLot(lotId: number | null)` to be a thin wrapper that calls `useConfiguratorStore.getState().setLotId(String(lotId))` — keeps existing build-flow call sites working without a wider refactor.
+- URL contract becomes `?lot={uuid}` (string), not `?lot={int}`.
+- All `setSearchParams` writers (the new `useSitePlanFilters` AND the lot writer) must use the **functional form** to avoid clobbering each other's params:
+  ```ts
+  setSearchParams(prev => {
+    const next = new URLSearchParams(prev);
+    next.set('lot', lotId);
+    return next;
+  });
+  ```
+
 ## Step 1 — Add Mapbox dependency and access token
 
 ```bash
@@ -131,6 +152,17 @@ function parseLotPolygon(raw: unknown): LotPolygon {
 }
 ```
 
+**Also update `mapStaticLotsToDbFormat`** ([src/hooks/useLots.ts](src/hooks/useLots.ts)) — currently emits `polygon_coordinates: lot.polygon || []` (raw array). After the union lands, the new `MapboxLotPicker` filter checks `polygon_coordinates?.type === 'Polygon'` and will silently skip these. Wrap the static fallback in the discriminated shape:
+
+```ts
+// In mapStaticLotsToDbFormat:
+polygon_coordinates: lot.polygon
+  ? { type: 'image-xy', points: lot.polygon }
+  : null,
+```
+
+This way the static fallback's lots show in the sidebar list (with the "Setting up map for this lot" placeholder in the map area) instead of disappearing entirely.
+
 `MapboxLotPicker` (Step 3) only renders lots where `polygon_coordinates?.type === 'Polygon'`. Lots still in legacy `image-xy` shape are listed in the sidebar but not drawn on the map — with a "Setting up map for this lot" indicator. After backfill (Step 6) this dual-mode handling can be deleted.
 
 Also: `FixedSitePlanEditor.tsx` consumes the legacy `{x, y}[]` shape. Either delete it (it's an internal admin tool) or update it to handle the union. The plan recommends deleting after backfill verification (already in the file diff).
@@ -170,6 +202,47 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 ```
 Without this, Mapbox's zoom buttons, scale bar, and attribution control render unstyled.
 
+**Critical: StrictMode-safe init pattern.** Vite + React 18 dev mode runs effects twice under `<StrictMode>`. Mapbox's `new mapboxgl.Map({ container, ... })` throws *"Map container is already initialized"* on the second run. Use this exact pattern:
+
+```ts
+import { useEffect, useRef } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN as string;
+
+export function MapboxLotPicker(props: MapboxLotPickerProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+
+  useEffect(() => {
+    if (mapRef.current || !containerRef.current) return;   // StrictMode guard
+
+    mapRef.current = new mapboxgl.Map({
+      container: containerRef.current,
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: [props.development.map_center_lng, props.development.map_center_lat],
+      zoom: props.development.map_zoom,
+    });
+
+    // ... add sources/layers/handlers once the map fires 'load'
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init only once; updates via separate effects
+  }, []);
+
+  // Separate effects sync prop changes (selectedLotId, filteredLotIds, etc.)
+  // via mapRef.current.setFeatureState(...) — do NOT recreate the map.
+
+  return <div ref={containerRef} className="absolute inset-0" />;
+}
+```
+
+Key rules: init runs ONCE (empty dep array, guarded by ref). Prop changes flow through separate effects that mutate the existing map via `setFeatureState`, `flyTo`, `setData`, etc. — never recreate the instance.
+
 ## Step 4 — Wire `MapboxLotPicker` into `InteractiveSitePlan`
 
 Edit `src/components/siteplan/InteractiveSitePlan.tsx`:
@@ -187,7 +260,7 @@ Delete after backfill is verified:
 - `src/data/lots/ypsilanti.ts`
 
 Keep but rewrite:
-- `src/pages/SitePlanFullScreen.tsx` — **Read the current file first** before rewriting. It has its own URL-param handling and scroll behavior that must be preserved. Render `<FullscreenSitePlan>` directly so the standalone deep-link route still works, but keep the same `useParams()` -> developmentSlug contract and any analytics events the current page fires.
+- `src/pages/SitePlanFullScreen.tsx` — **Read the current file first** before rewriting. Specifically: preserve the `useParams()` → `developmentSlug` extraction, preserve any `useEffect(() => trackEvent(...), [])` calls, preserve the scroll-restore behavior, and preserve any redirect logic for missing developments. After preserving those, render `<FullscreenSitePlan developmentSlug={slug} />` for the body. Do NOT change the route path; users who deep-link to `/developments/:slug/site-plan` should still land here.
 
 **Initial-mount behavior for `?fullscreen=1`:** If a user lands directly on `/developments/ypsilanti?fullscreen=1`, the dialog should open AFTER `useLotsBySlug` resolves (i.e., gate the `<Dialog open={fullscreen && !isLoading}>`). Otherwise the dialog opens against an empty map and Mapbox throws during init. The embedded view shows the skeleton; the dialog mounts when data is ready.
 
@@ -199,12 +272,14 @@ Create:
 |---|---|
 | `src/components/siteplan/SitePlanFilters.tsx` | Chip row: status multi-toggle, fits-model dropdown, price range slider, lot size range slider. State synced to URL via `useSearchParams`. |
 | `src/components/siteplan/FullscreenSitePlan.tsx` | shadcn `Dialog` that fills the viewport. Renders the same `MapboxLotPicker` + `LotListPanel` + `LotDetailsPanel` as the embedded view. Triggered by `?fullscreen=1`. Close via Esc / X / outside-click. **Important: shadcn `DialogContent` defaults to `max-w-lg` centered. Override with `className="max-w-none w-screen h-screen rounded-none p-0 gap-0"` to actually fill the viewport. Mapbox also requires its container to have an explicit pixel height — wrap the map in a flex parent with `flex-1` + `min-h-0`.** |
-| `src/hooks/useLotFit.ts` | `(lot, conformingModels) => Model[]`. Computes which models fit based on lot acreage + restrictions vs. model footprint (length × width + setbacks). Memoized. **NULL-dimension rule: if either `model.length` OR `model.width` is NULL on the model row, EXCLUDE that model from the fit set (don't silently approve). Show a "More homes coming soon" note in `LotDetailsPanel` when the fit set is empty so users aren't confused.** |
+| `src/hooks/useLotFit.ts` | `(lot, conformingModels) => Model[]`. Computes which models fit based on lot acreage + restrictions vs. model footprint (length × width + setbacks). **Memoize via `useMemo` keyed on stable IDs, not array identity** — callers (especially TanStack Query) return new array references every render, which would defeat a naive memo. Use a key like `[lot.id, conformingModels.map(m => m.id).join(',')]`. **NULL-dimension rule: if either `model.length` OR `model.width` is NULL on the model row, EXCLUDE that model from the fit set (don't silently approve). Show a "More homes coming soon" note in `LotDetailsPanel` when the fit set is empty so users aren't confused.** |
 | `src/hooks/useSitePlanFilters.ts` | URL-param-backed filter state. Wraps `useSearchParams` with typed getters/setters. Computes `filteredLotIds` set. |
 
 Update:
 
-- `src/components/siteplan/LotListPanel.tsx` — restyle for charcoal theme, sync with `filteredLotIds` (dim non-matching rows).
+- `src/components/siteplan/LotListPanel.tsx` — restyle for charcoal theme, sync with `filteredLotIds` (dim non-matching rows). **Accessibility:** put `aria-current="true"` on the row whose lot is selected; the list root gets `role="listbox"` with each row `role="option"`. The list is the keyboard-accessible alternative to the map for screen-reader users (Mapbox is not keyboard-navigable).
+- `src/components/siteplan/LotDetailsPanel.tsx` — wrap the panel in `<div role="region" aria-live="polite" aria-atomic="true">` so screen-reader users hear "Lot 14, 0.32 acres, from $268,400" when selection changes via either the map OR the keyboard list.
+- **Mobile bottom sheets**: use `Drawer` from `vaul` ([vaul v0.9.9 is already in package.json](package.json)), not hand-rolled `framer-motion` slide-up. Apply to both the lot-list bottom sheet and the lot-detail bottom drawer. `vaul`'s `Drawer.Root` + `Drawer.Content` handles dismiss gestures, focus trap, and accessibility correctly out of the box.
 - `src/components/siteplan/LotDetailsPanel.tsx` — add "Homes that fit on this lot" section. For each model from `useLotFit(lot, conformingModels)`, render a mini-card with thumbnail, name, starting price (from `model_pricing.base_home_price + lot.premium`), and a "Build on this lot →" CTA. The CTA calls `useConfiguratorStore.getState().setLotId(lot.id)` (note: method is `setLotId`, not `setLot`; defined at `src/state/useConfiguratorStore.ts:241`) plus `setModel(model.slug)`, then navigates to `/developments/:slug/build` via `useNavigate`.
 - **Conforming models source** — add `src/hooks/useConformingModels.ts`: query `development_conforming_models` junction (already in DB, [migration line 132](supabase/migrations/20260129043607_262937e4-311a-47f4-b6f0-71be85e38de1.sql)) joined to `models` filtered by `is_active = true`. Returns `Model[]`. Used by both `LotDetailsPanel` and the "Fits [model]" filter dropdown.
 
@@ -245,7 +320,18 @@ Local dev:
 
 Automated tests:
 - `src/hooks/__tests__/useLotFit.test.ts` — unit test the fit algorithm with known lot/model pairs.
-- `e2e/siteplan-filters.spec.ts` (Playwright) — deep-link state restoration + filter interaction. **Do not mock the Mapbox token** — Mapbox SDK throws on invalid tokens before any UI mounts. Instead: support a `?nomap=1` URL param in `MapboxLotPicker` that short-circuits to a static "Map disabled in test mode" placeholder. The Playwright test uses this flag so it can assert filter UI and lot detail panel behavior independently of Mapbox network calls.
+- `e2e/siteplan-filters.spec.ts` (Playwright) — deep-link state restoration + filter interaction. **Do not put test-only branches in production code.** Stub the Mapbox SDK before navigation using Playwright's `page.addInitScript()`:
+  ```ts
+  await page.addInitScript(() => {
+    // Replace mapboxgl with a no-op stub before the bundle loads
+    (window as any).__MAPBOX_TEST_STUB__ = true;
+  });
+  ```
+  Then in `MapboxLotPicker`, the only test concession is one line at the top that already exists for other reasons:
+  ```ts
+  if (typeof window !== 'undefined' && (window as any).__MAPBOX_TEST_STUB__) return <div data-testid="map-stub" />;
+  ```
+  This pattern keeps the production bundle clean and lets the test assert filter UI and lot detail behavior without hitting Mapbox's network calls. Alternative: use `import.meta.env.MODE === 'test'` if Vite is configured with a `test` mode.
 
 ## Step 8 — Commit and deploy
 
@@ -265,7 +351,7 @@ After each commit lands in Lovable's preview and is verified, hit Publish to pus
 | Mapbox token accidentally committed to git | `.env.local` is already in `.gitignore`. Set via Lovable's env-var UI for production, never in code. |
 | Mapbox quota exceeded (50k loads/month free) | Compact attribution + lazy-init the map (only when section is in viewport). Set up Mapbox-side billing alerts. |
 | County GIS data not available for a community | Manual digitization in geojson.io is the fallback. ~30 min per community. |
-| `mapbox-gl` bundle size (~250KB gzip in v3+; includes the WebGL renderer and PMTiles support) | Dynamic-import the map component so it only loads on community detail pages: `const MapboxLotPicker = lazy(() => import('./MapboxLotPicker'))`. Render a Suspense fallback skeleton at the map's intended dimensions to avoid layout shift. |
+| `mapbox-gl` bundle size (~250KB gzip in v3+; includes the WebGL renderer and PMTiles support) | Dynamic-import the map component so it only loads on community detail pages: `const MapboxLotPicker = lazy(() => import('./MapboxLotPicker'))`. Render a Suspense fallback skeleton at the map's intended dimensions to avoid layout shift. **Preload the chunk on hover** of community cards on the `/communities` index page to eliminate cold-load flicker: `onMouseEnter={() => import('@/components/siteplan/MapboxLotPicker')}`. Vite handles the prefetch idempotently. |
 | SEO regression — Mapbox canvas is opaque to crawlers | This plan does NOT address SEO. See "Deferred" below. As a stopgap, the existing page text content (community name, description, lot list) still indexes. Don't ship the Mapbox swap as the only content change. |
 | Lovable's Supabase migration runner doesn't apply migrations on push | Known: Lovable's "Publish" doesn't auto-run migrations. After committing, ask Lovable's chat agent: "Read the SQL in `supabase/migrations/<filename>.sql` and run it against the database." (This is captured in your memory file `lovable_migration_workflow.md`.) |
 
