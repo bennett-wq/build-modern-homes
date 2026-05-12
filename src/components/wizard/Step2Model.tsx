@@ -169,6 +169,7 @@ export function Step2Model({
                 isSelected={model.slug === normalizedSelectedSlug}
                 onSelect={() => handleSelect(model.slug)}
                 isConforming={conformingModels?.includes(model.slug)}
+                hasSelectedLot={!!selectedLot}
               />
             </motion.div>
           ))}
