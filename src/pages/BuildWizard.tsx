@@ -63,7 +63,9 @@ function mapDbLotToComponentLot(dbLot: DbLot, index: number): ComponentLot {
     id: numericId,
     label: dbLot.lot_number,
     status: dbLot.status as ComponentLot['status'],
-    polygon: dbLot.polygon_coordinates || [],
+    polygon: dbLot.polygon_coordinates && dbLot.polygon_coordinates.type === 'image-xy'
+      ? dbLot.polygon_coordinates.points
+      : [],
     acreage: dbLot.acreage || undefined,
     netAcreage: dbLot.net_acreage || undefined,
     premium: dbLot.premium || 0,

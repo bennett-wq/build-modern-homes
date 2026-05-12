@@ -87,14 +87,40 @@ async function fetchLotsBySlug(slug: string): Promise<Lot[]> {
   return lotRows.map(mapRowToLot);
 }
 
-function mapRowToLot(row: LotRow): Lot {
-  // Parse polygon coordinates from JSON
-  let polygonCoordinates: LotPolygonPoint[] = [];
-  if (Array.isArray(row.polygon_coordinates)) {
-    polygonCoordinates = (row.polygon_coordinates as unknown) as LotPolygonPoint[];
+function parseLotPolygon(raw: unknown): import('@/types/database').LotPolygon {
+  if (raw == null) return null;
+
+  // Already-tagged shapes
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    const obj = raw as { type?: unknown; points?: unknown; coordinates?: unknown };
+    if (obj.type === 'image-xy' && Array.isArray(obj.points)) {
+      const points = (obj.points as unknown[]).filter(
+        (p): p is LotPolygonPoint =>
+          !!p && typeof p === 'object' && typeof (p as LotPolygonPoint).x === 'number' && typeof (p as LotPolygonPoint).y === 'number',
+      );
+      return { type: 'image-xy', points };
+    }
+    if (obj.type === 'Polygon' && Array.isArray(obj.coordinates)) {
+      return { type: 'Polygon', coordinates: obj.coordinates as number[][][] };
+    }
+    return null;
   }
 
-  // Parse restrictions from JSON
+  // Legacy raw array of {x,y} points → image-xy
+  if (Array.isArray(raw)) {
+    const points = raw.filter(
+      (p): p is LotPolygonPoint =>
+        !!p && typeof p === 'object' && typeof (p as LotPolygonPoint).x === 'number' && typeof (p as LotPolygonPoint).y === 'number',
+    );
+    return points.length ? { type: 'image-xy', points } : null;
+  }
+
+  return null;
+}
+
+function mapRowToLot(row: LotRow): Lot {
+  const polygon_coordinates = parseLotPolygon(row.polygon_coordinates);
+
   let restrictions: LotRestrictions = {};
   if (row.restrictions && typeof row.restrictions === 'object') {
     restrictions = row.restrictions as LotRestrictions;
@@ -102,7 +128,7 @@ function mapRowToLot(row: LotRow): Lot {
 
   return {
     ...row,
-    polygon_coordinates: polygonCoordinates,
+    polygon_coordinates,
     restrictions,
   };
 }
@@ -159,7 +185,9 @@ function mapStaticLotsToDbFormat(staticLots: Array<{
     acreage: lot.acreage || null,
     net_acreage: lot.netAcreage || null,
     premium: lot.premium || 0,
-    polygon_coordinates: lot.polygon || [],
+    polygon_coordinates: lot.polygon && lot.polygon.length > 0
+      ? { type: 'image-xy' as const, points: lot.polygon }
+      : null,
     restrictions: {},
     notes: lot.notes || null,
     created_at: new Date().toISOString(),

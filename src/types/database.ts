@@ -76,7 +76,7 @@ export interface Development extends DevelopmentRow {
  * Lot with typed coordinates
  */
 export interface Lot extends Omit<LotRow, 'polygon_coordinates' | 'restrictions'> {
-  polygon_coordinates: LotPolygonPoint[];
+  polygon_coordinates: LotPolygon;
   restrictions: LotRestrictions;
 }
 
@@ -84,6 +84,27 @@ export interface LotPolygonPoint {
   x: number;
   y: number;
 }
+
+/**
+ * Legacy image-space polygon (SVG x/y coordinates relative to the static site
+ * plan image). Retained for backward compatibility with existing site plans.
+ */
+export interface LotPolygonImageXY {
+  type: 'image-xy';
+  points: LotPolygonPoint[];
+}
+
+/**
+ * GeoJSON Polygon in WGS84 (lng, lat). Used by the Mapbox parcel picker.
+ * coordinates is an array of linear rings; each ring is an array of [lng, lat]
+ * positions. Mirrors the GeoJSON spec so it can be fed straight to Mapbox.
+ */
+export interface LotPolygonGeoJSON {
+  type: 'Polygon';
+  coordinates: number[][][];
+}
+
+export type LotPolygon = LotPolygonImageXY | LotPolygonGeoJSON | null;
 
 export interface LotRestrictions {
   maxSqft?: number;
