@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { BedDouble, Bath, Maximize, FileText, Check, CheckCircle, Home as HomeIcon } from 'lucide-react';
+import { BedDouble, Bath, Maximize, FileText, Check, CheckCircle, Home as HomeIcon, MapPin, Info, Droplet } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
@@ -16,6 +16,7 @@ import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/Wiza
 import { InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { getModelHeroImage, HERO_PLACEHOLDER } from '@/lib/model-images';
+import type { Lot as ComponentLot } from '@/data/lots/grand-haven';
 import { cn } from '@/lib/utils';
 
 interface Step2ModelProps {
