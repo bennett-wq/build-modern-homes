@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { BedDouble, Bath, Maximize, FileText, Check, CheckCircle, Home as HomeIcon } from 'lucide-react';
+import { BedDouble, Bath, Maximize, FileText, Check, CheckCircle, Home as HomeIcon, MapPin, Info, Droplet } from 'lucide-react';
 import { homeModels, HomeModel } from '@/data/models';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { normalizeModelSlug } from '@/data/hawthorne-exteriors';
@@ -16,6 +16,7 @@ import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/Wiza
 import { InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { getModelHeroImage, HERO_PLACEHOLDER } from '@/lib/model-images';
+import type { Lot as ComponentLot } from '@/data/lots/grand-haven';
 import { cn } from '@/lib/utils';
 
 interface Step2ModelProps {
@@ -27,6 +28,8 @@ interface Step2ModelProps {
   // For financing modal
   developmentSlug?: string;
   lotId?: number | null;
+  // Selected homesite context for guidance
+  selectedLot?: ComponentLot | null;
   // For mobile pricing display
   buyerFacingBreakdown?: BuyerFacingBreakdown;
   pricingFlags?: BuyerPricingFlags;
@@ -40,6 +43,7 @@ export function Step2Model({
   isMobile,
   developmentSlug,
   lotId,
+  selectedLot,
   buyerFacingBreakdown,
   pricingFlags,
 }: Step2ModelProps) {
@@ -75,12 +79,76 @@ export function Step2Model({
           </h2>
           <div className="flex items-center gap-3 mt-0.5">
             <p className="text-sm text-muted-foreground">
-              {conformingModels ? 'Showing conforming plans approved for this development' : 'Choose from our factory-built home collection'}
+              {selectedLot
+                ? `Comparing homes for ${selectedLot.label}`
+                : conformingModels
+                  ? 'Showing conforming plans approved for this development'
+                  : 'Choose from our factory-built home collection'}
             </p>
             <span className="text-muted-foreground/30">•</span>
             <AppraisalInfoLink />
           </div>
         </div>
+
+        {/* Selected Homesite context bar */}
+        {selectedLot && (
+          <div
+            className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2"
+            aria-label={`Selected homesite ${selectedLot.label}`}
+          >
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <MapPin className="h-4 w-4 text-accent" aria-hidden="true" />
+              {selectedLot.label}
+            </div>
+            {selectedLot.acreage != null && (
+              <span className="text-xs text-muted-foreground">
+                {selectedLot.acreage} ac
+              </span>
+            )}
+            {selectedLot.premium != null && selectedLot.premium > 0 && (
+              <span className="text-xs text-muted-foreground">
+                ${selectedLot.premium.toLocaleString()} premium
+              </span>
+            )}
+            {selectedLot.phase != null && (
+              <Badge variant="outline" className="text-[10px] font-medium">
+                Phase {selectedLot.phase}
+              </Badge>
+            )}
+            {selectedLot.availability && (
+              <Badge variant="outline" className="text-[10px] font-medium">
+                {selectedLot.availability}
+              </Badge>
+            )}
+            {selectedLot.requiresWellSeptic && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Droplet className="h-3 w-3" aria-hidden="true" />
+                Well &amp; septic
+              </span>
+            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                    aria-label="About site-fit review"
+                  >
+                    <Info className="h-3 w-3" aria-hidden="true" />
+                    Site-fit verified by BaseMod
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[240px]">
+                  <p className="text-xs">
+                    These suggestions are a preliminary home-fit pre-screen.
+                    Final placement, setbacks, and civil approvals are verified
+                    by BaseMod for your homesite.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </div>
 
       {/* Models Grid - scrollable with safe bottom padding */}
@@ -101,6 +169,7 @@ export function Step2Model({
                 isSelected={model.slug === normalizedSelectedSlug}
                 onSelect={() => handleSelect(model.slug)}
                 isConforming={conformingModels?.includes(model.slug)}
+                hasSelectedLot={!!selectedLot}
               />
             </motion.div>
           ))}
@@ -168,9 +237,10 @@ interface ModelCardProps {
   isSelected: boolean;
   onSelect: () => void;
   isConforming?: boolean;
+  hasSelectedLot?: boolean;
 }
 
-function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps) {
+function ModelCard({ model, isSelected, onSelect, isConforming, hasSelectedLot }: ModelCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   
   // Use canonical hero image path from model-images utility
@@ -263,8 +333,30 @@ function ModelCard({ model, isSelected, onSelect, isConforming }: ModelCardProps
       </div>
 
       <CardContent className="p-4">
-        <div className="mb-2">
+        <div className="mb-2 flex items-start justify-between gap-2">
           <h3 className="font-semibold text-foreground text-base">The {model.name}</h3>
+          {hasSelectedLot && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 border-accent/40 bg-accent/5 text-[10px] font-medium text-foreground cursor-help"
+                  >
+                    <Info className="h-2.5 w-2.5 mr-1" aria-hidden="true" />
+                    Site-fit review
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[220px]">
+                  <p className="text-xs">
+                    Final placement on your homesite is verified by BaseMod
+                    after you continue. We confirm setbacks, orientation, and
+                    civil requirements as part of your site plan.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
         
         <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">

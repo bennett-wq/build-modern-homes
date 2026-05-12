@@ -437,7 +437,7 @@ export function Step1Lot({
       <WizardStickyFooter
         onContinue={onNext}
         canContinue={!!canProceed}
-        continueLabel="Continue"
+        continueLabel={canProceed ? 'Compare Homes' : 'Continue'}
         hideBack={true}
         pulseOnReady={selectedLotId}
       >

@@ -357,6 +357,7 @@ export default function BuildWizard() {
                 isMobile={isMobile}
                 developmentSlug={slug}
                 lotId={selection.lotId}
+                selectedLot={selectedLot}
                 buyerFacingBreakdown={pricing.breakdown}
                 pricingFlags={pricing.flags}
               />
