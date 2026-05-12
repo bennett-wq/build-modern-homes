@@ -79,12 +79,76 @@ export function Step2Model({
           </h2>
           <div className="flex items-center gap-3 mt-0.5">
             <p className="text-sm text-muted-foreground">
-              {conformingModels ? 'Showing conforming plans approved for this development' : 'Choose from our factory-built home collection'}
+              {selectedLot
+                ? `Comparing homes for ${selectedLot.label}`
+                : conformingModels
+                  ? 'Showing conforming plans approved for this development'
+                  : 'Choose from our factory-built home collection'}
             </p>
             <span className="text-muted-foreground/30">•</span>
             <AppraisalInfoLink />
           </div>
         </div>
+
+        {/* Selected Homesite context bar */}
+        {selectedLot && (
+          <div
+            className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2"
+            aria-label={`Selected homesite ${selectedLot.label}`}
+          >
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <MapPin className="h-4 w-4 text-accent" aria-hidden="true" />
+              {selectedLot.label}
+            </div>
+            {selectedLot.acreage != null && (
+              <span className="text-xs text-muted-foreground">
+                {selectedLot.acreage} ac
+              </span>
+            )}
+            {selectedLot.premium != null && selectedLot.premium > 0 && (
+              <span className="text-xs text-muted-foreground">
+                ${selectedLot.premium.toLocaleString()} premium
+              </span>
+            )}
+            {selectedLot.phase != null && (
+              <Badge variant="outline" className="text-[10px] font-medium">
+                Phase {selectedLot.phase}
+              </Badge>
+            )}
+            {selectedLot.availability && (
+              <Badge variant="outline" className="text-[10px] font-medium">
+                {selectedLot.availability}
+              </Badge>
+            )}
+            {selectedLot.requiresWellSeptic && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Droplet className="h-3 w-3" aria-hidden="true" />
+                Well &amp; septic
+              </span>
+            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                    aria-label="About site-fit review"
+                  >
+                    <Info className="h-3 w-3" aria-hidden="true" />
+                    Site-fit verified by BaseMod
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[240px]">
+                  <p className="text-xs">
+                    These suggestions are a preliminary home-fit pre-screen.
+                    Final placement, setbacks, and civil approvals are verified
+                    by BaseMod for your homesite.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </div>
 
       {/* Models Grid - scrollable with safe bottom padding */}
