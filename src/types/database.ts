@@ -61,6 +61,9 @@ export interface Model extends ModelRow {
     xmod?: PublicModelPricing | ModelPricingRow;
     mod?: PublicModelPricing | ModelPricingRow;
   };
+  // Staged via pending Mapbox geometry migration. Optional until generated
+  // Supabase types catch up.
+  width?: number | null;
 }
 
 /**
@@ -70,6 +73,11 @@ export interface Development extends DevelopmentRow {
   pricingZone?: PricingZoneRow;
   conformingModelIds?: string[];
   arbPackageIds?: string[];
+  // Staged via pending Mapbox geometry migration. Optional until generated
+  // Supabase types catch up.
+  map_center_lng?: number | null;
+  map_center_lat?: number | null;
+  map_zoom?: number | null;
 }
 
 /**
