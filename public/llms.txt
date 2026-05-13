@@ -1,0 +1,29 @@
+# BaseMod Homes
+
+> Modern modular homes with transparent, all-in pricing. BaseMod is building the infrastructure to make homeownership accessible again — combining factory-built quality with site-built finish, delivered to communities across the Midwest.
+
+BaseMod Homes designs, manufactures, and installs CrossMod® and IRC-code modular homes. Our buyers see the installed price upfront — no weeks of estimates, no "it depends." We standardize the parts of homebuilding that should be standard so timelines, quality, and pricing stay predictable.
+
+## Pages
+
+- [Home](/): Overview of BaseMod Homes, featured models, and our approach to attainable homeownership.
+- [How It Works](/how-it-works): The end-to-end BaseMod process from selection through installation.
+- [Models](/models): The full BaseMod home lineup — Aspen, Belmont, Keeneland, Hawthorne, Laurel, and Cypress.
+- [Pricing](/pricing): Transparent all-in pricing methodology and what's included.
+- [Mission](/mission): Why we exist and the housing problem we're solving.
+- [About](/about): The team and story behind BaseMod Homes.
+- [Contact](/contact): Get in touch, request a quote, or schedule a conversation.
+- [Developments](/developments): Active BaseMod communities and available homesites.
+
+## Models
+
+- [Aspen](/models/aspen): 1,620 sq ft, 4 bed / 2 bath efficient plan on a 32×60 footprint.
+- [Belmont](/models/belmont): 1,620 sq ft, 3 bed / 2 bath compact plan for tighter setbacks.
+- [Keeneland](/models/keeneland): 1,635 sq ft modern 3 bed / 2 bath designed for flexible exteriors.
+- [Hawthorne](/models/hawthorne): Modern barndominium-inspired open-concept design.
+- [Laurel](/models/laurel): 1,065 sq ft 3 bed plan with flexible garage options.
+- [Cypress](/models/cypress): 990 sq ft compact 2 bed plan ideal for narrow lots and ADUs.
+
+## Optional
+
+- [Privacy Policy](/privacy): How BaseMod handles personal information.
