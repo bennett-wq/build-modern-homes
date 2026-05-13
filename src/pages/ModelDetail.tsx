@@ -283,6 +283,22 @@ export default function ModelDetail() {
 
   return (
     <Layout>
+      <SEO
+        title={`The ${model.name} | BaseMod Homes`}
+        description={model.description.slice(0, 155).replace(/\s+/g, " ").trim()}
+        path={`/models/${model.slug}`}
+        type="product"
+        image={typeof heroImage === "string" && heroImage.startsWith("http") ? heroImage : `https://basemodhomes.com${heroImage}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: `The ${model.name}`,
+          description: model.description.slice(0, 500),
+          brand: { "@type": "Brand", name: "BaseMod Homes" },
+          image: typeof heroImage === "string" && heroImage.startsWith("http") ? heroImage : `https://basemodhomes.com${heroImage}`,
+          url: `https://basemodhomes.com/models/${model.slug}`,
+        }}
+      />
       {/* A) Hero Section - Premium, above the fold */}
       <section className="relative w-full min-h-[480px] md:min-h-[560px] overflow-hidden">
         <img 
