@@ -1,22 +1,13 @@
+## Replace homepage hero image
 
+Replace the right-side hero image on the home page (`/`) with the uploaded modern farmhouse exterior photo.
 
-## Unhide Communities Section
+### Steps
+1. Copy `user-uploads://2f30910c…jpeg` → `src/assets/hero-home.jpg`.
+2. In `src/pages/Index.tsx`, swap the `hawthornHomepage` import for the new asset and update the `<img src>` on line 142. Alt text stays as "Modern BaseMod home exterior".
+3. Leave layout, animation, and the `aspect-[4/3]` framing unchanged.
 
-### Summary
-Change the feature flag to restore all Communities links, routes, and UI elements.
-
-### Change
-
-**File: `src/config/featureFlags.ts`**
-- Change `SHOW_COMMUNITIES = false` to `SHOW_COMMUNITIES = true`
-
-This single change will restore:
-- "Communities" links in header and footer navigation
-- "Build in a Community" card on homepage
-- "Browse Communities" button on Models page  
-- All `/communities` and `/developments/*` routes (no more redirects)
-- "Build in a BaseMod Community" option in configurator
-
-### After making this change
-You'll need to **Publish** the site to push the change live to basemodhomes.com.
-
+### Notes
+- No other pages or components touched.
+- `hawthornHomepage` import is removed if unused elsewhere in the file (will verify).
+- No publish, no migrations, no env changes.
