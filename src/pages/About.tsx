@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Target, Zap, Shield, Heart, Users, Building } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,6 +80,11 @@ const timeline = [
 export default function About() {
   return (
     <Layout>
+      <SEO
+        title="About BaseMod Homes | Our Team & Story"
+        description="Meet the team rebuilding the path to homeownership. Learn how BaseMod combines factory-built quality with site-built finish to deliver attainable modern homes."
+        path="/about"
+      />
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">

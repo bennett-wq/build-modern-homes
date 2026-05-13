@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, MapPin, Compass, Building2, Clock, Repeat, Users, Shield, DollarSign, Zap, Heart, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { models } from "@/data/pricing-config";
 import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
 
@@ -81,6 +82,11 @@ const fadeInUp = {
 const Index = () => {
   return (
     <Layout>
+      <SEO
+        title="BaseMod Homes | Modern Modular Homes with Transparent Pricing"
+        description="Modern modular homes with all-in pricing you can see upfront. BaseMod is rebuilding the path to homeownership with CrossMod® and IRC-code homes across the Midwest."
+        path="/"
+      />
       {/* Hero Section - Statement feel with warm gradient */}
       <section className="relative min-h-[90vh] flex items-center bg-gradient-to-b from-warm-cream to-background overflow-hidden">
         <div className="container mx-auto px-6 lg:px-12 py-20">

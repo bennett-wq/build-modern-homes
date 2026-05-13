@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Home as HomeIcon, Ruler, BedDouble, Bath } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +26,11 @@ export default function Models() {
   
   return (
     <Layout>
+      <SEO
+        title="BaseMod Home Models | Modern Modular Floor Plans"
+        description="Browse the BaseMod lineup — Aspen, Belmont, Keeneland, Hawthorne, Laurel, and Cypress. CrossMod® and IRC-code modular homes from 990 to 1,635 sq ft."
+        path="/models"
+      />
       {/* Hero Section - Apple-minimal matching homepage */}
       <section className="relative py-20 lg:py-28 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">

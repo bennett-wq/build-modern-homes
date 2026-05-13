@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Send, Phone, Mail, MapPin, CheckCircle, Home, MapPinned, Palette, DoorOpen, ShieldCheck, Calendar, DollarSign } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,6 +169,23 @@ export default function Contact() {
 
   return (
     <Layout>
+      <SEO
+        title="Contact BaseMod Homes | Request a Quote"
+        description="Get in touch with BaseMod Homes. Request a quote, schedule a conversation, or ask about modern modular homes in Ann Arbor, Chicago, and across the Midwest."
+        path="/contact"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          name: "BaseMod Homes",
+          url: "https://basemodhomes.com",
+          telephone: "+1-734-249-3680",
+          areaServed: ["Ann Arbor, MI", "Chicago, IL"],
+          address: [
+            { "@type": "PostalAddress", addressLocality: "Ann Arbor", addressRegion: "MI", addressCountry: "US" },
+            { "@type": "PostalAddress", addressLocality: "Chicago", addressRegion: "IL", addressCountry: "US" },
+          ],
+        }}
+      />
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">

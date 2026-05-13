@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, ArrowRight, Bell, Building2 } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Layout } from '@/components/layout/Layout';
 import { Section, SectionHeader } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
@@ -145,6 +146,11 @@ export default function Developments() {
 
   return (
     <Layout>
+      <SEO
+        title="BaseMod Developments | Active Communities & Homesites"
+        description="Explore BaseMod communities and available homesites. Modern modular homes ready for placement in active developments across the Midwest."
+        path="/developments"
+      />
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">
