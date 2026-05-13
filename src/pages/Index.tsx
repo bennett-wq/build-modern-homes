@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { SEO } from "@/components/SEO";
 import { models } from "@/data/pricing-config";
-import heroHome from "@/assets/hero-home.jpg";
+import heroHome480 from "@/assets/hero-home-480.webp";
+import heroHome800 from "@/assets/hero-home-800.webp";
+import heroHome1200 from "@/assets/hero-home-1200.webp";
+import heroHome1600 from "@/assets/hero-home-1600.webp";
 
 // Featured models (first 4 with valid pricing)
 const featuredModels = models.filter(m => m.pricing.xmod).slice(0, 4);
@@ -139,10 +142,16 @@ const Index = () => {
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-muted shadow-elegant">
                 <img
-                  src={heroHome}
+                  src={heroHome1200}
+                  srcSet={`${heroHome480} 480w, ${heroHome800} 800w, ${heroHome1200} 1200w, ${heroHome1600} 1600w`}
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  width={1200}
+                  height={900}
                   alt="Modern BaseMod home exterior"
                   className="w-full h-full object-cover"
                   loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
               </div>
             </motion.div>
