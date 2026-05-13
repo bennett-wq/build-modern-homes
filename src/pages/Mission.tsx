@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 
 const fadeInUp = {
@@ -13,6 +14,11 @@ const fadeInUp = {
 export default function Mission() {
   return (
     <Layout>
+      <SEO
+        title="Our Mission | BaseMod Homes"
+        description="Why BaseMod exists: rebuilding the infrastructure of homeownership so middle-income families can buy a home again — at scale, with transparent pricing."
+        path="/mission"
+      />
       {/* Hero/Opening Section - White */}
       <section className="py-24 lg:py-32 bg-background">
         <div className="container mx-auto px-6 lg:px-12">

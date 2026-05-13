@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Home, Palette, ClipboardCheck, Calendar, FileCheck, CheckCircle } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/SEO';
 import { Section } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
 
@@ -86,6 +87,11 @@ const benefits = [
 export default function HowItWorks() {
   return (
     <Layout>
+      <SEO
+        title="How It Works | The BaseMod Build Process"
+        description="From model selection to installation: how BaseMod delivers modern modular homes with predictable pricing, real timelines, and consistent quality."
+        path="/how-it-works"
+      />
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">

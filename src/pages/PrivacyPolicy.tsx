@@ -1,8 +1,14 @@
 import { Layout } from "@/components/layout/Layout";
+import { SEO } from "@/components/SEO";
 
 export default function PrivacyPolicy() {
   return (
     <Layout>
+      <SEO
+        title="Privacy Policy | BaseMod Homes"
+        description="How BaseMod Homes collects, uses, and protects your personal information."
+        path="/privacy"
+      />
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
           Privacy Policy
