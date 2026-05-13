@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { SEO } from "@/components/SEO";
 import { models } from "@/data/pricing-config";
-import hawthornHomepage from "@/assets/homes/hawthorn-homepage.png";
+import heroHome from "@/assets/hero-home.jpg";
 
 // Featured models (first 4 with valid pricing)
 const featuredModels = models.filter(m => m.pricing.xmod).slice(0, 4);
@@ -139,7 +139,7 @@ const Index = () => {
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-muted shadow-elegant">
                 <img
-                  src={hawthornHomepage}
+                  src={heroHome}
                   alt="Modern BaseMod home exterior"
                   className="w-full h-full object-cover"
                   loading="eager"
