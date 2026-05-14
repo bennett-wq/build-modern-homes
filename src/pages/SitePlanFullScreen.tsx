@@ -244,6 +244,37 @@ export default function SitePlanFullScreen() {
 
       <section className="relative">
         <div className="container mx-auto px-4 lg:px-8 py-6">
+          {isGrandHaven && (
+            <div
+              role="tablist"
+              aria-label="Grand Haven phases"
+              className="mb-4 flex flex-wrap gap-2"
+            >
+              {grandHavenPhases.map((p) => {
+                const active = p.id === activePhase;
+                return (
+                  <button
+                    key={p.id}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      setActivePhase(p.id);
+                      setSelectedLot(null);
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-colors',
+                      active
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-card text-foreground border-border hover:bg-secondary',
+                    )}
+                  >
+                    <span className="font-medium">{p.label}</span>
+                    <span className="text-xs opacity-80">· {p.availability}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
