@@ -88,6 +88,7 @@ function mapStaticModelsToDbShape(): Model[] {
     floorplan_pdf_url: sm.floorPlanPdf || null,
     is_active: true,
     display_order: index,
+    width: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     pricing: sm.pricing
