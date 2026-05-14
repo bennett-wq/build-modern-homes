@@ -27,6 +27,10 @@ const LOTS_BY_SLUG: Record<string, Lot[]> = {
 export default function SitePlanFullScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const isPreview = location.pathname.startsWith('/preview/');
+  const routePrefix = isPreview ? '/preview/developments' : '/developments';
+  const communitiesHref = isPreview ? '/preview/communities' : '/developments';
   const isEditMode = searchParams.get('edit') === '1';
   const isMobile = useIsMobile();
 
