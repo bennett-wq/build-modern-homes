@@ -89,6 +89,9 @@ function mapStaticDevelopmentsToDbShape(): Development[] {
     is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    map_center_lng: null,
+    map_center_lat: null,
+    map_zoom: null,
     // Map conforming models from slugs (static uses slugs, DB uses IDs)
     conformingModelIds: sd.conformingModels,
     arbPackageIds: sd.arbReadyPackages,
