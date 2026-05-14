@@ -162,7 +162,8 @@ export default function SitePlanFullScreen() {
   const inventory = deriveStaticInventory(lots);
   const availableCount = inventory.availableCount;
   const readyNowCount = inventory.readyNowCount;
-  const selectedLotId = selectedLot?.status !== 'sold' ? String(selectedLot.id) : null;
+  const selectedLotId =
+    selectedLot && selectedLot.status !== 'sold' ? String(selectedLot.id) : null;
   const selectedBuildPath =
     buildHref(development, {
       preview: isPreview,
