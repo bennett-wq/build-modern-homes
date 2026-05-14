@@ -35,8 +35,6 @@ export default function SitePlanFullScreen() {
   const communitiesHref = communitiesHrefHelper({ preview: isPreview });
   const isEditMode = searchParams.get('edit') === '1';
   const isMobile = useIsMobile();
-  const isEditMode = searchParams.get('edit') === '1';
-  const isMobile = useIsMobile();
 
   const development = getDevelopmentBySlug(slug);
   const initialLots = useMemo<Lot[] | null>(
