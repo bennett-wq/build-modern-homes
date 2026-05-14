@@ -1,18 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FixedSitePlanViewer } from '@/components/siteplan/FixedSitePlanViewer';
 import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { LotDetailsPanel } from '@/components/siteplan/LotDetailsPanel';
+import { MapboxLotPicker } from '@/components/siteplan/MapboxLotPicker';
+import { adaptDbLots } from '@/components/siteplan/lot-adapter';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Maximize2, List, X } from 'lucide-react';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots, Lot } from '@/data/lots/grand-haven';
 import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { ypsilantiLots } from '@/data/lots/ypsilanti';
+import { useLotsBySlug } from '@/hooks/useLots';
+import { useDevelopments } from '@/hooks/useDevelopments';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import type { Development as DbDevelopment, Lot as DbLot } from '@/types/database';
 
 interface InteractiveSitePlanProps {
   developmentSlug?: string;
@@ -29,20 +33,76 @@ export function InteractiveSitePlan({
   const isMobile = useIsMobile();
 
   const development = getDevelopmentBySlug(developmentSlug);
-  
-  // Get lots based on development
-  const lots = useMemo(() => {
-    if (developmentSlug === 'grand-haven') {
-      return grandHavenLots;
-    }
-    if (developmentSlug === 'st-james-bay') {
-      return stJamesBayLots;
-    }
-    if (developmentSlug === 'ypsilanti') {
-      return ypsilantiLots;
-    }
+
+  // Static lots (legacy image-xy)
+  const staticLots = useMemo<Lot[]>(() => {
+    if (developmentSlug === 'grand-haven') return grandHavenLots;
+    if (developmentSlug === 'st-james-bay') return stJamesBayLots;
+    if (developmentSlug === 'ypsilanti') return ypsilantiLots;
     return [];
   }, [developmentSlug]);
+
+  // DB lots (UUID + GeoJSON when present)
+  const { lots: dbLots } = useLotsBySlug(developmentSlug);
+  const { developments: dbDevelopments } = useDevelopments();
+  const dbDevelopment = useMemo<DbDevelopment | undefined>(
+    () => dbDevelopments?.find((d) => d.slug === developmentSlug),
+    [dbDevelopments, developmentSlug],
+  );
+
+  // Mode selector — auto-upgrades only when token + map_center + GeoJSON lots exist.
+  const canUseMapbox = useMemo(() => {
+    const hasToken = Boolean(import.meta.env.VITE_MAPBOX_TOKEN);
+    const hasCenter =
+      typeof dbDevelopment?.map_center_lng === 'number' &&
+      typeof dbDevelopment?.map_center_lat === 'number';
+    const hasGeoJsonLots = dbLots.some(
+      (l) => l.polygon_coordinates?.type === 'Polygon',
+    );
+    return hasToken && hasCenter && hasGeoJsonLots;
+  }, [dbDevelopment, dbLots]);
+  const mode: 'mapbox' | 'image' = canUseMapbox ? 'mapbox' : 'image';
+
+  // Adapter (only meaningful in mapbox mode).
+  const adapted = useMemo(
+    () => (mode === 'mapbox' ? adaptDbLots(dbLots) : null),
+    [mode, dbLots],
+  );
+
+  const lots: Lot[] = mode === 'mapbox' && adapted ? adapted.displayLots : staticLots;
+
+  // Mapbox handler — translates DB lot into the display lot the panels expect.
+  const handleMapboxSelect = useCallback(
+    (dbLot: DbLot | null) => {
+      if (!dbLot || !adapted) {
+        setSelectedLot(null);
+        return;
+      }
+      const numericId = adapted.uuidToNumericId.get(dbLot.id);
+      const display = numericId != null ? adapted.displayLots.find((l) => l.id === numericId) : null;
+      setSelectedLot(display ?? null);
+      if (isMobile) setShowMobileList(false);
+    },
+    [adapted, isMobile],
+  );
+
+  const handleMapboxHover = useCallback(
+    (uuid: string | null) => {
+      if (!uuid || !adapted) {
+        setHoveredLotId(null);
+        return;
+      }
+      setHoveredLotId(adapted.uuidToNumericId.get(uuid) ?? null);
+    },
+    [adapted],
+  );
+
+  // Filter set (no filter UI yet — pass all DB ids).
+  const filteredLotIds = useMemo(
+    () => new Set(dbLots.map((l) => l.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dbLots.map((l) => l.id).sort().join(',')],
+  );
 
   if (!development) {
     return null;
@@ -65,6 +125,12 @@ export function InteractiveSitePlan({
   const availableLots = lots.filter(l => l.status === 'available').length;
   const reservedLots = lots.filter(l => l.status === 'reserved').length;
   const soldLots = lots.filter(l => l.status === 'sold').length;
+
+  // Selected lot id translated back to UUID for Mapbox feature-state.
+  const selectedUuid =
+    mode === 'mapbox' && adapted && selectedLot
+      ? [...adapted.uuidToNumericId.entries()].find(([, n]) => n === selectedLot.id)?.[0] ?? null
+      : null;
 
   return (
     <div className={className}>
@@ -122,7 +188,7 @@ export function InteractiveSitePlan({
           'flex',
           isMobile ? 'flex-col' : 'flex-row'
         )}>
-          {/* Site Plan Viewer - Fixed, centered, no zoom/pan */}
+          {/* Site Plan Viewer */}
           <div 
             className={cn(
               'relative',
@@ -133,15 +199,27 @@ export function InteractiveSitePlan({
               minHeight: isMobile ? '350px' : '500px'
             }}
           >
-            <FixedSitePlanViewer
-              sitePlanImagePath={development.sitePlanImagePath}
-              lots={lots}
-              onSelectLot={handleSelectLot}
-              selectedLotId={selectedLot?.id ?? null}
-              hoveredLotId={hoveredLotId}
-              onHoverLot={setHoveredLotId}
-              className="h-full"
-            />
+            {mode === 'mapbox' && dbDevelopment ? (
+              <MapboxLotPicker
+                development={dbDevelopment}
+                lots={dbLots}
+                selectedLotId={selectedUuid}
+                filteredLotIds={filteredLotIds}
+                onSelectLot={handleMapboxSelect}
+                onHoverLot={handleMapboxHover}
+                className="h-full"
+              />
+            ) : (
+              <FixedSitePlanViewer
+                sitePlanImagePath={development.sitePlanImagePath}
+                lots={lots}
+                onSelectLot={handleSelectLot}
+                selectedLotId={selectedLot?.id ?? null}
+                hoveredLotId={hoveredLotId}
+                onHoverLot={setHoveredLotId}
+                className="h-full"
+              />
+            )}
             
             {/* Details Panel (overlay) */}
             {selectedLot && (
