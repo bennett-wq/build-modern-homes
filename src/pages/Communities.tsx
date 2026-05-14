@@ -37,10 +37,13 @@ function useCommunityMetrics(slug: string): { metrics: CommunityMetrics; isLoadi
   const { lots, isLoading } = useLotsBySlug(slug);
   const metrics = useMemo<CommunityMetrics>(() => {
     const available = lots.filter((l) => l.status === 'available');
+    // Ready Now requires explicit timing evidence — never inferred from
+    // status: 'available'. Sources: restrictions.availability === 'Now' OR
+    // notes containing "Available Now" (case-insensitive).
     const readyNow = available.filter((l) => {
-      const r = l.restrictions as { availability?: string; phase?: number } | undefined;
-      // Treat phase-1 / no-future-phase as ready-now signal we already have.
-      return !r?.availability || r.availability === 'available-now';
+      const r = l.restrictions as { availability?: string } | undefined;
+      if (r?.availability === 'Now') return true;
+      return (l.notes ?? '').toLowerCase().includes('available now');
     });
     const premiums = available.map((l) => l.premium ?? 0);
     const startingAllIn = premiums.length > 0 ? BASE_ALL_IN_PRICE + Math.min(...premiums) : null;
