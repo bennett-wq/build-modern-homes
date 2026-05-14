@@ -222,12 +222,12 @@ function CommunityDetail({ development }: { development: Development }) {
                 </a>
               </Button>
               <Button asChild variant="outline" className="flex-1">
-                <Link to={`/developments/${development.slug}`}>View community</Link>
+                <Link to={communityDetailHref(development, { preview: true })}>View community</Link>
               </Button>
             </>
           ) : (
             <Button asChild variant="outline" className="flex-1">
-              <Link to={`/developments/${development.slug}`}>
+              <Link to={communityDetailHref(development, { preview: true })}>
                 <Bell className="mr-2 h-4 w-4" />
                 Join interest list
               </Link>
