@@ -127,7 +127,14 @@ export default function SitePlanFullScreen() {
   const inventory = deriveStaticInventory(lots);
   const availableCount = inventory.availableCount;
   const readyNowCount = inventory.readyNowCount;
-  const buildPath = `${routePrefix}/${slug}/build`;
+  // Carry the selected lot into the build flow when one is picked AND available.
+  // Falls back gracefully to community-level build URL otherwise.
+  const isSelectedLotAvailable = selectedLot?.status === 'available';
+  const buildPath =
+    buildHref(development, {
+      preview: isPreview,
+      lot: isSelectedLotAvailable ? String(selectedLot!.id) : null,
+    }) ?? `${routePrefix}/${slug}/build`;
 
   return (
     <Layout>
