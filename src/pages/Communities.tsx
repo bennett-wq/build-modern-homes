@@ -211,11 +211,11 @@ function CommunityDetail({ development }: { development: Development }) {
           {buildPath ? (
             <>
               <Button asChild className="flex-1">
-                <Link to={buildPath}>
+                <a href={buildPath}>
                   <Home className="mr-2 h-4 w-4" />
                   Get all-in price
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+                </a>
               </Button>
               <Button asChild variant="outline" className="flex-1">
                 <Link to={`/developments/${development.slug}`}>View community</Link>
@@ -399,15 +399,16 @@ export default function Communities() {
                 {selected.name}
               </div>
             </div>
-            <Link
+            <a
               key={selected.slug}
-              to={selectedBuildPath}
+              href={selectedBuildPath}
               className={cn(buttonVariants({ size: 'sm' }), 'flex-shrink-0')}
               aria-label={`Get all-in price for ${selected.name}`}
+              data-testid="selected-community-sticky-cta"
             >
               Get all-in price
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-            </Link>
+            </a>
           </div>
         </div>
       )}
