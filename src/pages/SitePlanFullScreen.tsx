@@ -148,8 +148,8 @@ export default function SitePlanFullScreen() {
 
         <FixedSitePlanEditor
           sitePlanImagePath={development.sitePlanImagePath}
-          initialLots={lots}
-          onLotsChange={setLots}
+          initialLots={staticLots}
+          onLotsChange={setStaticLots}
           className="flex-1"
         />
       </div>
