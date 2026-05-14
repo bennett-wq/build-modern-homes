@@ -105,7 +105,7 @@ export default function SitePlanFullScreen() {
             </div>
           </div>
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/developments/${slug}/site-plan`}>Exit Editor</Link>
+            <Link to={`${routePrefix}/${slug}/site-plan`}>Exit Editor</Link>
           </Button>
         </div>
 
