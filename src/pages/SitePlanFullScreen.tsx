@@ -78,7 +78,7 @@ export default function SitePlanFullScreen() {
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to="/preview/communities">Browse other communities</Link>
+                <Link to={communitiesHref}>Browse other communities</Link>
               </Button>
             </div>
           </div>
