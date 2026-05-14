@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, ArrowRight, Home } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { buildHref as buildCommunityHref, isPreviewPath } from '@/lib/communityRoutes';
 import { cn } from '@/lib/utils';
 import type { Lot, LotStatus } from '@/data/lots/grand-haven';
 
@@ -34,11 +35,22 @@ export function LotDetailsPanel({
   isMobile = false,
   buildHref,
 }: LotDetailsPanelProps) {
+  const location = useLocation();
+
   if (!lot) return null;
 
   const statusInfo = STATUS_VARIANTS[lot.status];
   const contactUrl = `/contact?development=${developmentSlug}&lot=${lot.id}`;
-  const buildUrl = buildHref ?? `/developments/${developmentSlug}/build?lot=${lot.id}`;
+  const buildUrl =
+    buildHref ??
+    buildCommunityHref(
+      { slug: developmentSlug, status: 'active' },
+      {
+        preview: isPreviewPath(location.pathname),
+        lot: lot.status === 'available' ? String(lot.id) : null,
+      },
+    ) ??
+    `/developments/${developmentSlug}/build?lot=${lot.id}`;
   const modelsUrl = `/models?development=${developmentSlug}&lot=${lot.id}`;
 
   const panelContent = (
@@ -112,7 +124,7 @@ export function LotDetailsPanel({
       {lot.status !== 'sold' && (
         <div className="pt-6 border-t border-border mt-auto space-y-3">
           <Button asChild className="w-full">
-            <Link to={buildUrl}>
+            <Link key={buildUrl} to={buildUrl}>
               <Home className="mr-2 h-4 w-4" />
               Build on This Lot
               <ArrowRight className="ml-2 h-4 w-4" />
