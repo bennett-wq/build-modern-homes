@@ -125,8 +125,25 @@ export function CommunityMapPanel({
           const isSelected = m.slug === selectedSlug;
           const isActive = m.status === 'active';
           const fill = isActive ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))';
+          const labelW = Math.max(80, m.name.length * 7.5 + 18);
           return (
-            <g key={m.slug}>
+            <g
+              key={m.slug}
+              role="button"
+              tabIndex={0}
+              aria-label={`${m.name}, ${m.state}${isActive ? ' (active)' : ' (coming soon)'}`}
+              aria-pressed={isSelected}
+              onClick={() => onSelect(m.slug)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(m.slug);
+                }
+              }}
+              className="cursor-pointer outline-none [&:focus-visible_circle.cmp-pin]:stroke-ring"
+            >
+              {/* Larger transparent hit-area for easier tap/click */}
+              <circle cx={m.x} cy={m.y} r={26} fill="transparent" />
               {isSelected && (
                 <circle
                   cx={m.x}
@@ -137,37 +154,35 @@ export function CommunityMapPanel({
                   className="animate-pulse"
                 />
               )}
-              <g
-                role="button"
-                tabIndex={0}
-                aria-label={`${m.name}, ${m.state}`}
-                aria-pressed={isSelected}
-                onClick={() => onSelect(m.slug)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onSelect(m.slug);
-                  }
-                }}
-                className="cursor-pointer outline-none focus-visible:[&>circle]:stroke-ring"
-                style={{ transition: 'transform 200ms ease' }}
-              >
-                <circle
-                  cx={m.x}
-                  cy={m.y}
-                  r={isSelected ? 11 : 8}
-                  fill={fill}
-                  stroke="hsl(var(--background))"
-                  strokeWidth={2}
+              <circle
+                className="cmp-pin transition-all"
+                cx={m.x}
+                cy={m.y}
+                r={isSelected ? 11 : 8}
+                fill={fill}
+                stroke="hsl(var(--background))"
+                strokeWidth={2}
+              />
+              {isActive && (
+                <circle cx={m.x} cy={m.y} r={3} fill="hsl(var(--background))" />
+              )}
+              {/* Name pill */}
+              <g transform={`translate(${m.x + 14}, ${m.y - 12})`}>
+                <rect
+                  width={labelW}
+                  height={22}
+                  rx={11}
+                  fill="hsl(var(--background))"
+                  stroke="hsl(var(--border))"
+                  strokeWidth={isSelected ? 1.5 : 1}
+                  opacity={0.95}
                 />
-                {isActive && (
-                  <circle cx={m.x} cy={m.y} r={3} fill="hsl(var(--background))" />
-                )}
                 <text
-                  x={m.x + 14}
-                  y={m.y + 4}
+                  x={labelW / 2}
+                  y={15}
+                  textAnchor="middle"
                   fill="hsl(var(--foreground))"
-                  fontSize="13"
+                  fontSize="12
                   fontWeight={isSelected ? 600 : 500}
                   style={{ pointerEvents: 'none', userSelect: 'none' }}
                 >
