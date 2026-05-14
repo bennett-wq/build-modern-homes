@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useParams, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Bell, MapPin } from 'lucide-react';
@@ -89,8 +89,8 @@ export default function SitePlanFullScreen() {
     );
   }
 
-  const handleSelectLot = (lot: Lot | null) => setSelectedLot(lot);
-  const handleListSelectLot = (lot: Lot) => setSelectedLot(lot);
+  const handleSelectLot = useCallback((lot: Lot | null) => setSelectedLot(lot), []);
+  const handleListSelectLot = useCallback((lot: Lot) => setSelectedLot(lot), []);
 
   // Editor Mode (admin-only deep link).
   if (isEditMode) {
@@ -129,12 +129,15 @@ export default function SitePlanFullScreen() {
   const readyNowCount = inventory.readyNowCount;
   // Carry the selected lot into the build flow when one is picked AND available.
   // Falls back gracefully to community-level build URL otherwise.
-  const isSelectedLotAvailable = selectedLot?.status === 'available';
-  const buildPath =
-    buildHref(development, {
-      preview: isPreview,
-      lot: isSelectedLotAvailable ? String(selectedLot!.id) : null,
-    }) ?? `${routePrefix}/${slug}/build`;
+  const selectedBuildPath = useMemo(() => {
+    const selectedLotId = selectedLot?.status === 'available' ? String(selectedLot.id) : null;
+    return (
+      buildHref(development, {
+        preview: isPreview,
+        lot: selectedLotId,
+      }) ?? `${routePrefix}/${slug}/build`
+    );
+  }, [development, isPreview, routePrefix, selectedLot, slug]);
 
   return (
     <Layout>
@@ -183,7 +186,7 @@ export default function SitePlanFullScreen() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
               <Button asChild size="lg">
-                <Link to={buildPath}>
+                <Link to={selectedBuildPath}>
                   Start your build
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
@@ -225,7 +228,7 @@ export default function SitePlanFullScreen() {
                     developmentSlug={development.slug}
                     onClose={() => setSelectedLot(null)}
                     isMobile={isMobile}
-                    buildHref={buildPath}
+                    buildHref={selectedBuildPath}
                   />
                 )}
               </div>
@@ -271,7 +274,7 @@ export default function SitePlanFullScreen() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild>
-                <Link to={buildPath}>
+                <Link to={selectedBuildPath}>
                   Start your build
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
@@ -288,7 +291,7 @@ export default function SitePlanFullScreen() {
       {isMobile && (
         <div className="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button asChild className="w-full" size="lg">
-            <Link to={buildPath}>
+            <Link to={selectedBuildPath}>
               {selectedLot ? `Build on Lot ${selectedLot.label}` : 'Start your build'}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
