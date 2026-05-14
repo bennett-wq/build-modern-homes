@@ -52,7 +52,7 @@ export default function SitePlanFullScreen() {
       <Layout>
         <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-24">
           <Link
-            to="/preview/communities"
+            to={communitiesHref}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
