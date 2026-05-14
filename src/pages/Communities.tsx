@@ -426,25 +426,37 @@ export default function Communities() {
       {/* Mobile sticky CTA for the selected active community */}
       {selected && isSelectedActive && selectedBuildPath && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden">
-          <div className="container mx-auto flex items-center gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs text-muted-foreground">
-                {selected.city}, {selected.state}
+          <div className="container mx-auto flex flex-col gap-1.5 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs text-muted-foreground">
+                  {selected.city}, {selected.state}
+                </div>
+                <div className="truncate text-sm font-semibold text-foreground">
+                  {selected.name}
+                </div>
               </div>
-              <div className="truncate text-sm font-semibold text-foreground">
-                {selected.name}
-              </div>
+              <a
+                key={selected.slug}
+                href={selectedBuildPath}
+                className={cn(buttonVariants({ size: 'sm' }), 'flex-shrink-0')}
+                aria-label={`Get all-in price for ${selected.name}`}
+                data-testid="selected-community-sticky-cta"
+              >
+                Get all-in price
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </a>
             </div>
-            <a
-              key={selected.slug}
-              href={selectedBuildPath}
-              className={cn(buttonVariants({ size: 'sm' }), 'flex-shrink-0')}
-              aria-label={`Get all-in price for ${selected.name}`}
-              data-testid="selected-community-sticky-cta"
-            >
-              Get all-in price
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-            </a>
+            {selectedSitePlanPath && (
+              <a
+                key={`${selected.slug}-sticky-siteplan`}
+                href={selectedSitePlanPath}
+                data-testid="selected-community-sticky-siteplan"
+                className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-accent hover:underline"
+              >
+                View site plan →
+              </a>
+            )}
           </div>
         </div>
       )}
