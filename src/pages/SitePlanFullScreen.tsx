@@ -122,13 +122,11 @@ export default function SitePlanFullScreen() {
   }
 
   // Buyer-facing metrics (counts only — no fabricated price math).
-  // Ready Now requires explicit timing evidence: availability === 'Now' OR
-  // notes containing "Available Now". Never inferred from status: available.
-  const availableLots = lots.filter((l) => l.status === 'available');
-  const availableCount = availableLots.length;
-  const readyNowCount = availableLots.filter(
-    (l) => l.availability === 'Now' || (l.notes ?? '').toLowerCase().includes('available now'),
-  ).length;
+  // Ready Now rule lives in src/lib/communityInventory.ts; never inferred
+  // from status: 'available'.
+  const inventory = deriveStaticInventory(lots);
+  const availableCount = inventory.availableCount;
+  const readyNowCount = inventory.readyNowCount;
   const buildPath = `${routePrefix}/${slug}/build`;
 
   return (
