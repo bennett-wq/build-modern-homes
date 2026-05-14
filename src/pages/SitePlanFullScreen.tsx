@@ -400,8 +400,10 @@ export default function SitePlanFullScreen() {
                     onSelectLot={handleListSelectLot}
                     onHoverLot={setHoveredLotId}
                     className="border-l-0 border-t"
-                style={{ height: '40vh' }}
-              />
+                    style={{ height: '40vh' }}
+                  />
+                )}
+              </>
             )}
           </motion.div>
         </div>
