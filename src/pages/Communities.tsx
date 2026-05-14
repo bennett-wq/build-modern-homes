@@ -23,34 +23,26 @@ import { developments, Development } from '@/data/developments';
 import { useLotsBySlug } from '@/hooks/useLots';
 import { CommunityMapPanel } from '@/components/communities/CommunityMapPanel';
 import { cn } from '@/lib/utils';
+import {
+  buildHref as buildHrefHelper,
+  sitePlanHref as sitePlanHrefHelper,
+} from '@/lib/communityRoutes';
+import { deriveDbInventory, type CommunityInventory } from '@/lib/communityInventory';
 
 // Base all-in price (default Hawthorne XMOD) for community pricing calculation
 const BASE_ALL_IN_PRICE = 253649;
 
-interface CommunityMetrics {
-  availableCount: number;
-  readyNowCount: number;
+interface CommunityMetrics extends CommunityInventory {
   startingAllIn: number | null;
 }
 
 function useCommunityMetrics(slug: string): { metrics: CommunityMetrics; isLoading: boolean } {
   const { lots, isLoading } = useLotsBySlug(slug);
   const metrics = useMemo<CommunityMetrics>(() => {
-    const available = lots.filter((l) => l.status === 'available');
-    // Ready Now requires explicit timing evidence — never inferred from
-    // status: 'available'. Sources: restrictions.availability === 'Now' OR
-    // notes containing "Available Now" (case-insensitive).
-    const readyNow = available.filter((l) => {
-      const r = l.restrictions as { availability?: string } | undefined;
-      if (r?.availability === 'Now') return true;
-      return (l.notes ?? '').toLowerCase().includes('available now');
-    });
-    const premiums = available.map((l) => l.premium ?? 0);
-    const startingAllIn = premiums.length > 0 ? BASE_ALL_IN_PRICE + Math.min(...premiums) : null;
+    const inv = deriveDbInventory(lots);
     return {
-      availableCount: available.length,
-      readyNowCount: readyNow.length,
-      startingAllIn,
+      ...inv,
+      startingAllIn: inv.startingPremium != null ? BASE_ALL_IN_PRICE + inv.startingPremium : null,
     };
   }, [lots]);
   return { metrics, isLoading };
@@ -82,34 +74,16 @@ function statusLabel(status: Development['status']) {
 }
 
 // All community CTAs route through /preview/* while SHOW_COMMUNITIES=false so
-// internal review can click the full buyer journey end-to-end. When the public
-// surface flips on, swap these prefixes back to /developments/...
-const COMMUNITY_ROUTE_PREFIX = '/preview/developments';
-
-function getCommunityBuildPath(
+// internal review can click the full buyer journey end-to-end. Centralized in
+// src/lib/communityRoutes.ts; flip `preview: false` once the public surface
+// is enabled.
+const getCommunityBuildPath = (
   development?: Pick<Development, 'slug' | 'status'> | null,
-) {
-  return development?.status === 'active'
-    ? `${COMMUNITY_ROUTE_PREFIX}/${development.slug}/build`
-    : null;
-}
+) => buildHrefHelper(development ?? null, { preview: true });
 
-// Slugs with both an active status AND existing static lot data driving the
-// site-plan route. Hard-coded to mirror src/data/lots/*.ts — adding a new lots
-// file requires explicitly adding the slug here.
-const SITE_PLAN_ELIGIBLE_SLUGS = new Set<string>([
-  'grand-haven',
-  'st-james-bay',
-  'ypsilanti',
-]);
-
-function getCommunitySitePlanPath(
+const getCommunitySitePlanPath = (
   development?: Pick<Development, 'slug' | 'status'> | null,
-) {
-  if (!development || development.status !== 'active') return null;
-  if (!SITE_PLAN_ELIGIBLE_SLUGS.has(development.slug)) return null;
-  return `${COMMUNITY_ROUTE_PREFIX}/${development.slug}/site-plan`;
-}
+) => sitePlanHrefHelper(development ?? null, { preview: true });
 
 // Compact list-row for the rail.
 function CommunityListItem({
