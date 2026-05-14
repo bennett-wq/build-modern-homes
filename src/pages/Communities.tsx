@@ -3,7 +3,7 @@
 // lot/model selection. Uses schematic regional map (not parcel-accurate); will
 // upgrade to live Mapbox once verified coordinates / GeoJSON land.
 import { useMemo, useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   MapPin,
@@ -15,7 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FinancingBadge } from '@/components/financing/FinancingBadge';
 import { AppraisalBadge } from '@/components/appraisal/AppraisalBadge';
@@ -76,6 +76,12 @@ function statusLabel(status: Development['status']) {
     default:
       return null;
   }
+}
+
+function getCommunityBuildPath(
+  development?: Pick<Development, 'slug' | 'status'> | null,
+) {
+  return development?.status === 'active' ? `/developments/${development.slug}/build` : null;
 }
 
 // Compact list-row for the rail.
@@ -141,10 +147,10 @@ function CommunityListItem({
 
 // Detail panel for the currently selected community.
 function CommunityDetail({ development }: { development: Development }) {
-  const navigate = useNavigate();
   const { metrics } = useCommunityMetrics(development.slug);
   const isActive = development.status === 'active';
   const hasImage = !!development.sitePlanImagePath;
+  const buildPath = getCommunityBuildPath(development);
 
   return (
     <motion.div
@@ -202,15 +208,14 @@ function CommunityDetail({ development }: { development: Development }) {
 
         {/* CTAs */}
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-          {isActive ? (
+          {buildPath ? (
             <>
-              <Button
-                onClick={() => navigate(`/developments/${development.slug}/build`)}
-                className="flex-1"
-              >
-                <Home className="mr-2 h-4 w-4" />
-                Get all-in price
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button asChild className="flex-1">
+                <a href={buildPath}>
+                  <Home className="mr-2 h-4 w-4" />
+                  Get all-in price
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </a>
               </Button>
               <Button asChild variant="outline" className="flex-1">
                 <Link to={`/developments/${development.slug}`}>View community</Link>
@@ -287,6 +292,7 @@ export default function Communities() {
   );
 
   const isSelectedActive = selected?.status === 'active';
+  const selectedBuildPath = getCommunityBuildPath(selected);
 
   // Smooth-scroll the mobile detail into view when selection changes via the rail.
   useEffect(() => {
@@ -382,7 +388,7 @@ export default function Communities() {
       </section>
 
       {/* Mobile sticky CTA for the selected active community */}
-      {selected && isSelectedActive && (
+      {selected && isSelectedActive && selectedBuildPath && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden">
           <div className="container mx-auto flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
@@ -393,12 +399,16 @@ export default function Communities() {
                 {selected.name}
               </div>
             </div>
-            <Button asChild size="sm" className="flex-shrink-0">
-              <Link to={`/developments/${selected.slug}/build`}>
-                Get all-in price
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Link>
-            </Button>
+            <a
+              key={selected.slug}
+              href={selectedBuildPath}
+              className={cn(buttonVariants({ size: 'sm' }), 'flex-shrink-0')}
+              aria-label={`Get all-in price for ${selected.name}`}
+              data-testid="selected-community-sticky-cta"
+            >
+              Get all-in price
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </a>
           </div>
         </div>
       )}
