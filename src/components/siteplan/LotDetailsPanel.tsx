@@ -32,12 +32,13 @@ export function LotDetailsPanel({
   onClose,
   className,
   isMobile = false,
+  buildHref,
 }: LotDetailsPanelProps) {
   if (!lot) return null;
 
   const statusInfo = STATUS_VARIANTS[lot.status];
   const contactUrl = `/contact?development=${developmentSlug}&lot=${lot.id}`;
-  const buildUrl = `/developments/${developmentSlug}/build?lot=${lot.id}`;
+  const buildUrl = buildHref ?? `/developments/${developmentSlug}/build?lot=${lot.id}`;
   const modelsUrl = `/models?development=${developmentSlug}&lot=${lot.id}`;
 
   const panelContent = (
