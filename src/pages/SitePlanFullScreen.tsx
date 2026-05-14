@@ -50,6 +50,12 @@ export default function SitePlanFullScreen() {
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
   const [staticLots, setStaticLots] = useState<Lot[]>(initialLots ?? []);
+  // Grand Haven is the only slug with phased product structure today.
+  // Default to Phase 1 (current/ready-now) so the existing Lot 15 build flow
+  // is untouched. Phase 2 is the 22-lot future concept and renders a
+  // coming-soon panel instead of mixed inventory.
+  const isGrandHaven = slug === 'grand-haven';
+  const [activePhase, setActivePhase] = useState<number>(1);
 
   // ---- Mapbox MVP gate (mirrors InteractiveSitePlan): token + map_center + GeoJSON lots ----
   const { lots: dbLots } = useLotsBySlug(slug);
