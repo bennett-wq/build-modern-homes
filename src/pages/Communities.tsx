@@ -1,38 +1,59 @@
-// Communities Listing Page - Entry point for "Get All-In Price"
-import { useState, useMemo } from 'react';
+// Communities — map-led discovery shell.
+// Premium proptech-style surface for selecting a BaseMod community before
+// lot/model selection. Uses schematic regional map (not parcel-accurate); will
+// upgrade to live Mapbox once verified coordinates / GeoJSON land.
+import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, ArrowRight, Bell, Building2, Home } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  MapPin,
+  ArrowRight,
+  Bell,
+  Building2,
+  Home,
+  CheckCircle2,
+  Sparkles,
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Section, SectionHeader } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FinancingBadge } from '@/components/financing/FinancingBadge';
 import { AppraisalBadge } from '@/components/appraisal/AppraisalBadge';
 import { developments, Development } from '@/data/developments';
 import { useLotsBySlug } from '@/hooks/useLots';
+import { CommunityMapPanel } from '@/components/communities/CommunityMapPanel';
 import { cn } from '@/lib/utils';
 
 // Base all-in price (default Hawthorne XMOD) for community pricing calculation
 const BASE_ALL_IN_PRICE = 253649;
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
+interface CommunityMetrics {
+  availableCount: number;
+  readyNowCount: number;
+  startingAllIn: number | null;
+}
 
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+function useCommunityMetrics(slug: string): { metrics: CommunityMetrics; isLoading: boolean } {
+  const { lots, isLoading } = useLotsBySlug(slug);
+  const metrics = useMemo<CommunityMetrics>(() => {
+    const available = lots.filter((l) => l.status === 'available');
+    const readyNow = available.filter((l) => {
+      const r = l.restrictions as { availability?: string; phase?: number } | undefined;
+      // Treat phase-1 / no-future-phase as ready-now signal we already have.
+      return !r?.availability || r.availability === 'available-now';
+    });
+    const premiums = available.map((l) => l.premium ?? 0);
+    const startingAllIn = premiums.length > 0 ? BASE_ALL_IN_PRICE + Math.min(...premiums) : null;
+    return {
+      availableCount: available.length,
+      readyNowCount: readyNow.length,
+      startingAllIn,
+    };
+  }, [lots]);
+  return { metrics, isLoading };
+}
 
-function getStatusBadge(status: Development['status']) {
+function statusLabel(status: Development['status']) {
   switch (status) {
     case 'active':
       return (
@@ -43,13 +64,13 @@ function getStatusBadge(status: Development['status']) {
     case 'coming-soon':
       return (
         <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
-          Coming Soon
+          Coming soon
         </Badge>
       );
     case 'sold-out':
       return (
         <Badge variant="secondary" className="bg-muted text-muted-foreground">
-          Sold Out
+          Sold out
         </Badge>
       );
     default:
@@ -57,270 +78,312 @@ function getStatusBadge(status: Development['status']) {
   }
 }
 
-function CommunityCard({ development }: { development: Development }) {
-  const navigate = useNavigate();
+// Compact list-row for the rail.
+function CommunityListItem({
+  development,
+  isSelected,
+  onSelect,
+}: {
+  development: Development;
+  isSelected: boolean;
+  onSelect: (slug: string) => void;
+}) {
+  const { metrics } = useCommunityMetrics(development.slug);
   const isActive = development.status === 'active';
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const hasSitePlanImage = development.sitePlanImagePath && development.sitePlanImagePath.length > 0;
-  
-  // Fetch lots for pricing info
-  const { lots, isLoading: lotsLoading } = useLotsBySlug(development.slug);
-  
-  // Calculate price range from lots
-  const priceRange = useMemo(() => {
-    if (!lots || lots.length === 0) return null;
-    
-    const availableLots = lots.filter(l => l.status === 'available');
-    if (availableLots.length === 0) return null;
-    
-    const premiums = availableLots.map(l => l.premium || 0);
-    const minPremium = Math.min(...premiums);
-    const maxPremium = Math.max(...premiums);
-    
-    return {
-      count: availableLots.length,
-      min: BASE_ALL_IN_PRICE + minPremium,
-      max: BASE_ALL_IN_PRICE + maxPremium,
-    };
-  }, [lots]);
-  
-  const handleGetAllInPrice = () => {
-    // Navigate to BuildWizard with community context
-    navigate(`/developments/${development.slug}/build`);
-  };
-  
+
   return (
-    <motion.div variants={fadeInUp}>
-      <Card className={cn(
-        'group h-full transition-all duration-300 border-border overflow-hidden',
-        'hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5',
-        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'
-      )}>
-        <CardContent className="p-0">
-          {/* Card Image */}
-          <div className="relative aspect-[16/10] bg-muted flex items-center justify-center border-b border-border overflow-hidden">
-            {/* Skeleton loader */}
-            {hasSitePlanImage && !imageLoaded && !imageError && (
-              <div className="absolute inset-0 bg-muted animate-pulse" />
-            )}
-            
-            {hasSitePlanImage && !imageError ? (
-              <img
-                src={development.sitePlanImagePath}
-                alt={`${development.name} site plan`}
-                className={cn(
-                  'w-full h-full object-cover transition-all duration-500',
-                  'group-hover:scale-105',
-                  imageLoaded ? 'opacity-100' : 'opacity-0'
-                )}
-                onLoad={() => setImageLoaded(true)}
-                onError={() => setImageError(true)}
-                loading="lazy"
-              />
-            ) : (
-              <Building2 className="h-12 w-12 text-muted-foreground/30" />
-            )}
-            
-            <div className="absolute top-3 right-3">
-              {getStatusBadge(development.status)}
-            </div>
-          </div>
-          
-          {/* Card Content */}
-          <div className="p-6">
-            <div className="flex items-start gap-2 mb-2">
-              <MapPin className="h-4 w-4 text-accent mt-1 flex-shrink-0" />
-              <span className="text-sm text-muted-foreground">
-                {development.city}, {development.state}
-              </span>
-            </div>
-            
-            <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-accent transition-colors">
+    <button
+      type="button"
+      onClick={() => onSelect(development.slug)}
+      aria-pressed={isSelected}
+      className={cn(
+        'w-full text-left rounded-lg border p-4 transition-all',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        isSelected
+          ? 'border-accent bg-accent/5 shadow-sm'
+          : 'border-border bg-background hover:border-accent/40 hover:bg-secondary/50',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-base font-semibold text-foreground">
               {development.name}
             </h3>
-            
-            {development.description && (
-              <p className="text-muted-foreground text-sm leading-relaxed mb-2 line-clamp-2">
-                {development.description}
-              </p>
-            )}
-            
-            {/* Price Range */}
-            {priceRange && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                <Home className="h-4 w-4 text-accent" />
-                <span className="font-medium text-foreground">
-                  {priceRange.count} {priceRange.count === 1 ? 'lot' : 'lots'}
-                </span>
-                <span>•</span>
-                <span>
-                  From ${priceRange.min.toLocaleString()} – ${priceRange.max.toLocaleString()}
-                </span>
-              </div>
-            )}
-            
-            <div className="pt-2">
-              {isActive ? (
-                <Button onClick={handleGetAllInPrice} className="w-full">
-                  <Home className="mr-2 h-4 w-4" />
-                  Explore Available Lots
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button asChild variant="outline" className="w-full">
-                  <Link to={`/developments/${development.slug}`}>
-                    <Bell className="mr-2 h-4 w-4" />
-                    Join Interest List
-                  </Link>
-                </Button>
-              )}
-            </div>
+            {statusLabel(development.status)}
           </div>
-        </CardContent>
-      </Card>
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3" />
+            {development.city}, {development.state}
+          </p>
+        </div>
+      </div>
+
+      {isActive && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">
+            {metrics.availableCount} {metrics.availableCount === 1 ? 'lot' : 'lots'}
+          </span>
+          {metrics.readyNowCount > 0 && (
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-green-600" />
+              {metrics.readyNowCount} ready now
+            </span>
+          )}
+          {metrics.startingAllIn && (
+            <span>From ${metrics.startingAllIn.toLocaleString()} all-in</span>
+          )}
+        </div>
+      )}
+    </button>
+  );
+}
+
+// Detail panel for the currently selected community.
+function CommunityDetail({ development }: { development: Development }) {
+  const navigate = useNavigate();
+  const { metrics } = useCommunityMetrics(development.slug);
+  const isActive = development.status === 'active';
+  const hasImage = !!development.sitePlanImagePath;
+
+  return (
+    <motion.div
+      key={development.slug}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-xl border border-border bg-background overflow-hidden"
+    >
+      <div className="relative aspect-[16/9] bg-muted">
+        {hasImage ? (
+          <img
+            src={development.sitePlanImagePath}
+            alt={`${development.name} site plan preview`}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <Building2 className="h-10 w-10 text-muted-foreground/40" />
+          </div>
+        )}
+        <div className="absolute right-3 top-3">{statusLabel(development.status)}</div>
+      </div>
+
+      <div className="p-5 sm:p-6">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <MapPin className="h-3.5 w-3.5 text-accent" />
+          {development.city}, {development.state}
+        </div>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+          {development.name}
+        </h2>
+        {development.description && (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-3">
+            {development.description}
+          </p>
+        )}
+
+        {/* Metrics row */}
+        {isActive && (
+          <div className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-border bg-secondary/40 p-3">
+            <Metric label="Available" value={metrics.availableCount.toString()} />
+            <Metric
+              label="Ready now"
+              value={metrics.readyNowCount > 0 ? metrics.readyNowCount.toString() : '—'}
+            />
+            <Metric
+              label="From"
+              value={metrics.startingAllIn ? `$${(metrics.startingAllIn / 1000).toFixed(0)}k` : '—'}
+              hint="all-in"
+            />
+          </div>
+        )}
+
+        {/* CTAs */}
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          {isActive ? (
+            <>
+              <Button
+                onClick={() => navigate(`/developments/${development.slug}/build`)}
+                className="flex-1"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Get all-in price
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button asChild variant="outline" className="flex-1">
+                <Link to={`/developments/${development.slug}`}>View community</Link>
+              </Button>
+            </>
+          ) : (
+            <Button asChild variant="outline" className="flex-1">
+              <Link to={`/developments/${development.slug}`}>
+                <Bell className="mr-2 h-4 w-4" />
+                Join interest list
+              </Link>
+            </Button>
+          )}
+        </div>
+
+        {/* Future-incentives placeholder */}
+        {isActive && (
+          <p className="mt-4 flex items-start gap-2 rounded-md border border-dashed border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
+            <span>Financing and incentive review comes next in your build flow.</span>
+          </p>
+        )}
+      </div>
     </motion.div>
   );
 }
 
+function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div>
+      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 text-lg font-semibold text-foreground">
+        {value}
+        {hint && (
+          <span className="ml-1 text-[10px] font-normal text-muted-foreground">{hint}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Communities() {
-  const isMobile = useIsMobile();
-  const activeDevelopments = developments.filter(d => d.status === 'active');
-  const upcomingDevelopments = developments.filter(d => d.status === 'coming-soon');
-  const soldOutDevelopments = developments.filter(d => d.status === 'sold-out');
+  const ordered = useMemo(() => {
+    const rank = (s: Development['status']) =>
+      s === 'active' ? 0 : s === 'coming-soon' ? 1 : 2;
+    return [...developments].sort((a, b) => rank(a.status) - rank(b.status));
+  }, []);
+
+  const firstActive = ordered.find((d) => d.status === 'active') ?? ordered[0];
+  const [selectedSlug, setSelectedSlug] = useState<string>(firstActive?.slug ?? '');
+  const selected = ordered.find((d) => d.slug === selectedSlug) ?? firstActive;
+
+  // Keep selection stable if the dataset changes.
+  useEffect(() => {
+    if (!ordered.find((d) => d.slug === selectedSlug) && firstActive) {
+      setSelectedSlug(firstActive.slug);
+    }
+  }, [ordered, selectedSlug, firstActive]);
+
+  const activeCount = ordered.filter((d) => d.status === 'active').length;
+
+  const mapCommunities = useMemo(
+    () =>
+      ordered.map((d) => ({
+        slug: d.slug,
+        name: d.name,
+        city: d.city,
+        state: d.state,
+        status: d.status,
+      })),
+    [ordered],
+  );
 
   return (
     <Layout>
-      {/* Hero Section - Compressed for mobile */}
-      <section className="relative py-6 sm:py-12 lg:py-24 bg-secondary">
-        <div className="container mx-auto px-4 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
-          >
-            {/* Hide label on mobile */}
-            {!isMobile && (
-              <div className="flex items-center gap-2 text-accent mb-4">
-                <Building2 size={20} />
-                <span className="text-sm font-medium uppercase tracking-wider">Our Communities</span>
+      {/* Compact hero */}
+      <section className="border-b border-border bg-secondary">
+        <div className="container mx-auto px-4 py-6 sm:py-10 lg:px-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="hidden sm:flex items-center gap-2 text-accent mb-2">
+                <Building2 size={18} />
+                <span className="text-xs font-medium uppercase tracking-wider">
+                  Community discovery
+                </span>
               </div>
-            )}
-            
-            {/* Compact heading with count badge */}
-            <div className="flex items-center gap-3 flex-wrap mb-2 sm:mb-4">
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground">
-                Communities
-              </h1>
-              <Badge className="bg-accent/10 text-accent border-accent/20">
-                {activeDevelopments.length} Active
-              </Badge>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+                  Communities
+                </h1>
+                <Badge className="bg-accent/10 text-accent border-accent/20">
+                  {activeCount} Active
+                </Badge>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                Pick a community to see live lot inventory and your all-in price.
+              </p>
             </div>
-            
-            {/* Short one-liner description */}
-            <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed mb-3 sm:mb-4">
-              All-in pricing on available lots
-            </p>
-            
-            {/* Trust Signals - Hide on mobile */}
-            <div className="hidden sm:flex flex-col sm:flex-row gap-3">
-              <FinancingBadge variant="inline" className="text-muted-foreground" />
-              <span className="hidden sm:inline text-muted-foreground/50">•</span>
-              <AppraisalBadge variant="inline" className="text-muted-foreground" />
+            <div className="hidden flex-col gap-1 text-right text-xs text-muted-foreground sm:flex">
+              <FinancingBadge variant="inline" />
+              <AppraisalBadge variant="inline" />
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Active Communities */}
-      {activeDevelopments.length > 0 && (
-        <Section>
-          <SectionHeader
-            title="Active Communities"
-            subtitle="Lots available now — get your all-in price and start your build."
-          />
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-          >
-            {activeDevelopments.map((dev) => (
-              <CommunityCard key={dev.slug} development={dev} />
-            ))}
-          </motion.div>
-        </Section>
-      )}
+      {/* Discovery shell */}
+      <section className="container mx-auto px-4 py-6 lg:px-8 lg:py-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Map panel — first on mobile, left on desktop */}
+          <div className="order-1 lg:order-1 lg:col-span-7">
+            <div className="lg:sticky lg:top-24">
+              <CommunityMapPanel
+                communities={mapCommunities}
+                selectedSlug={selectedSlug}
+                onSelect={setSelectedSlug}
+                className="aspect-[16/10] lg:aspect-[5/4]"
+              />
+              {selected && (
+                <div className="mt-4 lg:hidden">
+                  <CommunityDetail development={selected} />
+                </div>
+              )}
+            </div>
+          </div>
 
-      {/* Coming Soon */}
-      {upcomingDevelopments.length > 0 && (
-        <Section className="bg-secondary">
-          <SectionHeader
-            title="Coming Soon"
-            subtitle="Join the interest list to be notified when lots become available."
-          />
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-          >
-            {upcomingDevelopments.map((dev) => (
-              <CommunityCard key={dev.slug} development={dev} />
-            ))}
-          </motion.div>
-        </Section>
-      )}
+          {/* Rail — list + detail on desktop */}
+          <div className="order-2 lg:order-2 lg:col-span-5">
+            <div className="space-y-2">
+              <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                All communities
+              </h2>
+              <div className="space-y-2">
+                {ordered.map((d) => (
+                  <CommunityListItem
+                    key={d.slug}
+                    development={d}
+                    isSelected={d.slug === selectedSlug}
+                    onSelect={setSelectedSlug}
+                  />
+                ))}
+              </div>
+            </div>
 
-      {/* Sold Out */}
-      {soldOutDevelopments.length > 0 && (
-        <Section>
-          <SectionHeader
-            title="Completed Communities"
-            subtitle="These communities are fully sold. View our active developments above."
-          />
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-          >
-            {soldOutDevelopments.map((dev) => (
-              <CommunityCard key={dev.slug} development={dev} />
-            ))}
-          </motion.div>
-        </Section>
-      )}
-
-      {/* CTA Section */}
-      <Section dark>
-        <div className="text-center max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-primary-foreground">
-              Have Your Own Land?
-            </h2>
-            <p className="text-primary-foreground/70 text-lg leading-relaxed mb-8">
-              You can also build a BaseMod home on your own property. 
-              Get a quote and we'll help you understand your options.
-            </p>
-            <Button asChild size="lg">
-              <Link to="/build">
-                Get a Quote
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </motion.div>
+            {selected && (
+              <div className="mt-6 hidden lg:block">
+                <CommunityDetail development={selected} />
+              </div>
+            )}
+          </div>
         </div>
-      </Section>
+      </section>
+
+      {/* Own-land CTA */}
+      <section className="border-t border-border bg-primary py-12 sm:py-16">
+        <div className="container mx-auto px-4 text-center lg:px-8">
+          <h2 className="text-2xl font-semibold text-primary-foreground sm:text-3xl">
+            Have your own land?
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/70 sm:text-base">
+            Build a BaseMod home on your own property. Get a quote and we'll help you
+            understand your options.
+          </p>
+          <Button asChild size="lg" className="mt-6">
+            <Link to="/build">
+              Get a quote
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </section>
     </Layout>
   );
 }
