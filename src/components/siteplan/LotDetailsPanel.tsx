@@ -12,6 +12,12 @@ interface LotDetailsPanelProps {
   onClose: () => void;
   className?: string;
   isMobile?: boolean;
+  /**
+   * Preview-aware build URL for this lot (already includes ?lot= when applicable).
+   * When provided, overrides the legacy public-route fallback so preview pages
+   * never leak `/developments/...` links.
+   */
+  buildHref?: string;
 }
 
 const STATUS_VARIANTS: Record<LotStatus, { variant: 'default' | 'secondary' | 'outline'; label: string }> = {
