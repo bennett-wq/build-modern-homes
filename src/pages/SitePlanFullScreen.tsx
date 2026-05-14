@@ -15,7 +15,7 @@ import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { ypsilantiLots } from '@/data/lots/ypsilanti';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { isPreviewPath, communitiesHref as communitiesHrefHelper } from '@/lib/communityRoutes';
+import { isPreviewPath, communitiesHref as communitiesHrefHelper, buildHref } from '@/lib/communityRoutes';
 import { deriveStaticInventory } from '@/lib/communityInventory';
 
 // Slugs with both an active development AND existing static lot data.
@@ -127,7 +127,14 @@ export default function SitePlanFullScreen() {
   const inventory = deriveStaticInventory(lots);
   const availableCount = inventory.availableCount;
   const readyNowCount = inventory.readyNowCount;
-  const buildPath = `${routePrefix}/${slug}/build`;
+  // Carry the selected lot into the build flow when one is picked AND available.
+  // Falls back gracefully to community-level build URL otherwise.
+  const isSelectedLotAvailable = selectedLot?.status === 'available';
+  const buildPath =
+    buildHref(development, {
+      preview: isPreview,
+      lot: isSelectedLotAvailable ? String(selectedLot!.id) : null,
+    }) ?? `${routePrefix}/${slug}/build`;
 
   return (
     <Layout>
