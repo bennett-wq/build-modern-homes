@@ -242,15 +242,44 @@ export default function SitePlanFullScreen() {
                 className={cn('relative', isMobile ? 'w-full' : 'flex-1')}
                 style={{ height: isMobile ? '60vh' : '75vh' }}
               >
-                <FixedSitePlanViewer
-                  sitePlanImagePath={development.sitePlanImagePath}
-                  lots={lots}
-                  onSelectLot={handleSelectLot}
-                  selectedLotId={selectedLot?.id ?? null}
-                  hoveredLotId={hoveredLotId}
-                  onHoverLot={setHoveredLotId}
-                  className="h-full"
-                />
+                {canUseMapbox && dbDevelopment && adapted ? (
+                  <MapboxLotPicker
+                    development={dbDevelopment}
+                    lots={dbLots}
+                    selectedLotId={
+                      selectedLot
+                        ? [...adapted.uuidToNumericId.entries()].find(
+                            ([, n]) => n === selectedLot.id,
+                          )?.[0] ?? null
+                        : null
+                    }
+                    filteredLotIds={new Set(dbLots.map((l) => l.id))}
+                    onSelectLot={(dbLot: DbLot | null) => {
+                      if (!dbLot) return setSelectedLot(null);
+                      const numericId = adapted.uuidToNumericId.get(dbLot.id);
+                      const display =
+                        numericId != null
+                          ? adapted.displayLots.find((l) => l.id === numericId)
+                          : null;
+                      setSelectedLot(display ?? null);
+                    }}
+                    onHoverLot={(uuid) => {
+                      if (!uuid) return setHoveredLotId(null);
+                      setHoveredLotId(adapted.uuidToNumericId.get(uuid) ?? null);
+                    }}
+                    className="h-full"
+                  />
+                ) : (
+                  <FixedSitePlanViewer
+                    sitePlanImagePath={development.sitePlanImagePath}
+                    lots={lots}
+                    onSelectLot={handleSelectLot}
+                    selectedLotId={selectedLot?.id ?? null}
+                    hoveredLotId={hoveredLotId}
+                    onHoverLot={setHoveredLotId}
+                    className="h-full"
+                  />
+                )}
 
                 {selectedLot && (
                   <LotDetailsPanel
