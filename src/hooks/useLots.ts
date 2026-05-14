@@ -179,22 +179,31 @@ function mapStaticLotsToDbFormat(staticLots: Array<{
   availability?: string;
   requiresWellSeptic?: boolean;
 }>, developmentId: string): Lot[] {
-  return staticLots.map((lot) => ({
-    id: lot.id.toString(),
-    development_id: developmentId,
-    lot_number: lot.label,
-    status: lot.status as Lot['status'],
-    acreage: lot.acreage || null,
-    net_acreage: lot.netAcreage || null,
-    premium: lot.premium || 0,
-    polygon_coordinates: lot.polygon && lot.polygon.length > 0
-      ? { type: 'image-xy' as const, points: lot.polygon }
-      : null,
-    restrictions: lot.requiresWellSeptic ? { notes: 'Well & septic required' } : {},
-    notes: lot.notes || null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }));
+  return staticLots.map((lot) => {
+    // Preserve explicit timing evidence + well/septic notes through the
+    // static→DB shape mapping so the canonical Ready Now rule in
+    // src/lib/communityInventory.ts still fires on the fallback path.
+    const restrictions: LotRestrictions = {};
+    if (lot.availability) restrictions.availability = lot.availability;
+    if (lot.requiresWellSeptic) restrictions.notes = 'Well & septic required';
+
+    return {
+      id: lot.id.toString(),
+      development_id: developmentId,
+      lot_number: lot.label,
+      status: lot.status as Lot['status'],
+      acreage: lot.acreage || null,
+      net_acreage: lot.netAcreage || null,
+      premium: lot.premium || 0,
+      polygon_coordinates: lot.polygon && lot.polygon.length > 0
+        ? { type: 'image-xy' as const, points: lot.polygon }
+        : null,
+      restrictions,
+      notes: lot.notes || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  });
 }
 
 // ============================================================================

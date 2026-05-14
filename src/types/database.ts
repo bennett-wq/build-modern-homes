@@ -119,6 +119,12 @@ export interface LotRestrictions {
   minSqft?: number;
   allowedModels?: string[];
   notes?: string;
+  /**
+   * Lot delivery timing. Canonical value 'Now' is the only string that drives
+   * the Ready Now metric (see src/lib/communityInventory.ts). Other strings
+   * (e.g. 'Fall 2026') are display-only.
+   */
+  availability?: string;
 }
 
 /**

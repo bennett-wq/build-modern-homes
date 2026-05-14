@@ -15,6 +15,8 @@ import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { ypsilantiLots } from '@/data/lots/ypsilanti';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { isPreviewPath, communitiesHref as communitiesHrefHelper } from '@/lib/communityRoutes';
+import { deriveStaticInventory } from '@/lib/communityInventory';
 
 // Slugs with both an active development AND existing static lot data.
 // Mirror src/data/lots/*.ts; adding a new lots file requires updating this map.
@@ -28,9 +30,9 @@ export default function SitePlanFullScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const isPreview = location.pathname.startsWith('/preview/');
+  const isPreview = isPreviewPath(location.pathname);
   const routePrefix = isPreview ? '/preview/developments' : '/developments';
-  const communitiesHref = isPreview ? '/preview/communities' : '/developments';
+  const communitiesHref = communitiesHrefHelper({ preview: isPreview });
   const isEditMode = searchParams.get('edit') === '1';
   const isMobile = useIsMobile();
 
@@ -120,13 +122,11 @@ export default function SitePlanFullScreen() {
   }
 
   // Buyer-facing metrics (counts only — no fabricated price math).
-  // Ready Now requires explicit timing evidence: availability === 'Now' OR
-  // notes containing "Available Now". Never inferred from status: available.
-  const availableLots = lots.filter((l) => l.status === 'available');
-  const availableCount = availableLots.length;
-  const readyNowCount = availableLots.filter(
-    (l) => l.availability === 'Now' || (l.notes ?? '').toLowerCase().includes('available now'),
-  ).length;
+  // Ready Now rule lives in src/lib/communityInventory.ts; never inferred
+  // from status: 'available'.
+  const inventory = deriveStaticInventory(lots);
+  const availableCount = inventory.availableCount;
+  const readyNowCount = inventory.readyNowCount;
   const buildPath = `${routePrefix}/${slug}/build`;
 
   return (
