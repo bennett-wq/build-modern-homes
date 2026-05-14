@@ -134,19 +134,12 @@ export default function SitePlanFullScreen() {
   const inventory = deriveStaticInventory(lots);
   const availableCount = inventory.availableCount;
   const readyNowCount = inventory.readyNowCount;
-  // Carry the selected lot into the build flow when one is picked AND available.
-  // Falls back gracefully to community-level build URL otherwise.
-  const selectedBuildPath = useMemo(() => {
-    const selectedLotId = selectedLot?.status === 'available' ? String(selectedLot.id) : null;
-    return (
-      buildHref(development, {
-        preview: isPreview,
-        lot: selectedLotId,
-      }) ?? `${routePrefix}/${slug}/build`
-    );
-  }, [development, isPreview, routePrefix, selectedLot, slug]);
-
-  const selectedBuildPathKey = `${selectedBuildPath}|${selectedLot?.id ?? 'none'}`;
+  const selectedLotId = selectedLot?.status !== 'sold' ? String(selectedLot.id) : null;
+  const selectedBuildPath =
+    buildHref(development, {
+      preview: isPreview,
+      lot: selectedLotId,
+    }) ?? `${routePrefix}/${slug}/build`;
 
   return (
     <Layout>
@@ -195,10 +188,10 @@ export default function SitePlanFullScreen() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
               <Button asChild size="lg">
-                <Link key={`hero-${selectedBuildPathKey}`} to={selectedBuildPath}>
+                <a href={selectedBuildPath}>
                   Start your build
                   <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
+                </a>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link to={`${routePrefix}/${slug}`}>Community details</Link>
@@ -233,7 +226,7 @@ export default function SitePlanFullScreen() {
 
                 {selectedLot && (
                   <LotDetailsPanel
-                    key={`lot-panel-${selectedBuildPathKey}`}
+                    key={`lot-panel-${selectedBuildPath}`}
                     lot={selectedLot}
                     developmentSlug={development.slug}
                     onClose={() => setSelectedLot(null)}
@@ -284,10 +277,10 @@ export default function SitePlanFullScreen() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild>
-                <Link key={`about-${selectedBuildPathKey}`} to={selectedBuildPath}>
+                <a href={selectedBuildPath}>
                   Start your build
                   <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
+                </a>
               </Button>
               <Button asChild variant="outline">
                 <Link to={`/contact?development=${slug}`}>Schedule a site visit</Link>
@@ -301,10 +294,10 @@ export default function SitePlanFullScreen() {
       {isMobile && (
         <div className="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button asChild className="w-full" size="lg">
-            <Link key={`mobile-${selectedBuildPathKey}`} to={selectedBuildPath}>
+            <a href={selectedBuildPath}>
               {selectedLot ? `Build on Lot ${selectedLot.label}` : 'Start your build'}
               <ArrowRight className="h-4 w-4 ml-2" />
-            </Link>
+            </a>
           </Button>
         </div>
       )}

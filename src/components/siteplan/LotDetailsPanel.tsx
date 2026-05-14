@@ -124,11 +124,11 @@ export function LotDetailsPanel({
       {lot.status !== 'sold' && (
         <div className="pt-6 border-t border-border mt-auto space-y-3">
           <Button asChild className="w-full">
-            <Link key={buildUrl} to={buildUrl}>
+            <a href={buildUrl}>
               <Home className="mr-2 h-4 w-4" />
               Build on This Lot
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+            </a>
           </Button>
           <Button asChild variant="outline" className="w-full">
             <Link to={contactUrl}>
