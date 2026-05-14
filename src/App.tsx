@@ -73,6 +73,13 @@ const App = () => (
               <Route path="/development" element={<Navigate to="/" replace />} />
             </>
           )}
+          {/*
+            Internal review route for the Communities discovery shell while the
+            public surface remains gated behind SHOW_COMMUNITIES. Not linked from
+            header/footer/nav. Safe to leave mounted: it only renders the same
+            client-side component and reads existing public data.
+          */}
+          <Route path="/preview/communities" element={<Communities />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/models" element={<Models />} />
           <Route path="/models/:modelId" element={<ModelDetail />} />
