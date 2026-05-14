@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FixedSitePlanViewer } from '@/components/siteplan/FixedSitePlanViewer';
 import { LotListPanel } from '@/components/siteplan/LotListPanel';
@@ -15,6 +15,7 @@ import { ypsilantiLots } from '@/data/lots/ypsilanti';
 import { useLotsBySlug } from '@/hooks/useLots';
 import { useDevelopments } from '@/hooks/useDevelopments';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { buildHref, isPreviewPath, sitePlanHref } from '@/lib/communityRoutes';
 import { cn } from '@/lib/utils';
 import type { Development as DbDevelopment, Lot as DbLot } from '@/types/database';
 
@@ -27,6 +28,8 @@ export function InteractiveSitePlan({
   developmentSlug = 'grand-haven',
   className,
 }: InteractiveSitePlanProps) {
+  const location = useLocation();
+  const isPreview = isPreviewPath(location.pathname);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
   const [showMobileList, setShowMobileList] = useState(false);
@@ -132,6 +135,14 @@ export function InteractiveSitePlan({
       ? [...adapted.uuidToNumericId.entries()].find(([, n]) => n === selectedLot.id)?.[0] ?? null
       : null;
 
+  const fullScreenPath =
+    sitePlanHref(development, { preview: isPreview }) ?? `/developments/${developmentSlug}/site-plan`;
+  const selectedBuildPath =
+    buildHref(development, {
+      preview: isPreview,
+      lot: selectedLot?.status === 'available' ? String(selectedLot.id) : null,
+    }) ?? `/developments/${developmentSlug}/build`;
+
   return (
     <div className={className}>
       {/* Stats Bar */}
@@ -168,7 +179,7 @@ export function InteractiveSitePlan({
             </Button>
           )}
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/developments/${developmentSlug}/site-plan`}>
+            <Link to={fullScreenPath}>
               <Maximize2 className="h-4 w-4 mr-2" />
               Full Screen
             </Link>
@@ -228,6 +239,7 @@ export function InteractiveSitePlan({
                 developmentSlug={development.slug}
                 onClose={() => setSelectedLot(null)}
                 isMobile={isMobile}
+                buildHref={selectedBuildPath}
               />
             )}
           </div>
