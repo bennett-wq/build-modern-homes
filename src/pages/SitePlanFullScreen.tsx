@@ -120,10 +120,12 @@ export default function SitePlanFullScreen() {
   }
 
   // Buyer-facing metrics (counts only — no fabricated price math).
+  // Ready Now requires explicit timing evidence: availability === 'Now' OR
+  // notes containing "Available Now". Never inferred from status: available.
   const availableLots = lots.filter((l) => l.status === 'available');
   const availableCount = availableLots.length;
   const readyNowCount = availableLots.filter(
-    (l) => !l.availability || /now/i.test(l.availability),
+    (l) => l.availability === 'Now' || (l.notes ?? '').toLowerCase().includes('available now'),
   ).length;
   const buildPath = `${routePrefix}/${slug}/build`;
 
