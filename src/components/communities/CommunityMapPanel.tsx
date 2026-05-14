@@ -182,7 +182,7 @@ export function CommunityMapPanel({
                   y={15}
                   textAnchor="middle"
                   fill="hsl(var(--foreground))"
-                  fontSize="12
+                  fontSize="12"
                   fontWeight={isSelected ? 600 : 500}
                   style={{ pointerEvents: 'none', userSelect: 'none' }}
                 >
