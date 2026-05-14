@@ -15,7 +15,7 @@ import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { ypsilantiLots } from '@/data/lots/ypsilanti';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { isPreviewPath, communitiesHref as communitiesHrefHelper } from '@/lib/communityRoutes';
+import { isPreviewPath, communitiesHref as communitiesHrefHelper, buildHref } from '@/lib/communityRoutes';
 import { deriveStaticInventory } from '@/lib/communityInventory';
 
 // Slugs with both an active development AND existing static lot data.
