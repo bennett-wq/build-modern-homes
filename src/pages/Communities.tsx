@@ -84,6 +84,23 @@ function getCommunityBuildPath(
   return development?.status === 'active' ? `/developments/${development.slug}/build` : null;
 }
 
+// Slugs with both an active status AND existing static lot data driving the
+// /developments/:slug/site-plan route. Hard-coded to mirror src/data/lots/*.ts —
+// adding a new lots file requires explicitly adding the slug here.
+const SITE_PLAN_ELIGIBLE_SLUGS = new Set<string>([
+  'grand-haven',
+  'st-james-bay',
+  'ypsilanti',
+]);
+
+function getCommunitySitePlanPath(
+  development?: Pick<Development, 'slug' | 'status'> | null,
+) {
+  if (!development || development.status !== 'active') return null;
+  if (!SITE_PLAN_ELIGIBLE_SLUGS.has(development.slug)) return null;
+  return `/developments/${development.slug}/site-plan`;
+}
+
 // Compact list-row for the rail.
 function CommunityListItem({
   development,
