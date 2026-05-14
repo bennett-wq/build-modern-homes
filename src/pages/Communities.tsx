@@ -318,7 +318,7 @@ export default function Communities() {
                 </Badge>
               </div>
               <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-                Choose a community to see live lots and your all-in price.
+                Choose a community to see available lots and your all-in price.
               </p>
             </div>
             <div className="hidden flex-col gap-1 text-right text-xs text-muted-foreground sm:flex">
