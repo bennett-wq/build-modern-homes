@@ -328,6 +328,7 @@ export default function Communities() {
 
   const isSelectedActive = selected?.status === 'active';
   const selectedBuildPath = getCommunityBuildPath(selected);
+  const selectedSitePlanPath = getCommunitySitePlanPath(selected);
 
   // Smooth-scroll the mobile detail into view when selection changes via the rail.
   useEffect(() => {
