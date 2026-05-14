@@ -49,7 +49,30 @@ export default function SitePlanFullScreen() {
 
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
-  const [lots, setLots] = useState<Lot[]>(initialLots ?? []);
+  const [staticLots, setStaticLots] = useState<Lot[]>(initialLots ?? []);
+
+  // ---- Mapbox MVP gate (mirrors InteractiveSitePlan): token + map_center + GeoJSON lots ----
+  const { lots: dbLots } = useLotsBySlug(slug);
+  const { developments: dbDevelopments } = useDevelopments();
+  const dbDevelopment = useMemo<DbDevelopment | undefined>(
+    () => dbDevelopments?.find((d) => d.slug === slug),
+    [dbDevelopments, slug],
+  );
+  const canUseMapbox = useMemo(() => {
+    const hasToken = Boolean(import.meta.env.VITE_MAPBOX_TOKEN);
+    const hasCenter =
+      typeof dbDevelopment?.map_center_lng === 'number' &&
+      typeof dbDevelopment?.map_center_lat === 'number';
+    const hasGeoJsonLots = dbLots.some(
+      (l) => l.polygon_coordinates?.type === 'Polygon',
+    );
+    return hasToken && hasCenter && hasGeoJsonLots;
+  }, [dbDevelopment, dbLots]);
+  const adapted = useMemo(
+    () => (canUseMapbox ? adaptDbLots(dbLots) : null),
+    [canUseMapbox, dbLots],
+  );
+  const lots: Lot[] = canUseMapbox && adapted ? adapted.displayLots : staticLots;
 
   useEffect(() => {
     setSelectedLot((current) => {
