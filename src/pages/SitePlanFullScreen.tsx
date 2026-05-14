@@ -12,7 +12,7 @@ import { LotDetailsPanel } from '@/components/siteplan/LotDetailsPanel';
 import { MapboxLotPicker } from '@/components/siteplan/MapboxLotPicker';
 import { adaptDbLots } from '@/components/siteplan/lot-adapter';
 import { getDevelopmentBySlug } from '@/data/developments';
-import { grandHavenLots, Lot } from '@/data/lots/grand-haven';
+import { grandHavenLots, grandHavenPhases, Lot } from '@/data/lots/grand-haven';
 import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { ypsilantiLots } from '@/data/lots/ypsilanti';
 import { useLotsBySlug } from '@/hooks/useLots';
