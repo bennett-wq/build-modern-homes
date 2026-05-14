@@ -30,9 +30,11 @@ export default function SitePlanFullScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const isPreview = location.pathname.startsWith('/preview/');
+  const isPreview = isPreviewPath(location.pathname);
   const routePrefix = isPreview ? '/preview/developments' : '/developments';
-  const communitiesHref = isPreview ? '/preview/communities' : '/developments';
+  const communitiesHref = communitiesHrefHelper({ preview: isPreview });
+  const isEditMode = searchParams.get('edit') === '1';
+  const isMobile = useIsMobile();
   const isEditMode = searchParams.get('edit') === '1';
   const isMobile = useIsMobile();
 
