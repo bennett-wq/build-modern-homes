@@ -29,6 +29,43 @@ export interface Lot {
 // Status: Active (BaseMod Lots For Sale)
 // Notes: No HOA restrictions on lots 1-13. All lots require well & septic.
 
+// Phase metadata. Phase 1 is the ready-now buyer-facing phase backed by
+// real lot rows below. Phase 2 is the 22-lot future concept from
+// "Grand Haven Phase 2 Site Plan.pdf" (25201827-PREL1.pdf) and is
+// represented as planning-stage only — no fabricated polygons or pricing.
+export interface GrandHavenPhase {
+  id: number;
+  label: string;          // "Phase 1"
+  status: 'current' | 'future';
+  availability: string;   // "Available now" | "Future phase"
+  plannedLotCount: number;
+  source: string;         // PDF filename of record
+  description: string;
+}
+
+export const grandHavenPhases: GrandHavenPhase[] = [
+  {
+    id: 1,
+    label: 'Phase 1',
+    status: 'current',
+    availability: 'Available now',
+    plannedLotCount: 4,
+    source: 'Grand Haven Phase 1 Site Plan.pdf (25201827DSC.2.pdf)',
+    description:
+      'Ready-now homesites along Cedar Road. Select a lot to carry into the build flow.',
+  },
+  {
+    id: 2,
+    label: 'Phase 2',
+    status: 'future',
+    availability: 'Future phase',
+    plannedLotCount: 22,
+    source: 'Grand Haven Phase 2 Site Plan.pdf (25201827-PREL1.pdf)',
+    description:
+      '22-lot concept currently in engineering. Final acreage, pricing, and parcel geometry are pending — join the interest list to be notified when Phase 2 opens.',
+  },
+];
+
 export const grandHavenLots: Lot[] = [
   // Phase 2 - Fall 2026
   {
