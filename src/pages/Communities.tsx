@@ -168,6 +168,8 @@ function CommunityDetail({ development }: { development: Development }) {
   const isActive = development.status === 'active';
   const hasImage = !!development.sitePlanImagePath;
   const buildPath = getCommunityBuildPath(development);
+  const sitePlanPath = getCommunitySitePlanPath(development);
+  const availableLotsCount = metrics.availableCount;
 
   return (
     <motion.div
