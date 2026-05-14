@@ -225,6 +225,7 @@ export default function SitePlanFullScreen() {
                     developmentSlug={development.slug}
                     onClose={() => setSelectedLot(null)}
                     isMobile={isMobile}
+                    buildHref={buildPath}
                   />
                 )}
               </div>

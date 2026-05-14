@@ -12,6 +12,12 @@ interface LotDetailsPanelProps {
   onClose: () => void;
   className?: string;
   isMobile?: boolean;
+  /**
+   * Preview-aware build URL for this lot (already includes ?lot= when applicable).
+   * When provided, overrides the legacy public-route fallback so preview pages
+   * never leak `/developments/...` links.
+   */
+  buildHref?: string;
 }
 
 const STATUS_VARIANTS: Record<LotStatus, { variant: 'default' | 'secondary' | 'outline'; label: string }> = {
@@ -26,12 +32,13 @@ export function LotDetailsPanel({
   onClose,
   className,
   isMobile = false,
+  buildHref,
 }: LotDetailsPanelProps) {
   if (!lot) return null;
 
   const statusInfo = STATUS_VARIANTS[lot.status];
   const contactUrl = `/contact?development=${developmentSlug}&lot=${lot.id}`;
-  const buildUrl = `/developments/${developmentSlug}/build?lot=${lot.id}`;
+  const buildUrl = buildHref ?? `/developments/${developmentSlug}/build?lot=${lot.id}`;
   const modelsUrl = `/models?development=${developmentSlug}&lot=${lot.id}`;
 
   const panelContent = (
