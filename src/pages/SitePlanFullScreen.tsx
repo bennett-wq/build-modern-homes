@@ -125,7 +125,7 @@ export default function SitePlanFullScreen() {
   const readyNowCount = availableLots.filter(
     (l) => !l.availability || /now/i.test(l.availability),
   ).length;
-  const buildPath = `/developments/${slug}/build`;
+  const buildPath = `${routePrefix}/${slug}/build`;
 
   return (
     <Layout>
