@@ -250,6 +250,22 @@ function CommunityDetail({ development }: { development: Development }) {
           )}
         </div>
 
+        {/* Secondary: lot-level deep link into existing site-plan route */}
+        {sitePlanPath && (
+          <div className="mt-3">
+            <a
+              key={`${development.slug}-siteplan`}
+              href={sitePlanPath}
+              data-testid="community-siteplan-link"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              Preview {availableLotsCount > 0 ? `${availableLotsCount} ` : ''}available {availableLotsCount === 1 ? 'lot' : 'lots'}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        )}
+
         {/* Future-incentives placeholder */}
         {isActive && (
           <p className="mt-4 flex items-start gap-2 rounded-md border border-dashed border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
