@@ -78,7 +78,13 @@ export default function SitePlanFullScreen() {
     () => (canUseMapbox ? adaptDbLots(dbLots) : null),
     [canUseMapbox, dbLots],
   );
-  const lots: Lot[] = canUseMapbox && adapted ? adapted.displayLots : staticLots;
+  const allLots: Lot[] = canUseMapbox && adapted ? adapted.displayLots : staticLots;
+  // For Grand Haven, only show lots whose phase matches the active phase tab.
+  // Lots without a phase value default to Phase 1 to preserve historical
+  // behavior. For all other slugs, no filtering — every lot renders.
+  const lots: Lot[] = isGrandHaven
+    ? allLots.filter((l) => (l.phase ?? 1) === activePhase)
+    : allLots;
 
   useEffect(() => {
     setSelectedLot((current) => {
