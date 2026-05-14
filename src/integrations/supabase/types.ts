@@ -103,6 +103,9 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          map_center_lat: number | null
+          map_center_lng: number | null
+          map_zoom: number | null
           name: string
           pricing_zone_id: string | null
           site_plan_image_url: string | null
@@ -118,6 +121,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          map_center_lat?: number | null
+          map_center_lng?: number | null
+          map_zoom?: number | null
           name: string
           pricing_zone_id?: string | null
           site_plan_image_url?: string | null
@@ -133,6 +139,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          map_center_lat?: number | null
+          map_center_lng?: number | null
+          map_zoom?: number | null
           name?: string
           pricing_zone_id?: string | null
           site_plan_image_url?: string | null
@@ -494,6 +503,7 @@ export type Database = {
           sqft: number
           tagline: string | null
           updated_at: string
+          width: number | null
         }
         Insert: {
           badge?: string | null
@@ -513,6 +523,7 @@ export type Database = {
           sqft: number
           tagline?: string | null
           updated_at?: string
+          width?: number | null
         }
         Update: {
           badge?: string | null
@@ -532,6 +543,7 @@ export type Database = {
           sqft?: number
           tagline?: string | null
           updated_at?: string
+          width?: number | null
         }
         Relationships: []
       }
