@@ -74,12 +74,16 @@ const App = () => (
             </>
           )}
           {/*
-            Internal review route for the Communities discovery shell while the
+            Internal review routes for the Communities discovery shell while the
             public surface remains gated behind SHOW_COMMUNITIES. Not linked from
-            header/footer/nav. Safe to leave mounted: it only renders the same
-            client-side component and reads existing public data.
+            header/footer/nav. Safe to leave mounted: they only render existing
+            client-side components against existing public data. Used by PMs to
+            click the full buyer journey: communities → site-plan → build wizard.
           */}
           <Route path="/preview/communities" element={<Communities />} />
+          <Route path="/preview/developments/:slug" element={<DevelopmentDetail />} />
+          <Route path="/preview/developments/:slug/site-plan" element={<SitePlanFullScreen />} />
+          <Route path="/preview/developments/:slug/build" element={<BuildWizard />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/models" element={<Models />} />
           <Route path="/models/:modelId" element={<ModelDetail />} />
