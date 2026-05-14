@@ -78,15 +78,22 @@ function statusLabel(status: Development['status']) {
   }
 }
 
+// All community CTAs route through /preview/* while SHOW_COMMUNITIES=false so
+// internal review can click the full buyer journey end-to-end. When the public
+// surface flips on, swap these prefixes back to /developments/...
+const COMMUNITY_ROUTE_PREFIX = '/preview/developments';
+
 function getCommunityBuildPath(
   development?: Pick<Development, 'slug' | 'status'> | null,
 ) {
-  return development?.status === 'active' ? `/developments/${development.slug}/build` : null;
+  return development?.status === 'active'
+    ? `${COMMUNITY_ROUTE_PREFIX}/${development.slug}/build`
+    : null;
 }
 
 // Slugs with both an active status AND existing static lot data driving the
-// /developments/:slug/site-plan route. Hard-coded to mirror src/data/lots/*.ts —
-// adding a new lots file requires explicitly adding the slug here.
+// site-plan route. Hard-coded to mirror src/data/lots/*.ts — adding a new lots
+// file requires explicitly adding the slug here.
 const SITE_PLAN_ELIGIBLE_SLUGS = new Set<string>([
   'grand-haven',
   'st-james-bay',
@@ -98,7 +105,7 @@ function getCommunitySitePlanPath(
 ) {
   if (!development || development.status !== 'active') return null;
   if (!SITE_PLAN_ELIGIBLE_SLUGS.has(development.slug)) return null;
-  return `/developments/${development.slug}/site-plan`;
+  return `${COMMUNITY_ROUTE_PREFIX}/${development.slug}/site-plan`;
 }
 
 // Compact list-row for the rail.
