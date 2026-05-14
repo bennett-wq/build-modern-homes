@@ -84,6 +84,23 @@ function getCommunityBuildPath(
   return development?.status === 'active' ? `/developments/${development.slug}/build` : null;
 }
 
+// Slugs with both an active status AND existing static lot data driving the
+// /developments/:slug/site-plan route. Hard-coded to mirror src/data/lots/*.ts —
+// adding a new lots file requires explicitly adding the slug here.
+const SITE_PLAN_ELIGIBLE_SLUGS = new Set<string>([
+  'grand-haven',
+  'st-james-bay',
+  'ypsilanti',
+]);
+
+function getCommunitySitePlanPath(
+  development?: Pick<Development, 'slug' | 'status'> | null,
+) {
+  if (!development || development.status !== 'active') return null;
+  if (!SITE_PLAN_ELIGIBLE_SLUGS.has(development.slug)) return null;
+  return `/developments/${development.slug}/site-plan`;
+}
+
 // Compact list-row for the rail.
 function CommunityListItem({
   development,
@@ -151,6 +168,8 @@ function CommunityDetail({ development }: { development: Development }) {
   const isActive = development.status === 'active';
   const hasImage = !!development.sitePlanImagePath;
   const buildPath = getCommunityBuildPath(development);
+  const sitePlanPath = getCommunitySitePlanPath(development);
+  const availableLotsCount = metrics.availableCount;
 
   return (
     <motion.div
@@ -231,6 +250,22 @@ function CommunityDetail({ development }: { development: Development }) {
           )}
         </div>
 
+        {/* Secondary: lot-level deep link into existing site-plan route */}
+        {sitePlanPath && (
+          <div className="mt-3">
+            <a
+              key={`${development.slug}-siteplan`}
+              href={sitePlanPath}
+              data-testid="community-siteplan-link"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              Preview {availableLotsCount > 0 ? `${availableLotsCount} ` : ''}available {availableLotsCount === 1 ? 'lot' : 'lots'}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        )}
+
         {/* Future-incentives placeholder */}
         {isActive && (
           <p className="mt-4 flex items-start gap-2 rounded-md border border-dashed border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
@@ -293,6 +328,7 @@ export default function Communities() {
 
   const isSelectedActive = selected?.status === 'active';
   const selectedBuildPath = getCommunityBuildPath(selected);
+  const selectedSitePlanPath = getCommunitySitePlanPath(selected);
 
   // Smooth-scroll the mobile detail into view when selection changes via the rail.
   useEffect(() => {
@@ -390,25 +426,37 @@ export default function Communities() {
       {/* Mobile sticky CTA for the selected active community */}
       {selected && isSelectedActive && selectedBuildPath && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden">
-          <div className="container mx-auto flex items-center gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs text-muted-foreground">
-                {selected.city}, {selected.state}
+          <div className="container mx-auto flex flex-col gap-1.5 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs text-muted-foreground">
+                  {selected.city}, {selected.state}
+                </div>
+                <div className="truncate text-sm font-semibold text-foreground">
+                  {selected.name}
+                </div>
               </div>
-              <div className="truncate text-sm font-semibold text-foreground">
-                {selected.name}
-              </div>
+              <a
+                key={selected.slug}
+                href={selectedBuildPath}
+                className={cn(buttonVariants({ size: 'sm' }), 'flex-shrink-0')}
+                aria-label={`Get all-in price for ${selected.name}`}
+                data-testid="selected-community-sticky-cta"
+              >
+                Get all-in price
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </a>
             </div>
-            <a
-              key={selected.slug}
-              href={selectedBuildPath}
-              className={cn(buttonVariants({ size: 'sm' }), 'flex-shrink-0')}
-              aria-label={`Get all-in price for ${selected.name}`}
-              data-testid="selected-community-sticky-cta"
-            >
-              Get all-in price
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-            </a>
+            {selectedSitePlanPath && (
+              <a
+                key={`${selected.slug}-sticky-siteplan`}
+                href={selectedSitePlanPath}
+                data-testid="selected-community-sticky-siteplan"
+                className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-accent hover:underline"
+              >
+                View site plan →
+              </a>
+            )}
           </div>
         </div>
       )}
