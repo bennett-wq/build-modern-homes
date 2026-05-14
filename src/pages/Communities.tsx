@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import {
   buildHref as buildHrefHelper,
   sitePlanHref as sitePlanHrefHelper,
+  communityDetailHref,
 } from '@/lib/communityRoutes';
 import { deriveDbInventory, type CommunityInventory } from '@/lib/communityInventory';
 
