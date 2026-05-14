@@ -180,7 +180,7 @@ export default function SitePlanFullScreen() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link to={`/developments/${slug}`}>Community details</Link>
+                <Link to={`${routePrefix}/${slug}`}>Community details</Link>
               </Button>
             </div>
           </div>
