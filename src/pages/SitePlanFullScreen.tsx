@@ -281,83 +281,125 @@ export default function SitePlanFullScreen() {
             transition={{ duration: 0.5 }}
             className="bg-card rounded-xl border border-border overflow-hidden"
           >
-            <div className={cn('flex', isMobile ? 'flex-col' : 'flex-row')}>
+            {isGrandHaven && activePhase === 2 ? (
+              // Phase 2 future-state panel — no fabricated lots, no build CTA hijack.
               <div
-                className={cn('relative', isMobile ? 'w-full' : 'flex-1')}
-                style={{ height: isMobile ? '60vh' : '75vh' }}
+                className="p-8 lg:p-12"
+                style={{ minHeight: isMobile ? '60vh' : '60vh' }}
               >
-                {canUseMapbox && dbDevelopment && adapted ? (
-                  <MapboxLotPicker
-                    development={dbDevelopment}
-                    lots={dbLots}
-                    selectedLotId={
-                      selectedLot
-                        ? [...adapted.uuidToNumericId.entries()].find(
-                            ([, n]) => n === selectedLot.id,
-                          )?.[0] ?? null
-                        : null
-                    }
-                    filteredLotIds={new Set(dbLots.map((l) => l.id))}
-                    onSelectLot={(dbLot: DbLot | null) => {
-                      if (!dbLot) return setSelectedLot(null);
-                      const numericId = adapted.uuidToNumericId.get(dbLot.id);
-                      const display =
-                        numericId != null
-                          ? adapted.displayLots.find((l) => l.id === numericId)
-                          : null;
-                      setSelectedLot(display ?? null);
-                    }}
-                    onHoverLot={(uuid) => {
-                      if (!uuid) return setHoveredLotId(null);
-                      setHoveredLotId(adapted.uuidToNumericId.get(uuid) ?? null);
-                    }}
-                    className="h-full"
-                  />
-                ) : (
-                  <FixedSitePlanViewer
-                    sitePlanImagePath={development.sitePlanImagePath}
+                {(() => {
+                  const phase = grandHavenPhases.find((p) => p.id === 2)!;
+                  return (
+                    <div className="max-w-2xl mx-auto text-center">
+                      <Badge
+                        variant="secondary"
+                        className="bg-accent/10 text-accent border-accent/20 mb-4"
+                      >
+                        {phase.availability}
+                      </Badge>
+                      <h2 className="text-2xl lg:text-3xl font-semibold text-foreground mb-3">
+                        {phase.label} · {phase.plannedLotCount} planned lots
+                      </h2>
+                      <p className="text-muted-foreground leading-relaxed mb-6">
+                        {phase.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground/80 mb-6">
+                        Source of record: {phase.source}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button asChild>
+                          <Link to={`/contact?development=${slug}&phase=2`}>
+                            <Bell className="h-4 w-4 mr-2" />
+                            Join Phase 2 interest list
+                          </Link>
+                        </Button>
+                        <Button variant="outline" onClick={() => setActivePhase(1)}>
+                          View Phase 1 (available now)
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <>
+                <div className={cn('flex', isMobile ? 'flex-col' : 'flex-row')}>
+                  <div
+                    className={cn('relative', isMobile ? 'w-full' : 'flex-1')}
+                    style={{ height: isMobile ? '60vh' : '75vh' }}
+                  >
+                    {canUseMapbox && dbDevelopment && adapted ? (
+                      <MapboxLotPicker
+                        development={dbDevelopment}
+                        lots={dbLots}
+                        selectedLotId={
+                          selectedLot
+                            ? [...adapted.uuidToNumericId.entries()].find(
+                                ([, n]) => n === selectedLot.id,
+                              )?.[0] ?? null
+                            : null
+                        }
+                        filteredLotIds={new Set(dbLots.map((l) => l.id))}
+                        onSelectLot={(dbLot: DbLot | null) => {
+                          if (!dbLot) return setSelectedLot(null);
+                          const numericId = adapted.uuidToNumericId.get(dbLot.id);
+                          const display =
+                            numericId != null
+                              ? adapted.displayLots.find((l) => l.id === numericId)
+                              : null;
+                          setSelectedLot(display ?? null);
+                        }}
+                        onHoverLot={(uuid) => {
+                          if (!uuid) return setHoveredLotId(null);
+                          setHoveredLotId(adapted.uuidToNumericId.get(uuid) ?? null);
+                        }}
+                        className="h-full"
+                      />
+                    ) : (
+                      <FixedSitePlanViewer
+                        sitePlanImagePath={development.sitePlanImagePath}
+                        lots={lots}
+                        onSelectLot={handleSelectLot}
+                        selectedLotId={selectedLot?.id ?? null}
+                        hoveredLotId={hoveredLotId}
+                        onHoverLot={setHoveredLotId}
+                        className="h-full"
+                      />
+                    )}
+
+                    {selectedLot && (
+                      <LotDetailsPanel
+                        key={`lot-panel-${selectedBuildPath}`}
+                        lot={selectedLot}
+                        developmentSlug={development.slug}
+                        onClose={() => setSelectedLot(null)}
+                        isMobile={isMobile}
+                        buildHref={selectedBuildPath}
+                      />
+                    )}
+                  </div>
+
+                  {!isMobile && (
+                    <LotListPanel
+                      lots={lots}
+                      selectedLotId={selectedLot?.id ?? null}
+                      hoveredLotId={hoveredLotId}
+                      onSelectLot={handleListSelectLot}
+                      onHoverLot={setHoveredLotId}
+                      className="w-72 xl:w-80"
+                      style={{ height: '75vh' }}
+                    />
+                  )}
+                </div>
+
+                {isMobile && (
+                  <LotListPanel
                     lots={lots}
-                    onSelectLot={handleSelectLot}
                     selectedLotId={selectedLot?.id ?? null}
                     hoveredLotId={hoveredLotId}
+                    onSelectLot={handleListSelectLot}
                     onHoverLot={setHoveredLotId}
-                    className="h-full"
-                  />
-                )}
-
-                {selectedLot && (
-                  <LotDetailsPanel
-                    key={`lot-panel-${selectedBuildPath}`}
-                    lot={selectedLot}
-                    developmentSlug={development.slug}
-                    onClose={() => setSelectedLot(null)}
-                    isMobile={isMobile}
-                    buildHref={selectedBuildPath}
-                  />
-                )}
-              </div>
-
-              {!isMobile && (
-                <LotListPanel
-                  lots={lots}
-                  selectedLotId={selectedLot?.id ?? null}
-                  hoveredLotId={hoveredLotId}
-                  onSelectLot={handleListSelectLot}
-                  onHoverLot={setHoveredLotId}
-                  className="w-72 xl:w-80"
-                  style={{ height: '75vh' }}
-                />
-              )}
-            </div>
-
-            {isMobile && (
-              <LotListPanel
-                lots={lots}
-                selectedLotId={selectedLot?.id ?? null}
-                hoveredLotId={hoveredLotId}
-                onSelectLot={handleListSelectLot}
-                onHoverLot={setHoveredLotId}
-                className="border-l-0 border-t"
+                    className="border-l-0 border-t"
                 style={{ height: '40vh' }}
               />
             )}
