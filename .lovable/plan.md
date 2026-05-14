@@ -1,153 +1,167 @@
-# Communities Discovery — Phases 3.5 → 5
 
-PM-ready sequencing for the `/preview/communities` track. Each phase has a single goal, hard boundaries, exit criteria, and a re-verification protocol so we stop closing phases on unverified claims.
+# Phase 0 — BaseMod Communities Buyer Cockpit: Audit & Plan
 
----
-
-## Phase 3.5 — Verify the sticky CTA fix end-to-end
-
-**Goal:** Confirm Phase 3.4's dynamic-binding fix actually produces correct DOM `href` values for every community on the internal preview, then formally close the 3.x track.
-
-**Why this is its own phase:** Phase 3.4 shipped the code fix but explicitly noted DOM-level href confirmation was never captured. We've already burned 3.3 → 3.4 on "I thought it was fixed." No further Communities work happens until this is verified with literal href strings.
-
-### Scope
-
-1. Open `/preview/communities` in the browser tool at the mobile viewport that triggers the sticky CTA (≤768px, e.g. 390×844).
-2. For each of the 5 communities, in order:
-   - Grand Haven
-   - St. James Bay
-   - Ypsilanti
-   - Ann Arbor
-   - Chicago Suburbs
-   Select the community via the rail (and via the map marker, separately) and extract the literal `href` of the sticky bottom CTA, plus whether the CTA is present at all.
-3. Record results in a table: `community → expected href → actual rail-selection href → actual map-selection href → presence for coming-soon`.
-4. Repeat the same extraction for the desktop primary CTA on the `CommunityDetail` card (same `getCommunityBuildPath` helper, but worth confirming both call sites).
-5. If any href is wrong: fix the binding inside `src/pages/Communities.tsx` only, then re-run steps 2–4 from scratch. No partial verification.
-
-### Hard boundaries
-
-- `SHOW_COMMUNITIES` stays `false`.
-- No nav entry for `/preview/communities`.
-- No publish, no PR, no migration, no `.env`, no secrets.
-- No copy or layout changes beyond what's required to fix a wrong href.
-- No new components.
-
-### Exit criteria
-
-- Verification table posted with all 10 href values (5 rail + 5 map) plus 5 desktop hrefs.
-- All 3 active communities resolve to `/developments/{slug}/build` with the correct slug.
-- Both coming-soon communities show no build CTA (sticky absent, desktop replaced by "Join interest list").
-- `bunx tsc --noEmit` clean.
-- `bun run build` clean.
-
-### Re-verification trigger
-
-If any later phase touches `Communities.tsx` or `getCommunityBuildPath`, re-run the full 15-row table before claiming that later phase complete.
+No code will change in Phase 0. SHOW_COMMUNITIES stays false. All work continues to live under `/preview/*`. No publish, deploy, migrations, secrets, env edits, Mapbox token, MapboxLotPicker, fabricated geometry, or fabricated incentives.
 
 ---
 
-## Phase 4 — Lot-level connective tissue for one community
+## 1. Current UX Diagnosis
 
-**Goal:** Make `/preview/communities` reviewable as a buyer journey, not just a regional map. Today PM clicks "Get all-in price" and lands cold in the wizard. Add a single connective surface so PM can preview the lot-picking experience for the one community that has real lot polygons (Grand Haven), without enabling Mapbox or touching data.
+`/preview/communities` and `/preview/developments/:slug/site-plan` already work end-to-end after Phases 4–5.6, but they read as a brochure with a static schematic next to a card list, not a buyer cockpit:
 
-**Why now:** Phase 3.x answered "which community"; nothing answers "and then what." Without this, every future Communities polish phase is decorating a dead-end.
+- **Visual hierarchy is brochure-grade.** Hero band + 12-col split + map/list/detail look fine, but density is low, the map panel is a schematic that does not respond to selection in a "decision" way (no halo/zoom, no clustering), and there is no global "decision summary" giving the buyer a one-glance read of inventory across all communities.
+- **Selection feels disconnected from the map.** The map is decorative; selection is driven by the rail. There's no map-to-list-to-detail directional flow, no hover sync into the map, no compare across communities.
+- **Lot Studio is a generic site-plan + list.** Header metrics live above the canvas, but the canvas is fixed-aspect, the right rail is a flat list with no filters (status, ready-now, phase, premium band), and there is no persistent "selected lot inspector + price/action bar" docked at the bottom. The selected lot panel currently floats over the canvas.
+- **Handoff is implicit, not orchestrated.** "Start your build" is a single button; there's no breadcrumb-style cockpit chrome (Community → Lot → Build), no carry-through of `lotId` into the build URL, no pre-build summary card.
+- **Coming-soon states are correct but bland.** Ann Arbor / Chicago land on a friendly unavailable page, but it doesn't reinforce the cockpit metaphor (e.g., timeline, market-watch CTA).
+- **Ready-now signal is correct but underplayed.** After 5.6, the metric is honest (4 in Grand Haven), but it's a small badge — not a top-of-funnel filter.
+- **Mobile is functional but stacked.** Sticky CTA exists, but the canvas is 60vh with the lot list pushed below; there is no bottom-sheet inspector and no map/list toggle.
 
-### Scope
-
-1. **Active community card — "Preview lots" affordance (Grand Haven only).**
-   - On the `CommunityDetail` card, when `selected.slug === 'grand-haven'` and `selected.active === true`, add a secondary link "Preview {N} available lots →" beneath the existing primary CTA.
-   - `N` comes from the existing static `src/data/lots/grand-haven.ts` count of `status === 'available'`. No DB call, no new hook.
-   - Link target: `/developments/grand-haven/site-plan` (the existing `SitePlanFullScreen` route — already shipped, already image-mode safe).
-   - For St. James Bay and Ypsilanti: same affordance pattern, also pointing at their existing site-plan routes, gated on `lots/{slug}.ts` existing.
-   - For coming-soon communities: do not render.
-
-2. **Sticky mobile CTA — secondary line.**
-   - Below the existing "Get all-in price" sticky CTA, add a single muted secondary link "View site plan" pointing at the same `/developments/{slug}/site-plan` route, only when a static lots file exists for the slug.
-   - Same `key={selected.slug}` discipline as the primary CTA to avoid the stale-href class of bug from Phase 3.3/3.4.
-
-3. **No new data, no Mapbox, no flag flips.** Reuse the existing `FixedSitePlanViewer` route exactly as it renders today.
-
-### Hard boundaries
-
-- `SHOW_COMMUNITIES` stays `false`.
-- No edits to `InteractiveSitePlan`, `FixedSitePlanViewer`, `MapboxLotPicker`, `useLots`, or any wizard step.
-- No new lot data, no polygon edits, no centroid changes.
-- No deep-link into `/build` Step 1 — that's a Phase 4.5 candidate, not this scope.
-- No interest-list capture for coming-soon communities (separate backend convo).
-- No analytics events added — that's a separate instrumentation phase.
-
-### Exit criteria
-
-- For Grand Haven, St. James Bay, Ypsilanti: rail/map selection shows both the existing build CTA and the new "Preview lots" / "View site plan" affordance, and both links resolve to the correct slug.
-- For Ann Arbor, Chicago Suburbs: neither affordance renders.
-- Re-run Phase 3.5's 15-row href verification table to prove no regression on the primary CTA bindings.
-- `bunx tsc --noEmit` clean.
-- `bun run build` clean.
-- DOM `href` evidence captured for the new secondary affordance on all 3 active communities.
-
-### Re-verification trigger
-
-Any subsequent change to `CommunityDetail` card or sticky CTA region requires re-running the Phase 3.5 table plus the new "secondary affordance present/absent" check across all 5 communities.
+Net: it works; it doesn't yet *feel* like a billion-dollar prop-tech decision tool.
 
 ---
 
-## Phase 5 — Mapbox migration gate: decide and document
+## 2. Proposed Route Structure (Preview Only)
 
-**Goal:** Resolve the standing ambiguity around `supabase/_pending_migrations/20260512214014_mapbox_lot_geometry.sql`. It has been deferred across Phases 2.3, 3.1, 3.2, 3.3, 3.4. Every map-real future phase (live Mapbox, parcel digitization, per-lot map premiums, lot-level pricing rail surfacing on map) is blocked behind it. We either schedule it or we formally park it — we stop planning around a phantom.
+All routes remain under `/preview/*`. Public `/communities` and `/developments` continue to redirect home while `SHOW_COMMUNITIES=false`.
 
-**This is a decision phase, not an implementation phase.** No migration is applied in this phase without explicit PM greenlight on the decision deliverable.
+```text
+/preview/communities                                  → Communities Command Center
+/preview/communities?slug=:slug                       → Deep-link a selected community (URL-driven)
+/preview/developments/:slug                           → Existing community detail (unchanged)
+/preview/developments/:slug/site-plan                 → Lot Studio (enhanced)
+/preview/developments/:slug/site-plan?lot=:label      → Deep-link a selected lot (URL-driven)
+/preview/developments/:slug/build                     → Existing build entry (unchanged)
+/preview/developments/:slug/build?lot=:label          → Pre-selected lot carry-through (Phase 4)
+```
 
-### Scope
+New helpers (single source of truth, no scattered string concats):
 
-1. **Audit deliverable** (read-only, no code changes):
-   - Read `supabase/_pending_migrations/20260512214014_mapbox_lot_geometry.sql` and document exactly what it adds: columns on `developments`, columns on `models`, columns on `lots`, any new tables, any RLS changes.
-   - Cross-reference each addition against current consumers in code (`MapboxLotPicker`, `InteractiveSitePlan` mode-derivation gate, `useLots`, `useDevelopments`).
-   - Identify which additions are required for *any* map-real work vs. which are speculative.
-   - Identify any additions that conflict with current `src/integrations/supabase/types.ts` (which is auto-managed).
+- `src/lib/communityRoutes.ts` exporting `communityHref`, `sitePlanHref(slug, { lot? })`, `buildHref(slug, { lot? })`, `isPreviewPath(pathname)`. Replaces the ad-hoc `COMMUNITY_ROUTE_PREFIX` constants in `Communities.tsx` and `SitePlanFullScreen.tsx`.
 
-2. **Risk + dependency note:**
-   - List what gets unblocked the moment the migration is applied (still gated by `VITE_MAPBOX_TOKEN` absence, so zero visible change).
-   - List what is still blocked even after the migration: Mapbox token in env, GeoJSON polygon authoring for at least one community, parcel digitization workflow, any per-lot map premium surfacing.
-   - Confirm the auto-gate in `InteractiveSitePlan` (`canUseMapbox` boolean) still falls back to image mode when GeoJSON is absent — so applying the migration alone is non-visible.
-
-3. **Decision options presented to PM** (this phase ends with PM picking one; no code in this phase executes the choice):
-   - **A. Apply now.** Schedule the migration apply as Phase 5.1, with rollback plan, types-regeneration step, and post-apply smoke (every community still renders image mode, no console errors, `useDevelopments` still types correctly).
-   - **B. Park formally.** Move the file out of `_pending_migrations/` into `_parked_migrations/` with a README explaining the parking reason and the trigger condition that would un-park it (e.g. "first community with authored GeoJSON polygons + Mapbox token provisioned"). Update `.lovable/plan.md` to remove the "pending migration" framing.
-   - **C. Split the migration.** If the audit shows the file mixes truly-needed columns (e.g. `developments.map_center_*`) with speculative ones (e.g. `models.width`), draft a smaller migration for option A and park the rest under option B.
-
-### Hard boundaries
-
-- No migration applied in Phase 5 itself. Phase 5 produces a written audit + recommendation only.
-- No `.env` edits, no Mapbox token provisioning, no secrets touched.
-- No edits to `src/integrations/supabase/*`.
-- `SHOW_COMMUNITIES` stays `false`.
-- No code changes outside (optionally) moving the SQL file between `_pending_migrations/` and `_parked_migrations/` if PM picks option B during this phase. If they don't pick during this phase, the file stays where it is.
-
-### Exit criteria
-
-- Audit document delivered (chat reply or `docs/plans/mapbox-migration-decision.md`) covering: what the migration adds, current consumers, what unblocks, what remains blocked, conflict surface with auto-generated types.
-- Three options (A / B / C) presented with concrete next-phase scoping for each.
-- PM selects an option in the same review pass. If A or C: spawn Phase 5.1 with the apply + types regen + smoke plan. If B: execute the file move and the `.lovable/plan.md` update inside Phase 5 itself.
-
-### Re-verification trigger
-
-If option A or C is chosen, Phase 5.1 must include:
-- Pre-apply: capture `useDevelopments` type signature.
-- Post-apply: regenerate types, confirm signature delta is additive only, smoke-test every existing community page renders identically (Grand Haven, St. James Bay, Ypsilanti, Ann Arbor, Chicago Suburbs preview cards + Grand Haven `/developments/grand-haven/site-plan` image-mode render).
-- Re-run Phase 3.5's 15-row href table to prove no Communities regression.
+No new public routes. No nav exposure. No redirects added.
 
 ---
 
-## What is explicitly NOT in this plan
+## 3. Component Reuse Plan
 
-- Live Mapbox rendering for any community.
-- Parcel digitization / GeoJSON authoring.
-- Incentive stacking or per-program eligibility on community cards.
-- "From $X/mo" financing surfacing on community cards (good idea, separate phase, depends on PM appetite).
-- Interest-list lead capture for coming-soon communities (needs backend + routing decision).
-- Enabling `SHOW_COMMUNITIES` publicly.
-- Any publish, PR, or deployment.
+**Reuse as-is (do not modify behavior):**
+- `developments` registry, `useLots` / `useLotsBySlug`, static lot files under `src/data/lots/*`.
+- `FixedSitePlanViewer`, `LotDetailsPanel`, `LotListPanel` (visual tweaks via props/className only — no behavior changes per the standing guardrail).
+- `Layout`, `Header`, `Footer`, `Badge`, `Button`, `Card`, `FinancingBadge`, `AppraisalBadge`.
+- `CommunityMapPanel` (kept as the schematic; we wrap it, don't replace it; no Mapbox).
 
-## Phase ordering rationale
+**New components (cockpit chrome only, presentation layer):**
+- `src/components/communities/CockpitHeader.tsx` — slim breadcrumb + global inventory summary (active communities, total available, total ready now). Read-only metrics derived from existing data.
+- `src/components/communities/CommunityRail.tsx` — extracted, denser version of the current list; adds optional filter chips (Active / Ready now / Coming soon) driving local state only.
+- `src/components/communities/CommunityInspector.tsx` — extracted, restyled `CommunityDetail` panel.
+- `src/components/communities/InventoryStat.tsx` — shared metric tile.
+- `src/components/siteplan/LotStudioHeader.tsx` — restyled header used inside `SitePlanFullScreen` (community name, breadcrumb, metrics, CTAs).
+- `src/components/siteplan/LotStudioActionBar.tsx` — docked bottom action bar with selected-lot summary and "Build on Lot X" CTA (desktop + mobile variants).
+- `src/components/siteplan/LotFilterChips.tsx` — status / ready-now / phase chips that filter the existing `LotListPanel` via a wrapper, without touching the panel's internals.
 
-3.5 must precede 4 because 4 touches the same CTA region and would inherit any unverified binding bug. 4 must precede 5 because 4 proves the buyer journey is reviewable without map-real data, which is the input PM needs to weigh option A vs. B in 5. 5 is a gate, not a build — it determines whether any subsequent phase can be map-real or has to stay schematic.
+**New hook:**
+- `src/hooks/useCommunityInventory.ts` — single source of `{ availableCount, readyNowCount, totalCount, startingPremium }` per slug + an aggregate across slugs. Wraps `useLotsBySlug` and centralizes the Phase 5.6 ready-now rule.
+
+---
+
+## 4. Data / Metric Plan
+
+One canonical derivation, one place: `useCommunityInventory`.
+
+Per slug (active communities only):
+- `totalCount` = `lots.length`.
+- `availableCount` = `lots.filter(l => l.status === 'available').length`.
+- `readyNowCount` = subset of available where **explicit timing evidence** is present:
+  - `restrictions.availability === 'Now'` (DB shape) **OR**
+  - `availability === 'Now'` (static `Lot` shape) **OR**
+  - `notes` contains `"available now"` (case-insensitive).
+  - Never inferred from `status: 'available'` alone (Phase 5.6 rule, locked in).
+- `startingPremium` = `min(premium ?? 0)` across available lots; **null** when no available lots.
+- `priceFromAllIn` = existing `BASE_ALL_IN_PRICE + startingPremium` formula already used in `Communities.tsx`. We do **not** invent a new pricing math; we just relocate the existing constant alongside the hook so it stops being duplicated. No new pricing claims, no incentives, no monthly-payment math.
+
+Aggregate (for cockpit header):
+- `activeCommunities` = `developments.filter(d => d.status === 'active').length`.
+- `totalAvailable` / `totalReadyNow` = sum across active slugs.
+- Coming-soon count is shown as a separate stat — never mixed into "available".
+
+Coming-soon (`ann-arbor`, `chicago`):
+- All count fields are `null`/hidden.
+- No build CTA, no site-plan CTA, no fabricated lots — enforced in helpers (`buildHref`/`sitePlanHref` return `null` for non-active slugs, mirroring today's behavior).
+
+---
+
+## 5. Design System Direction
+
+Target: a calm, dense, decision-oriented cockpit — closer to Compass / Cadre / Opendoor Pro than a marketing site.
+
+- **Layout.** Three-zone shell on desktop: 16-col grid → left rail (communities), center canvas (map for Communities; site-plan for Lot Studio), right inspector (selected community / selected lot). On mobile: top filter chips → canvas → bottom sheet inspector + sticky action bar.
+- **Density.** Tighter vertical rhythm (`py-3` rail rows, 12–13px metadata, 14px primary), generous whitespace inside panels but compact between rows. Numbers up front, labels secondary.
+- **Typography.** Existing semantic tokens. H1 28–36px tracking-tight. Stat numerals tabular (`tabular-nums`), labels `text-xs uppercase tracking-wider text-muted-foreground`.
+- **Panels.** `rounded-xl border border-border bg-background` with subtle `shadow-sm`. Selected state uses accent border + 4–6% accent tint, not a heavy fill.
+- **Map / canvas anatomy.** Canvas is the visual anchor (60–70% of viewport on desktop). Persistent "selected" halo + label callout. Hovered list row pulses the matching map node and vice versa (presentation-only sync; no Mapbox).
+- **Mobile.** Map/list segmented toggle at top; sticky bottom action bar (64px) with selected-lot summary on the left and primary CTA on the right. Inspector becomes a bottom sheet.
+- **Color & motion.** Existing Charcoal/Wood-Gold tokens only. Framer Motion fades + 8–12px translate on selection change. No parallax, no marquee.
+
+This builds on the visual identity memory (warm-neutral paper UI, tight H1 tracking) and the design-reference gold-standard memory.
+
+---
+
+## 6. Implementation Phases
+
+- **Phase 1 — Foundation (route helpers + inventory hook + cockpit chrome scaffolding).** Add `communityRoutes.ts` and `useCommunityInventory.ts`; introduce `CockpitHeader` and `InventoryStat`. Refactor `Communities.tsx` and `SitePlanFullScreen.tsx` to consume the helpers/hook with **zero behavior change**. Verification: existing Phase 5.6 metrics table reproduces exactly (Grand Haven 18/4/18, St. James Bay 30/4/30, Ypsilanti 30/4/30; Ann Arbor + Chicago unavailable).
+- **Phase 2 — Communities Command Center.** Replace the current rail + detail with `CommunityRail`, `CommunityInspector`, restyled metrics, optional filter chips. Map panel stays schematic and gains hover/selection sync. Mobile gets a map/list segmented toggle.
+- **Phase 3 — Lot Studio.** Add `LotStudioHeader`, `LotFilterChips`, and `LotStudioActionBar`. `FixedSitePlanViewer`, `MapboxLotPicker`, `LotListPanel`, `LotDetailsPanel` remain untouched internally — wrappers only.
+- **Phase 4 — Build Handoff.** Carry `?lot=:label` from Lot Studio into the build URL. Pre-build mini-summary card (community + lot + premium) before entering the configurator. No pricing engine changes.
+- **Phase 5 — Coming-Soon Polish.** Cockpit-styled unavailable state (timeline, "watch this market" CTA → existing `/contact?development=:slug`). No fabricated lots/dates beyond what `developments.ts` already states.
+- **Phase 6 — Incentive Stack Preview.** Cautious eligibility surface with explicit source/confidence labels; no monthly payment, no guaranteed-incentive math. Plan-only reference to `useFinancingCalculator`; **scoped out of Phase 1–2**.
+- **Phase 7 — QA.** DOM table (CTAs + hrefs + metrics) for all five communities, `bunx tsc --noEmit`, `bun run build`, mobile + desktop preview QA at 375 / 768 / 1280.
+
+Each phase ships under `/preview/*` only, with PM verification gate before the next phase.
+
+---
+
+## 7. Exact File List — Phase 1 & Phase 2 Only
+
+**Phase 1 (foundation, behavior-preserving):**
+- `src/lib/communityRoutes.ts` — new.
+- `src/hooks/useCommunityInventory.ts` — new.
+- `src/components/communities/InventoryStat.tsx` — new.
+- `src/components/communities/CockpitHeader.tsx` — new.
+- `src/pages/Communities.tsx` — refactor to consume helpers/hook; remove duplicated `COMMUNITY_ROUTE_PREFIX` and inline metric derivation.
+- `src/pages/SitePlanFullScreen.tsx` — refactor to consume helpers/hook; keep all existing CTA hrefs and unavailable-state logic.
+
+**Phase 2 (Communities Command Center):**
+- `src/components/communities/CommunityRail.tsx` — new (extracted + restyled list).
+- `src/components/communities/CommunityInspector.tsx` — new (extracted + restyled detail).
+- `src/components/communities/CommunityFilterChips.tsx` — new.
+- `src/components/communities/CommunityMapPanel.tsx` — minor: accept `hoveredSlug` prop for hover sync; no Mapbox, no geometry changes.
+- `src/pages/Communities.tsx` — recompose using the new components; mobile map/list toggle; preserves all existing routes and CTAs.
+
+No edits in Phase 1–2 to: `InteractiveSitePlan`, `MapboxLotPicker`, `FixedSitePlanViewer`, `LotListPanel`, `LotDetailsPanel`, `developments.ts`, any `src/data/lots/*`, any pricing/build/configurator code, `featureFlags.ts`, `.env`, `Header`, `Footer`, Supabase, edge functions.
+
+---
+
+## 8. Acceptance Criteria
+
+- `SHOW_COMMUNITIES` remains `false`; public `/communities` and `/developments` redirect to `/`; header/footer nav unchanged.
+- `/preview/communities`, `/preview/developments/:slug/site-plan`, `/preview/developments/:slug/build` continue to render for Grand Haven, St. James Bay, Ypsilanti.
+- Ann Arbor + Chicago: no fake lots, no build CTA, no site-plan CTA — friendly unavailable + interest-list path only.
+- Phase 5.6 ready-now rule preserved exactly: Grand Haven 4, St. James Bay 4, Ypsilanti 4 (or whatever explicit timing evidence in static data yields), never inferred from `available` status.
+- All community/site-plan/build URLs go through `communityRoutes.ts` helpers — no string-concatenated `/preview/...` hrefs left in `Communities.tsx` or `SitePlanFullScreen.tsx`.
+- `bunx tsc --noEmit` and `bun run build` pass.
+- No Mapbox token usage, no `MapboxLotPicker` mount, no migrations, no secrets, no env edits, no publish/deploy/PR, no pricing/incentive/financing math added.
+- DOM verification table reproduced at the end of each phase.
+
+---
+
+## 9. Risks / Questions
+
+- **Route helper drift.** If any consumer outside `Communities.tsx` / `SitePlanFullScreen.tsx` builds preview hrefs by hand (e.g., a future card on `Index.tsx`), the helper won't catch it. Mitigation: keep `/preview/*` strictly internal and grep for `'/preview/developments'` after Phase 1.
+- **Inventory aggregation perf.** `useCommunityInventory` aggregate would call `useLotsBySlug` for every active slug on `/preview/communities`. Today the page already does this implicitly per `CommunityListItem`; aggregating shouldn't add net calls. Will confirm with React Query devtools in Phase 1.
+- **`LotListPanel` filtering.** Standing guardrail forbids editing `LotListPanel`. Filter chips will live in a wrapper that filters the `lots` array passed in — verify this is acceptable, or descope filters to Phase 3.
+- **`CommunityMapPanel` hover-sync prop.** Adding a `hoveredSlug` prop is presentation-only, but the panel sits in the no-edit list of "site-plan" components (Mapbox/Interactive). It is a *communities* map, not a site-plan map, so I read it as in-scope — please confirm.
+- **Coming-soon timeline content.** `developments.ts` doesn't carry a launch date for Ann Arbor / Chicago. Phase 5 polish will not invent dates; it will only restate existing copy ("upcoming community…") in cockpit chrome.
+- **Phase 6 incentive layer.** Highest fabrication risk. Plan keeps it last and behind explicit PM approval; Phases 1–5 will not surface any monthly payment, APR, or incentive value.
+
+Stopping here for PM approval before any Phase 1 code lands.
