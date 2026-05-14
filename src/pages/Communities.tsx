@@ -286,6 +286,16 @@ export default function Communities() {
     [ordered],
   );
 
+  const isSelectedActive = selected?.status === 'active';
+
+  // Smooth-scroll the mobile detail into view when selection changes via the rail.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth >= 1024) return;
+    const el = document.getElementById('community-detail-mobile');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedSlug]);
+
   return (
     <Layout>
       {/* Compact hero */}
@@ -308,7 +318,7 @@ export default function Communities() {
                 </Badge>
               </div>
               <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-                Pick a community to see live lot inventory and your all-in price.
+                Choose a community to see live lots and your all-in price.
               </p>
             </div>
             <div className="hidden flex-col gap-1 text-right text-xs text-muted-foreground sm:flex">
@@ -320,7 +330,7 @@ export default function Communities() {
       </section>
 
       {/* Discovery shell */}
-      <section className="container mx-auto px-4 py-6 lg:px-8 lg:py-10">
+      <section className="container mx-auto px-4 pt-6 pb-24 lg:px-8 lg:py-10 lg:pb-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Map panel — first on mobile, left on desktop */}
           <div className="order-1 lg:order-1 lg:col-span-7">
@@ -332,7 +342,7 @@ export default function Communities() {
                 className="aspect-[16/10] lg:aspect-[5/4]"
               />
               {selected && (
-                <div className="mt-4 lg:hidden">
+                <div id="community-detail-mobile" className="mt-4 lg:hidden scroll-mt-20">
                   <CommunityDetail development={selected} />
                 </div>
               )}
@@ -342,9 +352,14 @@ export default function Communities() {
           {/* Rail — list + detail on desktop */}
           <div className="order-2 lg:order-2 lg:col-span-5">
             <div className="space-y-2">
-              <h2 className="px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                All communities
-              </h2>
+              <div className="flex items-baseline justify-between px-1">
+                <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  All communities
+                </h2>
+                <span className="text-xs text-muted-foreground">
+                  {ordered.length} total
+                </span>
+              </div>
               <div className="space-y-2">
                 {ordered.map((d) => (
                   <CommunityListItem
@@ -366,6 +381,28 @@ export default function Communities() {
         </div>
       </section>
 
+      {/* Mobile sticky CTA for the selected active community */}
+      {selected && isSelectedActive && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden">
+          <div className="container mx-auto flex items-center gap-3 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs text-muted-foreground">
+                {selected.city}, {selected.state}
+              </div>
+              <div className="truncate text-sm font-semibold text-foreground">
+                {selected.name}
+              </div>
+            </div>
+            <Button asChild size="sm" className="flex-shrink-0">
+              <Link to={`/developments/${selected.slug}/build`}>
+                Get all-in price
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Own-land CTA */}
       <section className="border-t border-border bg-primary py-12 sm:py-16">
         <div className="container mx-auto px-4 text-center lg:px-8">
@@ -373,8 +410,8 @@ export default function Communities() {
             Have your own land?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/70 sm:text-base">
-            Build a BaseMod home on your own property. Get a quote and we'll help you
-            understand your options.
+            Build a BaseMod home on your own property. Get a quote and we'll walk you
+            through your options.
           </p>
           <Button asChild size="lg" className="mt-6">
             <Link to="/build">
@@ -387,3 +424,4 @@ export default function Communities() {
     </Layout>
   );
 }
+
