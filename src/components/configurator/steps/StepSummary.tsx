@@ -25,7 +25,8 @@ import { type ModelConfig, type BuildIntent, type BuildType, exteriorConfig } fr
 import type { PriceBreakdown, ExteriorSelection } from '@/hooks/usePricingEngine';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
 import { cn } from '@/lib/utils';
-import { jsPDF } from 'jspdf';
+// jsPDF is dynamically imported in handleDownloadPDF to keep it (and its
+// transitive deps) out of the initial bundle — it loads only on PDF download.
 import { 
   calculatePriceBreakdown as calcCanonicalPricing,
   formatPrice as formatCanonicalPrice,
@@ -124,7 +125,8 @@ export function StepSummary({
   };
   
   // Generate and download PDF summary
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 20;
