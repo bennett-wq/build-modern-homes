@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams, useParams, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Bell, MapPin } from 'lucide-react';
@@ -9,7 +9,12 @@ import { FixedSitePlanViewer } from '@/components/siteplan/FixedSitePlanViewer';
 import { FixedSitePlanEditor } from '@/components/siteplan/FixedSitePlanEditor';
 import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { LotDetailsPanel } from '@/components/siteplan/LotDetailsPanel';
-import { MapboxLotPicker } from '@/components/siteplan/MapboxLotPicker';
+// Lazy: keeps mapbox-gl (~1MB) out of the initial bundle. The map is gated off
+// by default (mapGeometryGate), so this chunk only loads if a community has
+// complete, source-verified geometry. The funnel never depends on it.
+const MapboxLotPicker = lazy(() =>
+  import('@/components/siteplan/MapboxLotPicker').then((m) => ({ default: m.MapboxLotPicker })),
+);
 import { adaptDbLots } from '@/components/siteplan/lot-adapter';
 import { getDevelopmentBySlug } from '@/data/developments';
 import { grandHavenLots, grandHavenPhases, Lot } from '@/data/lots/grand-haven';
@@ -20,6 +25,7 @@ import { useDevelopments } from '@/hooks/useDevelopments';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { isPreviewPath, communitiesHref as communitiesHrefHelper, buildHref } from '@/lib/communityRoutes';
+import { canRenderMapbox } from '@/lib/mapGeometryGate';
 import { deriveStaticInventory } from '@/lib/communityInventory';
 import type { Development as DbDevelopment, Lot as DbLot } from '@/types/database';
 
@@ -57,23 +63,26 @@ export default function SitePlanFullScreen() {
   const isGrandHaven = slug === 'grand-haven';
   const [activePhase, setActivePhase] = useState<number>(1);
 
-  // ---- Mapbox MVP gate (mirrors InteractiveSitePlan): token + map_center + GeoJSON lots ----
+  // ---- Source-bound Mapbox gate (shared with InteractiveSitePlan) ----
+  // Mapbox renders only when token + usable map center + complete geometry +
+  // medium/high/verified source confidence hold for the development AND every
+  // displayed lot; otherwise we fall back to the static image plan. See
+  // src/lib/mapGeometryGate.ts.
   const { lots: dbLots } = useLotsBySlug(slug);
   const { developments: dbDevelopments } = useDevelopments();
   const dbDevelopment = useMemo<DbDevelopment | undefined>(
     () => dbDevelopments?.find((d) => d.slug === slug),
     [dbDevelopments, slug],
   );
-  const canUseMapbox = useMemo(() => {
-    const hasToken = Boolean(import.meta.env.VITE_MAPBOX_TOKEN);
-    const hasCenter =
-      typeof dbDevelopment?.map_center_lng === 'number' &&
-      typeof dbDevelopment?.map_center_lat === 'number';
-    const hasGeoJsonLots = dbLots.some(
-      (l) => l.polygon_coordinates?.type === 'Polygon',
-    );
-    return hasToken && hasCenter && hasGeoJsonLots;
-  }, [dbDevelopment, dbLots]);
+  const canUseMapbox = useMemo(
+    () =>
+      canRenderMapbox({
+        token: import.meta.env.VITE_MAPBOX_TOKEN as string | undefined,
+        development: dbDevelopment,
+        lots: dbLots,
+      }),
+    [dbDevelopment, dbLots],
+  );
   const adapted = useMemo(
     () => (canUseMapbox ? adaptDbLots(dbLots) : null),
     [canUseMapbox, dbLots],
@@ -92,6 +101,11 @@ export default function SitePlanFullScreen() {
       return lots.find((lot) => lot.id === current.id) ?? current;
     });
   }, [lots]);
+
+  // Stable lot-selection handlers. Declared before any conditional return so
+  // hook order stays constant across renders (React rules-of-hooks).
+  const handleSelectLot = useCallback((lot: Lot | null) => setSelectedLot(lot), []);
+  const handleListSelectLot = useCallback((lot: Lot) => setSelectedLot(lot), []);
 
   // Unknown development OR no static lots → friendly unavailable state.
   // Coming-soon communities (ann-arbor, chicago) intentionally land here:
@@ -136,9 +150,6 @@ export default function SitePlanFullScreen() {
     );
   }
 
-  const handleSelectLot = useCallback((lot: Lot | null) => setSelectedLot(lot), []);
-  const handleListSelectLot = useCallback((lot: Lot) => setSelectedLot(lot), []);
-
   // Editor Mode (admin-only deep link).
   if (isEditMode) {
     return (
@@ -174,8 +185,18 @@ export default function SitePlanFullScreen() {
   const inventory = deriveStaticInventory(lots);
   const availableCount = inventory.availableCount;
   const readyNowCount = inventory.readyNowCount;
+  // Grand Haven phase context. A future/concept phase (e.g. Phase 2) must never
+  // present placeholder lots as buyable inventory — show planned counts and a
+  // future-phase treatment instead of Available/Ready-now metrics + lots.
+  const activePhaseMeta = isGrandHaven
+    ? grandHavenPhases.find((p) => p.id === activePhase)
+    : undefined;
+  const isFuturePhase = activePhaseMeta?.status === 'future';
+  // Carry the lot_number/label (e.g. "Lot 15") into the build flow — stable in
+  // both image and Mapbox modes and resolvable on the wizard side (see
+  // useBuildSelection / BuildWizard). Avoids leaking synthetic numeric ids.
   const selectedLotId =
-    selectedLot && selectedLot.status !== 'sold' ? String(selectedLot.id) : null;
+    selectedLot && selectedLot.status !== 'sold' ? selectedLot.label : null;
   const selectedBuildPath =
     buildHref(development, {
       preview: isPreview,
@@ -209,23 +230,41 @@ export default function SitePlanFullScreen() {
                 {development.name}
               </h1>
               <p className="text-muted-foreground mt-2 max-w-2xl">
-                Tap a lot on the plan or pick from the list to see acreage, phase, and any
-                homesite premium. Then carry your selection into the build flow.
+                {isFuturePhase
+                  ? 'This phase is a future concept. Lot geometry and pricing are pending final source review — join the interest list to be notified first.'
+                  : 'Tap a lot on the plan or pick from the list to see acreage, phase, and any homesite premium. Then carry your selection into the build flow.'}
               </p>
-              <dl className="flex flex-wrap gap-x-8 gap-y-3 mt-5">
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Available</dt>
-                  <dd className="text-xl font-semibold text-foreground">{availableCount}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Ready now</dt>
-                  <dd className="text-xl font-semibold text-foreground">{readyNowCount}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Total lots</dt>
-                  <dd className="text-xl font-semibold text-foreground">{lots.length}</dd>
-                </div>
-              </dl>
+              {isFuturePhase && activePhaseMeta ? (
+                <dl className="flex flex-wrap gap-x-8 gap-y-3 mt-5">
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">Phase</dt>
+                    <dd className="text-xl font-semibold text-foreground">Future</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">Planned lots</dt>
+                    <dd className="text-xl font-semibold text-foreground">{activePhaseMeta.plannedLotCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">Ready now</dt>
+                    <dd className="text-xl font-semibold text-foreground">0</dd>
+                  </div>
+                </dl>
+              ) : (
+                <dl className="flex flex-wrap gap-x-8 gap-y-3 mt-5">
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">Available</dt>
+                    <dd className="text-xl font-semibold text-foreground">{availableCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">Ready now</dt>
+                    <dd className="text-xl font-semibold text-foreground">{readyNowCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">Total lots</dt>
+                    <dd className="text-xl font-semibold text-foreground">{lots.length}</dd>
+                  </div>
+                </dl>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
               <Button asChild size="lg">
@@ -281,14 +320,14 @@ export default function SitePlanFullScreen() {
             transition={{ duration: 0.5 }}
             className="bg-card rounded-xl border border-border overflow-hidden"
           >
-            {isGrandHaven && activePhase === 2 ? (
-              // Phase 2 future-state panel — no fabricated lots, no build CTA hijack.
+            {isGrandHaven && isFuturePhase && activePhaseMeta ? (
+              // Future-phase concept panel — no fabricated lots, no build CTA hijack.
               <div
                 className="p-8 lg:p-12"
                 style={{ minHeight: isMobile ? '60vh' : '60vh' }}
               >
                 {(() => {
-                  const phase = grandHavenPhases.find((p) => p.id === 2)!;
+                  const phase = activePhaseMeta;
                   return (
                     <div className="max-w-2xl mx-auto text-center">
                       <Badge
@@ -308,9 +347,9 @@ export default function SitePlanFullScreen() {
                       </p>
                       <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <Button asChild>
-                          <Link to={`/contact?development=${slug}&phase=2`}>
+                          <Link to={`/contact?development=${slug}&phase=${activePhase}`}>
                             <Bell className="h-4 w-4 mr-2" />
-                            Join Phase 2 interest list
+                            Join {phase.label} interest list
                           </Link>
                         </Button>
                         <Button variant="outline" onClick={() => setActivePhase(1)}>
@@ -329,6 +368,7 @@ export default function SitePlanFullScreen() {
                     style={{ height: isMobile ? '60vh' : '75vh' }}
                   >
                     {canUseMapbox && dbDevelopment && adapted ? (
+                      <Suspense fallback={<div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">Loading map…</div>}>
                       <MapboxLotPicker
                         development={dbDevelopment}
                         lots={dbLots}
@@ -355,6 +395,7 @@ export default function SitePlanFullScreen() {
                         }}
                         className="h-full"
                       />
+                      </Suspense>
                     ) : (
                       <FixedSitePlanViewer
                         sitePlanImagePath={development.sitePlanImagePath}
@@ -409,6 +450,7 @@ export default function SitePlanFullScreen() {
         </div>
       </section>
 
+      {!isFuturePhase && (
       <section className="py-12 bg-secondary">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
@@ -434,13 +476,15 @@ export default function SitePlanFullScreen() {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Mobile sticky CTA — always derives from current slug; lot-aware label */}
-      {isMobile && (
+      {/* Mobile sticky CTA — hidden on future/concept phases (the concept panel
+          carries its own interest-list CTA). */}
+      {isMobile && !isFuturePhase && (
         <div className="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button asChild className="w-full" size="lg">
             <a href={selectedBuildPath}>
-              {selectedLot ? `Build on Lot ${selectedLot.label}` : 'Start your build'}
+              {selectedLot ? `Build on ${selectedLot.label}` : 'Start your build'}
               <ArrowRight className="h-4 w-4 ml-2" />
             </a>
           </Button>

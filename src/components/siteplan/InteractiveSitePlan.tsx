@@ -1,10 +1,13 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FixedSitePlanViewer } from '@/components/siteplan/FixedSitePlanViewer';
 import { LotListPanel } from '@/components/siteplan/LotListPanel';
 import { LotDetailsPanel } from '@/components/siteplan/LotDetailsPanel';
-import { MapboxLotPicker } from '@/components/siteplan/MapboxLotPicker';
+// Lazy: keeps mapbox-gl (~1MB) out of the initial bundle (gated off by default).
+const MapboxLotPicker = lazy(() =>
+  import('@/components/siteplan/MapboxLotPicker').then((m) => ({ default: m.MapboxLotPicker })),
+);
 import { adaptDbLots } from '@/components/siteplan/lot-adapter';
 import { Button } from '@/components/ui/button';
 import { Maximize2, List, X } from 'lucide-react';
@@ -16,6 +19,7 @@ import { useLotsBySlug } from '@/hooks/useLots';
 import { useDevelopments } from '@/hooks/useDevelopments';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { buildHref, isPreviewPath, sitePlanHref } from '@/lib/communityRoutes';
+import { canRenderMapbox } from '@/lib/mapGeometryGate';
 import { cn } from '@/lib/utils';
 import type { Development as DbDevelopment, Lot as DbLot } from '@/types/database';
 
@@ -53,17 +57,19 @@ export function InteractiveSitePlan({
     [dbDevelopments, developmentSlug],
   );
 
-  // Mode selector — auto-upgrades only when token + map_center + GeoJSON lots exist.
-  const canUseMapbox = useMemo(() => {
-    const hasToken = Boolean(import.meta.env.VITE_MAPBOX_TOKEN);
-    const hasCenter =
-      typeof dbDevelopment?.map_center_lng === 'number' &&
-      typeof dbDevelopment?.map_center_lat === 'number';
-    const hasGeoJsonLots = dbLots.some(
-      (l) => l.polygon_coordinates?.type === 'Polygon',
-    );
-    return hasToken && hasCenter && hasGeoJsonLots;
-  }, [dbDevelopment, dbLots]);
+  // Mode selector — source-bound gate (shared with SitePlanFullScreen). Mapbox
+  // activates only when token + usable map center + complete geometry +
+  // medium/high/verified source confidence hold for the development AND every
+  // displayed lot. See src/lib/mapGeometryGate.ts.
+  const canUseMapbox = useMemo(
+    () =>
+      canRenderMapbox({
+        token: import.meta.env.VITE_MAPBOX_TOKEN as string | undefined,
+        development: dbDevelopment,
+        lots: dbLots,
+      }),
+    [dbDevelopment, dbLots],
+  );
   const mode: 'mapbox' | 'image' = canUseMapbox ? 'mapbox' : 'image';
 
   // Adapter (only meaningful in mapbox mode).
@@ -140,7 +146,8 @@ export function InteractiveSitePlan({
   const selectedBuildPath =
     buildHref(development, {
       preview: isPreview,
-      lot: selectedLot?.status === 'available' ? String(selectedLot.id) : null,
+      // Carry the lot_number/label so the build flow can resolve it reliably.
+      lot: selectedLot && selectedLot.status === 'available' ? selectedLot.label : null,
     }) ?? `/developments/${developmentSlug}/build`;
 
   return (
@@ -211,6 +218,7 @@ export function InteractiveSitePlan({
             }}
           >
             {mode === 'mapbox' && dbDevelopment ? (
+              <Suspense fallback={<div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">Loading map…</div>}>
               <MapboxLotPicker
                 development={dbDevelopment}
                 lots={dbLots}
@@ -220,6 +228,7 @@ export function InteractiveSitePlan({
                 onHoverLot={handleMapboxHover}
                 className="h-full"
               />
+              </Suspense>
             ) : (
               <FixedSitePlanViewer
                 sitePlanImagePath={development.sitePlanImagePath}
