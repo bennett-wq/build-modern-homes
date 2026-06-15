@@ -46,11 +46,12 @@ export function LotDetailsPanel({
     buildCommunityHref(
       { slug: developmentSlug, status: 'active' },
       {
+        // Carry the lot_number/label so the build flow can resolve it reliably.
         preview: isPreviewPath(location.pathname),
-        lot: lot.status === 'available' ? String(lot.id) : null,
+        lot: lot.status === 'available' ? lot.label : null,
       },
     ) ??
-    `/developments/${developmentSlug}/build?lot=${lot.id}`;
+    `/developments/${developmentSlug}/build?lot=${encodeURIComponent(lot.label)}`;
   const modelsUrl = `/models?development=${developmentSlug}&lot=${lot.id}`;
 
   const panelContent = (
