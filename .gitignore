@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Playwright test artifacts
+/playwright-report/
+/test-results/
+
 # Env files — never stage; each developer/env supplies their own.
 # Root .env is already tracked in git history; this ignore rule only
 # prevents future re-adds after it is untracked.
