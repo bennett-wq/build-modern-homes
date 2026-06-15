@@ -19,6 +19,13 @@ export interface CommunityInventory {
   readyNowCount: number;
   /** Minimum homesite premium across available lots, or null when none. */
   startingPremium: number | null;
+  /**
+   * Minimum homesite premium across Ready-Now lots specifically, or null when
+   * none are Ready Now. Buyer-facing "From $X / starting price" surfaces should
+   * prefer this over startingPremium so the entry price reflects what's buyable
+   * today, not cheaper future-phase inventory.
+   */
+  startingReadyNowPremium: number | null;
 }
 
 const NOTE_READY_NOW = /available now/i;
@@ -38,11 +45,14 @@ export function deriveDbInventory(lots: DbLot[]): CommunityInventory {
   const available = lots.filter((l) => l.status === 'available');
   const readyNow = available.filter(isReadyNowDbLot);
   const premiums = available.map((l) => l.premium ?? 0);
+  const readyNowPremiums = readyNow.map((l) => l.premium ?? 0);
   return {
     totalCount: lots.length,
     availableCount: available.length,
     readyNowCount: readyNow.length,
     startingPremium: premiums.length > 0 ? Math.min(...premiums) : null,
+    startingReadyNowPremium:
+      readyNowPremiums.length > 0 ? Math.min(...readyNowPremiums) : null,
   };
 }
 
@@ -50,11 +60,14 @@ export function deriveStaticInventory(lots: StaticLot[]): CommunityInventory {
   const available = lots.filter((l) => l.status === 'available');
   const readyNow = available.filter(isReadyNowStaticLot);
   const premiums = available.map((l) => l.premium ?? 0);
+  const readyNowPremiums = readyNow.map((l) => l.premium ?? 0);
   return {
     totalCount: lots.length,
     availableCount: available.length,
     readyNowCount: readyNow.length,
     startingPremium: premiums.length > 0 ? Math.min(...premiums) : null,
+    startingReadyNowPremium:
+      readyNowPremiums.length > 0 ? Math.min(...readyNowPremiums) : null,
   };
 }
 
@@ -64,4 +77,5 @@ export const EMPTY_INVENTORY: CommunityInventory = {
   availableCount: 0,
   readyNowCount: 0,
   startingPremium: null,
+  startingReadyNowPremium: null,
 };

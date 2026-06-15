@@ -29,10 +29,20 @@ export interface Lot {
 // Status: Active (BaseMod Lots For Sale)
 // Notes: No HOA restrictions on lots 1-13. All lots require well & septic.
 
-// Phase metadata. Phase 1 is the ready-now buyer-facing phase backed by
-// real lot rows below. Phase 2 is the 22-lot future concept from
-// "Grand Haven Phase 2 Site Plan.pdf" (25201827-PREL1.pdf) and is
-// represented as planning-stage only — no fabricated polygons or pricing.
+// Phase metadata + lot classification (AUTHORITATIVE — keep surfaces in sync).
+//
+//   Phase 1 (Lots 15–18): the ONLY currently-sellable, ready-now inventory
+//     (availability: 'Now'). Drives the buyer conversion path.
+//   Phase 2 (Lots 1–8) + Phase 3 (Lots 9–14): FUTURE / pre-sale. Their acreage
+//     and premium are PRELIMINARY concepts from the Phase 2/3 site-plan PDFs
+//     (final figures + parcel geometry pending). They are gated from every
+//     conversion surface: not selectable to start a build (Step1Lot.tsx),
+//     excluded from ready-now metrics (communityInventory.ts), and shown only
+//     as future/interest (SitePlanFullScreen.tsx phase panel). These figures
+//     must NEVER be presented as final or ready-to-buy.
+//
+// OPEN DATA DECISION (owner): confirm whether the Phase 2/3 acreage/premium are
+// real preliminary survey figures (keep) or placeholders (null until confirmed).
 export interface GrandHavenPhase {
   id: number;
   label: string;          // "Phase 1"

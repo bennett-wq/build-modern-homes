@@ -41,9 +41,13 @@ function useCommunityMetrics(slug: string): { metrics: CommunityMetrics; isLoadi
   const { lots, isLoading } = useLotsBySlug(slug);
   const metrics = useMemo<CommunityMetrics>(() => {
     const inv = deriveDbInventory(lots);
+    // Prefer the Ready-Now entry price so "From $X all-in" reflects what's
+    // buyable today, not cheaper future-phase inventory. Falls back to overall
+    // available pricing for communities without explicit Ready-Now timing.
+    const entryPremium = inv.startingReadyNowPremium ?? inv.startingPremium;
     return {
       ...inv,
-      startingAllIn: inv.startingPremium != null ? BASE_ALL_IN_PRICE + inv.startingPremium : null,
+      startingAllIn: entryPremium != null ? BASE_ALL_IN_PRICE + entryPremium : null,
     };
   }, [lots]);
   return { metrics, isLoading };
@@ -129,15 +133,18 @@ function CommunityListItem({
 
       {isActive && (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">
-            {metrics.availableCount} {metrics.availableCount === 1 ? 'lot' : 'lots'}
-          </span>
+          {/* Lead with ready-now (buyable today); show total available across
+              phases as secondary so we never present future-phase lots as
+              ready-to-buy. */}
           {metrics.readyNowCount > 0 && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 font-medium text-foreground">
               <CheckCircle2 className="h-3 w-3 text-green-600" />
               {metrics.readyNowCount} ready now
             </span>
           )}
+          <span>
+            {metrics.availableCount} {metrics.availableCount === 1 ? 'lot' : 'lots'} total
+          </span>
           {metrics.startingAllIn && (
             <span>From ${metrics.startingAllIn.toLocaleString()} all-in</span>
           )}
@@ -197,7 +204,7 @@ function CommunityDetail({ development }: { development: Development }) {
         {/* Metrics row */}
         {isActive && (
           <div className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-border bg-secondary/40 p-3">
-            <Metric label="Available" value={metrics.availableCount.toString()} />
+            <Metric label="Total lots" value={metrics.availableCount.toString()} />
             <Metric
               label="Ready now"
               value={metrics.readyNowCount > 0 ? metrics.readyNowCount.toString() : '—'}
@@ -245,7 +252,10 @@ function CommunityDetail({ development }: { development: Development }) {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-accent underline-offset-4 hover:underline"
             >
               <MapPin className="h-3.5 w-3.5" />
-              Preview {availableLotsCount > 0 ? `${availableLotsCount} ` : ''}available {availableLotsCount === 1 ? 'lot' : 'lots'}
+              Preview {metrics.readyNowCount > 0
+                ? `${metrics.readyNowCount} ready-now`
+                : `${availableLotsCount} available`}{' '}
+              {availableLotsCount === 1 ? 'lot' : 'lots'}
               <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>

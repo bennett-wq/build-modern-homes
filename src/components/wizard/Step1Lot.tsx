@@ -18,6 +18,14 @@ import { InlineMobilePricing, type BuyerPricingFlags } from '@/components/pricin
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import { cn } from '@/lib/utils';
 
+// A lot is "future-dated" when it carries a non-"Now" availability (e.g.
+// "Fall 2026"/"Spring 2027"). Future lots stay visible but are NOT selectable
+// for a build/quote here — they belong in future/interest, not the conversion
+// path.
+function isFutureDatedLot(lot: Lot): boolean {
+  return !!lot.availability && lot.availability !== 'Now';
+}
+
 // ============================================================================
 // LotPill Component - Compact horizontal scrolling selector for mobile
 // ============================================================================
@@ -94,7 +102,7 @@ export function Step1Lot({
   pricingFlags,
 }: Step1LotProps) {
   const selectedLot = lots.find(l => l.id === selectedLotId);
-  const canProceed = selectedLot && selectedLot.status === 'available';
+  const canProceed = selectedLot && selectedLot.status === 'available' && !isFutureDatedLot(selectedLot);
   const [hoveredLotId, setHoveredLotId] = useState<number | null>(null);
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const [showPricingPreview, setShowPricingPreview] = useState(false);
@@ -115,6 +123,13 @@ export function Step1Lot({
   const availableLots = useMemo(() => {
     return lots.filter(l => l.status === 'available');
   }, [lots]);
+
+  // Buildable-now lots = available AND not future-dated. The quick-select only
+  // offers these so future-phase lots are never a one-tap "start build" path.
+  const buildableLots = useMemo(
+    () => availableLots.filter((l) => !isFutureDatedLot(l)),
+    [availableLots],
+  );
 
   // Get phase 1 lots count for highlighting
   const phase1Count = useMemo(() => {
@@ -225,8 +240,8 @@ export function Step1Lot({
           )}
         </div>
 
-        {/* Mobile: Horizontal Lot Quick-Select */}
-        {isMobile && availableLots.length > 0 && (
+        {/* Mobile: Horizontal Lot Quick-Select (buildable-now lots only) */}
+        {isMobile && buildableLots.length > 0 && (
           <div className="shrink-0 border-t border-border bg-card">
             <div className="px-4 py-3 flex items-center justify-between">
               <div>
@@ -247,7 +262,7 @@ export function Step1Lot({
             </div>
             <div className="px-4 pb-4 overflow-x-auto scrollbar-hide">
               <div className="flex gap-2" style={{ width: 'max-content' }}>
-                {availableLots.map(lot => (
+                {buildableLots.map(lot => (
                   <LotPill
                     key={lot.id}
                     lot={lot}
@@ -505,7 +520,9 @@ export function Step1Lot({
             {!canProceed && selectedLot && (
               <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 shrink-0">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
-                <span className="text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-medium">Not available</span>
+                <span className="text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-medium">
+                  {isFutureDatedLot(selectedLot) ? 'Future phase — not yet for sale' : 'Not available'}
+                </span>
               </div>
             )}
           </div>
