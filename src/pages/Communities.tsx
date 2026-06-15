@@ -253,9 +253,8 @@ function CommunityDetail({ development }: { development: Development }) {
             >
               <MapPin className="h-3.5 w-3.5" />
               Preview {metrics.readyNowCount > 0
-                ? `${metrics.readyNowCount} ready-now`
-                : `${availableLotsCount} available`}{' '}
-              {availableLotsCount === 1 ? 'lot' : 'lots'}
+                ? `${metrics.readyNowCount} ready-now ${metrics.readyNowCount === 1 ? 'lot' : 'lots'}`
+                : `${availableLotsCount} available ${availableLotsCount === 1 ? 'lot' : 'lots'}`}
               <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
