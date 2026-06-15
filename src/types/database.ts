@@ -70,6 +70,12 @@ export interface Development extends DevelopmentRow {
   pricingZone?: PricingZoneRow;
   conformingModelIds?: string[];
   arbPackageIds?: string[];
+  /**
+   * Source-geometry confidence for the development map center / control frame.
+   * Optional until the pending confidence migration is applied. Gates Mapbox
+   * activation (see src/lib/mapGeometryGate.ts).
+   */
+  map_geometry_source_confidence?: GeometrySourceConfidence | null;
 }
 
 /**
@@ -78,6 +84,11 @@ export interface Development extends DevelopmentRow {
 export interface Lot extends Omit<LotRow, 'polygon_coordinates' | 'restrictions'> {
   polygon_coordinates: LotPolygon;
   restrictions: LotRestrictions;
+  /**
+   * Source-geometry confidence for this lot's polygon. Optional until the
+   * pending confidence migration is applied. 'low'/null blocks Mapbox.
+   */
+  polygon_source_confidence?: GeometrySourceConfidence | null;
 }
 
 export interface LotPolygonPoint {
@@ -104,7 +115,29 @@ export interface LotPolygonGeoJSON {
   coordinates: number[][][];
 }
 
-export type LotPolygon = LotPolygonImageXY | LotPolygonGeoJSON | null;
+/**
+ * GeoJSON MultiPolygon in WGS84 (lng, lat). Used by the Mapbox parcel picker
+ * for lots whose parcel is made of multiple disjoint rings/parts. `coordinates`
+ * is an array of Polygon coordinate arrays. Mirrors the GeoJSON spec.
+ */
+export interface LotPolygonMultiPolygonGeoJSON {
+  type: 'MultiPolygon';
+  coordinates: number[][][][];
+}
+
+export type LotPolygon =
+  | LotPolygonImageXY
+  | LotPolygonGeoJSON
+  | LotPolygonMultiPolygonGeoJSON
+  | null;
+
+/**
+ * Source-geometry confidence used to gate Mapbox activation. Only
+ * 'medium' | 'high' | 'verified' are acceptable; 'low' (or null/absent) keeps a
+ * community in the safe static image-plan mode. Backed by the (pending)
+ * confidence columns on developments/lots — see supabase/_pending_migrations.
+ */
+export type GeometrySourceConfidence = 'low' | 'medium' | 'high' | 'verified';
 
 export interface LotRestrictions {
   maxSqft?: number;

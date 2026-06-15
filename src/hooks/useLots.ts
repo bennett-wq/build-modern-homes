@@ -5,7 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Lot, LotRow, LotPolygonPoint, LotRestrictions } from '@/types/database';
+import type { Lot, LotRow, LotPolygonPoint, LotRestrictions, GeometrySourceConfidence } from '@/types/database';
 import { grandHavenLots } from '@/data/lots/grand-haven';
 import { stJamesBayLots } from '@/data/lots/st-james-bay';
 import { ypsilantiLots } from '@/data/lots/ypsilanti';
@@ -103,6 +103,9 @@ function parseLotPolygon(raw: unknown): import('@/types/database').LotPolygon {
     if (obj.type === 'Polygon' && Array.isArray(obj.coordinates)) {
       return { type: 'Polygon', coordinates: obj.coordinates as number[][][] };
     }
+    if (obj.type === 'MultiPolygon' && Array.isArray(obj.coordinates)) {
+      return { type: 'MultiPolygon', coordinates: obj.coordinates as number[][][][] };
+    }
     return null;
   }
 
@@ -126,10 +129,18 @@ function mapRowToLot(row: LotRow): Lot {
     restrictions = row.restrictions as LotRestrictions;
   }
 
+  // Source-confidence column is additive/pending; read it defensively so the
+  // Mapbox gate (src/lib/mapGeometryGate.ts) picks it up once the migration
+  // lands, and treats its absence as null (which blocks Mapbox) until then.
+  const polygon_source_confidence =
+    (row as { polygon_source_confidence?: GeometrySourceConfidence | null })
+      .polygon_source_confidence ?? null;
+
   return {
     ...row,
     polygon_coordinates,
     restrictions,
+    polygon_source_confidence,
   };
 }
 
@@ -200,6 +211,9 @@ function mapStaticLotsToDbFormat(staticLots: Array<{
         : null,
       restrictions,
       notes: lot.notes || null,
+      // Static fallback lots have no source-verified GeoJSON, so they must
+      // never satisfy the Mapbox gate — keep confidence explicitly null.
+      polygon_source_confidence: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
