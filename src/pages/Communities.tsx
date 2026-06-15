@@ -143,7 +143,7 @@ function CommunityListItem({
             </span>
           )}
           <span>
-            {metrics.availableCount} {metrics.availableCount === 1 ? 'lot' : 'lots'} total
+            {metrics.totalCount} {metrics.totalCount === 1 ? 'lot' : 'lots'} total
           </span>
           {metrics.startingAllIn && (
             <span>From ${metrics.startingAllIn.toLocaleString()} all-in</span>
@@ -204,7 +204,7 @@ function CommunityDetail({ development }: { development: Development }) {
         {/* Metrics row */}
         {isActive && (
           <div className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-border bg-secondary/40 p-3">
-            <Metric label="Total lots" value={metrics.availableCount.toString()} />
+            <Metric label="Total lots" value={metrics.totalCount.toString()} />
             <Metric
               label="Ready now"
               value={metrics.readyNowCount > 0 ? metrics.readyNowCount.toString() : '—'}

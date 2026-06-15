@@ -44,8 +44,12 @@ export function isReadyNowStaticLot(lot: StaticLot): boolean {
 export function deriveDbInventory(lots: DbLot[]): CommunityInventory {
   const available = lots.filter((l) => l.status === 'available');
   const readyNow = available.filter(isReadyNowDbLot);
-  const premiums = available.map((l) => l.premium ?? 0);
-  const readyNowPremiums = readyNow.map((l) => l.premium ?? 0);
+  const premiums = available
+    .map((l) => l.premium)
+    .filter((p): p is number => typeof p === 'number');
+  const readyNowPremiums = readyNow
+    .map((l) => l.premium)
+    .filter((p): p is number => typeof p === 'number');
   return {
     totalCount: lots.length,
     availableCount: available.length,
@@ -59,8 +63,12 @@ export function deriveDbInventory(lots: DbLot[]): CommunityInventory {
 export function deriveStaticInventory(lots: StaticLot[]): CommunityInventory {
   const available = lots.filter((l) => l.status === 'available');
   const readyNow = available.filter(isReadyNowStaticLot);
-  const premiums = available.map((l) => l.premium ?? 0);
-  const readyNowPremiums = readyNow.map((l) => l.premium ?? 0);
+  const premiums = available
+    .map((l) => l.premium)
+    .filter((p): p is number => typeof p === 'number');
+  const readyNowPremiums = readyNow
+    .map((l) => l.premium)
+    .filter((p): p is number => typeof p === 'number');
   return {
     totalCount: lots.length,
     availableCount: available.length,

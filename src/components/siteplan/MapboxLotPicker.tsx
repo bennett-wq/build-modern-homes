@@ -141,9 +141,9 @@ export function MapboxLotPicker({
   // Statuses actually present in this community, ordered, for the legend.
   const legendStatuses = useMemo<LotStatus[]>(() => {
     const order: LotStatus[] = ['available', 'reserved', 'pending', 'sold'];
-    const present = new Set(lots.map((l) => l.status));
+    const present = new Set(featureCollection.features.map((f) => f.properties.status));
     return order.filter((s) => present.has(s));
-  }, [lots]);
+  }, [featureCollection]);
 
   // ---------------------------------------------------------------------------
   // Init effect — runs once. StrictMode-safe via mapRef guard.
