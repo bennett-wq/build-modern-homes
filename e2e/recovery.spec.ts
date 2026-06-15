@@ -51,7 +51,8 @@ test.describe('Communities cockpit', () => {
   test('uses ready-now / total framing, never a bare "Available" count', async ({ page }) => {
     await page.goto('/preview/communities');
     await expect(page.getByRole('heading', { name: 'Communities', exact: true })).toBeVisible();
-    await page.waitForTimeout(600);
+    // Wait for the async community metrics to render (no fixed timeout).
+    await expect.poll(() => page.getByText('Total lots').count()).toBeGreaterThan(0);
     expect(await page.getByText('Total lots').count()).toBeGreaterThan(0);
     expect(await page.getByText('Ready now').count()).toBeGreaterThan(0);
     expect(await page.getByText('Available', { exact: true }).count()).toBe(0);

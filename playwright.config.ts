@@ -9,7 +9,19 @@ import { defineConfig, devices } from "@playwright/test";
  * exposes it via `baseURL` so specs can navigate with relative paths
  * (e.g. `page.goto('/build')`).
  */
-const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 8080);
+function resolvePort(): number {
+  const raw = process.env.PLAYWRIGHT_PORT;
+  if (raw === undefined || raw === "") return 8080;
+  const port = Number(raw);
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error(
+      `Invalid PLAYWRIGHT_PORT "${raw}": expected a positive integer port (1-65535).`,
+    );
+  }
+  return port;
+}
+
+const PORT = resolvePort();
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
