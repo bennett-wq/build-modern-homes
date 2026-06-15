@@ -4,6 +4,7 @@
 // ============================================================================
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -172,7 +173,11 @@ function ConfirmationScreen({ quoteId, onClose }: ConfirmationScreenProps) {
         </div>
       </div>
 
-      <Button onClick={onClose} className="w-full">
+      {/* Post-quote handoff: review/finalize the saved selections snapshot. */}
+      <Button asChild className="w-full">
+        <Link to={`/selections/${quoteId}`}>Review &amp; finalize your selections</Link>
+      </Button>
+      <Button onClick={onClose} variant="outline" className="w-full">
         Done
       </Button>
     </motion.div>
