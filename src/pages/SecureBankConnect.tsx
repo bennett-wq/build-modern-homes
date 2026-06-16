@@ -104,7 +104,17 @@ export default function SecureBankConnect() {
   // Get sessionId from URL params
   const urlParams = new URLSearchParams(window.location.search);
   const sessionId = urlParams.get('sessionId') || '';
-  const returnUrl = urlParams.get('returnUrl') || '';
+  // Only allow same-origin returnUrl to prevent open-redirect phishing
+  const rawReturnUrl = urlParams.get('returnUrl') || '';
+  const returnUrl = (() => {
+    if (!rawReturnUrl) return '';
+    try {
+      const parsed = new URL(rawReturnUrl, window.location.origin);
+      return parsed.origin === window.location.origin ? parsed.toString() : '';
+    } catch {
+      return '';
+    }
+  })();
 
   // Fetch link token
   const fetchLinkToken = useCallback(async () => {
