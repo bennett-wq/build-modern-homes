@@ -37,6 +37,7 @@ import { Separator } from '@/components/ui/separator';
 import { BuyerPricingDisplay, type BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import { getQuoteRequestById, type QuoteRequest } from '@/types/quote-request';
 import { getPricingModeLabel } from '@/lib/pricing-mode-utils';
+import { SHOW_COMMUNITIES } from '@/config/featureFlags';
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -134,8 +135,9 @@ function SavedSelections({ quote }: { quote: QuoteRequest }) {
   const typeLabel = buildTypeLabel(sel.buildType);
 
   // Community-backed quotes return to the community build flow; otherwise /build.
+  // Public route only when communities are live, else the preview route.
   const editHref = quote.communityDetails?.developmentSlug
-    ? `/preview/developments/${quote.communityDetails.developmentSlug}/build`
+    ? `${SHOW_COMMUNITIES ? '/developments' : '/preview/developments'}/${quote.communityDetails.developmentSlug}/build`
     : '/build';
 
   const pricingFlags: BuyerPricingFlags = quote.pricingFlags || {

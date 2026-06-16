@@ -28,6 +28,8 @@ test.describe('Wizard Mobile Footer Regression', () => {
     expect(box).not.toBeNull();
     expect(box!.y).toBeLessThan(844);
     expect(box!.y + box!.height).toBeGreaterThan(0);
+    // Bottom edge must stay within the 844px mobile viewport (not pushed off).
+    expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   });
 
   test('Step 4 sticky footer stays visible even when Continue is disabled', async ({ page }) => {
