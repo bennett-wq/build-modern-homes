@@ -185,14 +185,35 @@ serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const PLAID_CLIENT_ID = Deno.env.get('PLAID_CLIENT_ID');
     const PLAID_SECRET = Deno.env.get('PLAID_SECRET');
     const PLAID_ENV = Deno.env.get('PLAID_ENV') ?? 'sandbox';
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
       throw new Error('Backend configuration is missing');
     }
+
+    // Require authenticated caller
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    const callerUserId = userData.user.id;
 
     const { application_id, refresh_plaid = false } = await req.json();
 
@@ -203,7 +224,30 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const plaidBase = getPlaidBaseUrl(PLAID_ENV);
 
+    // Verify the caller owns this application before any service-role work
+    const { data: ownerRow, error: ownerErr } = await supabase
+      .from('financing_applications')
+      .select('id, user_id')
+      .eq('id', application_id)
+      .maybeSingle();
+    if (ownerErr || !ownerRow || ownerRow.user_id !== callerUserId) {
+      // Also allow admins/builders to run the engine for any application
+      const { data: roleRow } = await userClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', callerUserId)
+        .maybeSingle();
+      const isStaff = roleRow?.role === 'admin' || roleRow?.role === 'builder';
+      if (!isStaff) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403,
+        });
+      }
+    }
+
     console.log('Starting pre-qualification engine for application:', application_id);
+
 
     // Fetch the financing application
     const { data: application, error: appError } = await supabase
