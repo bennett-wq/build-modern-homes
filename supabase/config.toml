@@ -7,13 +7,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.plaid-create-link-token]
-verify_jwt = false
+verify_jwt = true
 
 [functions.plaid-exchange-token]
-verify_jwt = false
+verify_jwt = true
 
 [functions.plaid-get-financials]
 verify_jwt = false
 
 [functions.prequal-engine]
-verify_jwt = false
+verify_jwt = true
