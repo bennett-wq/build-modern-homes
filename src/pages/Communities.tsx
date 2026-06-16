@@ -252,9 +252,11 @@ function CommunityDetail({ development }: { development: Development }) {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-accent underline-offset-4 hover:underline"
             >
               <MapPin className="h-3.5 w-3.5" />
-              Preview {metrics.readyNowCount > 0
-                ? `${metrics.readyNowCount} ready-now ${metrics.readyNowCount === 1 ? 'lot' : 'lots'}`
-                : `${availableLotsCount} available ${availableLotsCount === 1 ? 'lot' : 'lots'}`}
+              {metrics.readyNowCount > 0
+                ? `Preview ${metrics.readyNowCount} ready-now ${metrics.readyNowCount === 1 ? 'lot' : 'lots'}`
+                : availableLotsCount > 0
+                  ? `Preview ${availableLotsCount} available ${availableLotsCount === 1 ? 'lot' : 'lots'}`
+                  : 'View site plan'}
               <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
