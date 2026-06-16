@@ -60,21 +60,57 @@ serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const PLAID_CLIENT_ID = Deno.env.get("PLAID_CLIENT_ID");
     const PLAID_SECRET = Deno.env.get("PLAID_SECRET");
     const PLAID_ENV = Deno.env.get("PLAID_ENV") ?? "sandbox";
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
       throw new Error("Backend configuration is missing");
     }
     if (!PLAID_CLIENT_ID || !PLAID_SECRET) {
       throw new Error("Plaid credentials are missing");
     }
 
+    // Require authenticated caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+    const callerUserId = userData.user.id;
+
     const { public_token, application_id, institution_name } = await req.json();
     if (!public_token) throw new Error("public_token is required");
     if (!application_id) throw new Error("application_id is required");
+
+    // Verify the caller owns this application
+    const adminPre = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: appRow, error: appErr } = await adminPre
+      .from("financing_applications")
+      .select("id, user_id")
+      .eq("id", application_id)
+      .maybeSingle();
+    if (appErr || !appRow || appRow.user_id !== callerUserId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
 
     const plaidBase = getPlaidBaseUrl(PLAID_ENV);
 
