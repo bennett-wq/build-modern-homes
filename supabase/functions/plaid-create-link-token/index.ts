@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 
 // Allowed origins for CORS - restrict to trusted domains
 const allowedOrigins = [
@@ -58,6 +60,27 @@ serve(async (req) => {
   logCorsEvent(req, 'request');
 
   try {
+    // Require authenticated caller to prevent anonymous Plaid quota abuse
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const authHeader = req.headers.get("Authorization");
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
     const PLAID_CLIENT_ID = Deno.env.get("PLAID_CLIENT_ID");
     const PLAID_SECRET = Deno.env.get("PLAID_SECRET");
     const PLAID_ENV = Deno.env.get("PLAID_ENV") ?? "sandbox";
@@ -68,7 +91,8 @@ serve(async (req) => {
 
     const plaidBase = getPlaidBaseUrl(PLAID_ENV);
 
-    const clientUserId = crypto.randomUUID();
+    const clientUserId = userData.user.id;
+
 
     const payload = {
       client_id: PLAID_CLIENT_ID,
