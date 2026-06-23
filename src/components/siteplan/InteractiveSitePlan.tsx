@@ -20,6 +20,7 @@ import { useDevelopments } from '@/hooks/useDevelopments';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { buildHref, isPreviewPath, sitePlanHref } from '@/lib/communityRoutes';
 import { canRenderMapbox } from '@/lib/mapGeometryGate';
+import { deriveStaticInventory } from '@/lib/communityInventory';
 import { cn } from '@/lib/utils';
 import type { Development as DbDevelopment, Lot as DbLot } from '@/types/database';
 
@@ -131,7 +132,11 @@ export function InteractiveSitePlan({
     }
   };
 
-  const availableLots = lots.filter(l => l.status === 'available').length;
+  // Honest inventory framing: lead with ready-now (buyable today) and show total
+  // across phases — never present future-phase lots as plainly "available".
+  const inventory = deriveStaticInventory(lots);
+  const readyNowLots = inventory.readyNowCount;
+  const totalLots = inventory.totalCount;
   const reservedLots = lots.filter(l => l.status === 'reserved').length;
   const soldLots = lots.filter(l => l.status === 'sold').length;
 
@@ -158,7 +163,8 @@ export function InteractiveSitePlan({
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500" />
             <span className="text-muted-foreground">
-              <span className="font-medium text-foreground">{availableLots}</span> Available
+              <span className="font-medium text-foreground">{readyNowLots}</span> Ready now
+              {totalLots > readyNowLots && <span> of {totalLots} total</span>}
             </span>
           </div>
           <div className="flex items-center gap-2">
