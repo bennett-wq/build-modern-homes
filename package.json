@@ -92,6 +92,6 @@
     "vite": "^5.4.19"
   },
   "overrides": {
-    "dompurify": "^3.4.10"
+    "dompurify": "3.4.11"
   }
 }
