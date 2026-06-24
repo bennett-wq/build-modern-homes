@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminShell } from '@/components/admin/AdminShell';
@@ -38,8 +38,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { 
-  Loader2, 
+  Loader2,
   TrendingUp,
+  Inbox,
   RefreshCw,
   Search,
   Mail,
@@ -391,10 +392,18 @@ export default function AdminLeads() {
       isAdmin={isAdmin}
       onSignOut={handleSignOut}
       headerActions={
-        <Button variant="ghost" size="sm" onClick={loadApplications}>
-          <RefreshCw className="h-4 w-4 mr-1" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/admin/quote-leads">
+              <Inbox className="h-4 w-4 mr-1" />
+              Buyer Leads
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={loadApplications}>
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </Button>
+        </div>
       }
     >
       <div className="space-y-6">
