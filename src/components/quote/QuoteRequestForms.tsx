@@ -208,6 +208,7 @@ export function BuildOnMyLandForm({
   const [step, setStep] = useState<'form' | 'confirmation'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteId, setQuoteId] = useState('');
+  const { toast } = useToast();
   
   const [contact, setContact] = useState<ContactInfo>({ name: '', email: '', phone: '' });
   const [hasLand, setHasLand] = useState(true);
@@ -242,7 +243,19 @@ export function BuildOnMyLandForm({
       status: 'pending',
     };
     
-    saveQuoteRequest(quote);
+    const saved = saveQuoteRequest(quote);
+    if (!saved) {
+      // Local snapshot failed — do not show a confirmation or a selections link
+      // for an unsaved quote. Keep the buyer's entered selections/contact for retry.
+      toast({
+        title: "Couldn't save your selections",
+        description:
+          "We couldn't save your quote selections on this device. Please try again.",
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+      return;
+    }
     setQuoteId(id);
     setIsSubmitting(false);
     setStep('confirmation');
@@ -449,6 +462,7 @@ export function FindLandForm({
   const [step, setStep] = useState<'form' | 'confirmation'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteId, setQuoteId] = useState('');
+  const { toast } = useToast();
   
   const [contact, setContact] = useState<ContactInfo>({ name: '', email: '', phone: '' });
   const [details, setDetails] = useState<FindLandDetails>({
@@ -478,7 +492,19 @@ export function FindLandForm({
       status: 'pending',
     };
     
-    saveQuoteRequest(quote);
+    const saved = saveQuoteRequest(quote);
+    if (!saved) {
+      // Local snapshot failed — do not show a confirmation or a selections link
+      // for an unsaved quote. Keep the buyer's entered selections/contact for retry.
+      toast({
+        title: "Couldn't save your selections",
+        description:
+          "We couldn't save your quote selections on this device. Please try again.",
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+      return;
+    }
     setQuoteId(id);
     setIsSubmitting(false);
     setStep('confirmation');
@@ -806,6 +832,7 @@ export function CommunityQuoteForm({
   const [step, setStep] = useState<'form' | 'confirmation'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteId, setQuoteId] = useState('');
+  const { toast } = useToast();
   
   const [contact, setContact] = useState<ContactInfo>({ name: '', email: '', phone: '' });
   const [timeline, setTimeline] = useState<TimelineType>('unknown');
@@ -838,7 +865,19 @@ export function CommunityQuoteForm({
       status: 'pending',
     };
     
-    saveQuoteRequest(quote);
+    const saved = saveQuoteRequest(quote);
+    if (!saved) {
+      // Local snapshot failed — do not show a confirmation or a selections link
+      // for an unsaved quote. Keep the buyer's entered selections/contact for retry.
+      toast({
+        title: "Couldn't save your selections",
+        description:
+          "We couldn't save your quote selections on this device. Please try again.",
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+      return;
+    }
     setQuoteId(id);
     setIsSubmitting(false);
     setStep('confirmation');

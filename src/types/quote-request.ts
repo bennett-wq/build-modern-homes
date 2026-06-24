@@ -118,15 +118,22 @@ export function generateQuoteId(): string {
 }
 
 /**
- * Save a quote request to localStorage
+ * Save a quote request to localStorage.
+ * Returns true only when the quote was written AND is retrievable by its id;
+ * returns false (without throwing) on serialization, storage, quota,
+ * private-mode, parsing, or read-back failure. Callers must gate quote-linked
+ * behavior (confirmation, the /selections/:quoteId link) on a true result.
  */
-export function saveQuoteRequest(quote: QuoteRequest): void {
+export function saveQuoteRequest(quote: QuoteRequest): boolean {
   try {
     const existing = getQuoteRequests();
     const updated = [quote, ...existing.filter(q => q.id !== quote.id)];
     localStorage.setItem(QUOTE_STORAGE_KEY, JSON.stringify(updated));
+    // Confirm the write is actually retrievable before reporting success.
+    return getQuoteRequestById(quote.id) !== null;
   } catch (e) {
     console.error('Failed to save quote request:', e);
+    return false;
   }
 }
 
