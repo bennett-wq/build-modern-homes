@@ -5,7 +5,7 @@
 //
 //   npx --yes deno test supabase/functions/submit-lead/index.test.ts
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { handleSubmitLead, type SubmitLeadDeps } from './index.ts';
+import { getCorsHeaders, handleSubmitLead, type SubmitLeadDeps } from './index.ts';
 import { buildQuoteRow, type LeadInput } from '../_shared/leadContract.ts';
 
 const UUID_A = '11111111-1111-4111-8111-111111111111';
@@ -278,4 +278,47 @@ Deno.test('concurrent race: null pre-check, insert 23505, materially different r
   );
   assertEquals(res.status, 409);
   assertEquals(reads, 2);
+});
+
+// --- CORS: production custom domain, preflight, invalid POST ------------------
+
+function acaoFor(origin: string): string | undefined {
+  return getCorsHeaders(
+    new Request('https://example.test/functions/v1/submit-lead', { headers: { origin } }),
+  )['Access-Control-Allow-Origin'];
+}
+
+Deno.test('CORS: production apex origin is echoed back', () => {
+  assertEquals(acaoFor('https://basemodhomes.com'), 'https://basemodhomes.com');
+});
+
+Deno.test('CORS: production www origin is echoed back', () => {
+  assertEquals(acaoFor('https://www.basemodhomes.com'), 'https://www.basemodhomes.com');
+});
+
+Deno.test('CORS: existing Lovable origin remains allowed', () => {
+  assertEquals(
+    acaoFor('https://build-modern-homes.lovable.app'),
+    'https://build-modern-homes.lovable.app',
+  );
+});
+
+Deno.test('CORS: unknown origin does NOT receive its own origin as ACAO', () => {
+  assertEquals(acaoFor('https://evil.example.com') === 'https://evil.example.com', false);
+});
+
+Deno.test('OPTIONS preflight still succeeds (200)', async () => {
+  const res = await handleSubmitLead(
+    new Request('https://example.test/functions/v1/submit-lead', {
+      method: 'OPTIONS',
+      headers: { origin: 'https://basemodhomes.com' },
+    }),
+    mockDeps(),
+  );
+  assertEquals(res.status, 200);
+});
+
+Deno.test('empty/invalid POST body → 400 (not 401 or 500)', async () => {
+  const res = await handleSubmitLead(makeReq({}), mockDeps());
+  assertEquals(res.status, 400);
 });

@@ -25,6 +25,10 @@ import {
 } from '../_shared/leadContract.ts';
 
 const allowedOrigins = [
+  // Canonical production custom domain (build-modern-homes.lovable.app 302s here;
+  // www → apex). Listed first so it is the fallback ACAO for unknown origins.
+  'https://basemodhomes.com',
+  'https://www.basemodhomes.com',
   'https://build-modern-homes.lovable.app',
   'https://id-preview--b6311393-fa2b-46a4-a734-59db659ebfc9.lovable.app',
   'https://b6311393-fa2b-46a4-a734-59db659ebfc9.lovableproject.com',
