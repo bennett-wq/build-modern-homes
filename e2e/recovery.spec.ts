@@ -111,6 +111,15 @@ test.describe('Quote persistence gating (review link only after a saved quote)',
     '/preview/developments/grand-haven/build?lot=Lot%2015&model=aspen&buildType=xmod&package=test-pkg&garage=test-garage';
 
   test('successful save → confirmation + Review link → /selections loads + persists on refresh', async ({ page }) => {
+    // Backend-first: the lead must be delivered before the local snapshot gates
+    // the selections link. Intercept submit-lead so no real backend write occurs.
+    await page.route('**/functions/v1/submit-lead', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: '33333333-3333-4333-8333-333333333333', persisted: true, duplicate: false }),
+      }),
+    );
     await page.goto(REVIEW_URL);
     await page.getByRole('button', { name: 'Get Quote' }).click({ timeout: 25000 });
     await page.locator('#contact-name').fill('Test Buyer');
@@ -136,7 +145,19 @@ test.describe('Quote persistence gating (review link only after a saved quote)',
     await expect(page.getByRole('heading', { name: /the aspen|your build/i })).toBeVisible();
   });
 
-  test('failed local save → retryable error, no Review link, no nav, no saved quote, state kept', async ({ page }) => {
+  test('backend success + local snapshot failure → partial confirmation, no Review link, no resubmit', async ({ page }) => {
+    // Backend delivery succeeds (system of record), but the same-device snapshot
+    // write fails. Per the combined flow: still confirm receipt, omit the
+    // selections link, and NEVER re-submit the backend lead to retry local storage.
+    let calls = 0;
+    await page.route('**/functions/v1/submit-lead', (route) => {
+      calls++;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: '33333333-3333-4333-8333-333333333333', persisted: true, duplicate: false }),
+      });
+    });
     // Make ONLY the quote-storage write fail; leave other app storage stable.
     await page.addInitScript(() => {
       const orig = Storage.prototype.setItem;
@@ -154,15 +175,15 @@ test.describe('Quote persistence gating (review link only after a saved quote)',
     await page.locator('#contact-phone').fill('5551234567');
     await page.getByRole('button', { name: /request quote/i }).click();
 
-    // Retryable error; quote-linked surfaces never appear.
-    await expect(page.getByText(/couldn.t save your selections/i).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/request received/i)).toHaveCount(0);
+    // Receipt is confirmed (backend has it), but the selections link is omitted
+    // and no retrievable local snapshot exists.
+    await expect(page.getByText(/request received/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/couldn.t save a copy on this device/i)).toBeVisible();
     await expect(page.getByRole('link', { name: /review .* finalize/i })).toHaveCount(0);
     expect(page.url()).not.toContain('/selections/');
-    // No retrievable quote was written for the generated id.
     const stored = await page.evaluate(() => localStorage.getItem('basemod-quote-requests'));
     expect(stored).toBeNull();
-    // Buyer-entered contact preserved for retry.
-    await expect(page.locator('#contact-name')).toHaveValue('Test Buyer');
+    // The backend lead was submitted exactly once (never resubmitted to retry local storage).
+    expect(calls).toBe(1);
   });
 });

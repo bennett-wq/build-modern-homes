@@ -1,6 +1,8 @@
 // Step 4: Review + Get Started - final summary with CTAs
 // Premium polish with proper Dialog handling and BaseMod Financial integration
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { submitLead, resolveRequestId } from '@/lib/leadDelivery';
+import type { LeadInput } from '@/lib/leadContract';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -594,18 +596,47 @@ function ScheduleForm({
     preferredTime: '',
     notes: '',
   });
+  const reqRef = useRef<{ sig: string; id: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
+    const baseInput: Omit<LeadInput, 'requestId'> = {
+      source: 'consultation',
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      message: [
+        formData.preferredDate ? `Preferred date: ${formData.preferredDate}` : null,
+        formData.preferredTime ? `Preferred time: ${formData.preferredTime}` : null,
+        formData.notes || null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      modelName: model?.name,
+      developmentName: development?.name,
+      lotLabel: lot?.label,
+      packageName: package_?.name,
+      garageDoorName: garageDoor?.name,
+    };
+    const requestId = resolveRequestId(reqRef, baseInput);
+    const result = await submitLead({ ...baseInput, requestId });
     setIsSubmitting(false);
+
+    if (!result.ok) {
+      // Do not claim the request was sent. Keep the buyer's entry for retry.
+      toast({
+        title: "We couldn't send your request",
+        description: "Please check your connection and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     onSuccess();
     toast({
-      title: "Scheduling request sent!",
+      title: "Consultation request sent!",
       description: "We'll confirm your call within 1 business day.",
     });
   };

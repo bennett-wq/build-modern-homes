@@ -3,7 +3,7 @@
 // Forms for Build on My Land, Find Land, and Community Interest
 // ============================================================================
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -54,11 +54,57 @@ import {
   type BudgetRange,
   generateQuoteId,
   saveQuoteRequest,
+  getQuoteRequestById,
   getQuoteShareableUrl,
 } from '@/types/quote-request';
 import type { BuyerFacingBreakdown } from '@/hooks/usePricingEngine';
 import type { BuyerPricingFlags } from '@/components/pricing/BuyerPricingDisplay';
 import type { PricingMode } from '@/data/pricing-layers';
+import { submitLead, resolveRequestId, type RequestIdRef } from '@/lib/leadDelivery';
+import type { LeadInput } from '@/lib/leadContract';
+
+// ============================================================================
+// SHARED BACKEND LEAD DELIVERY
+// Backend (submit-lead → public.quotes) is the system of record. localStorage
+// is kept only as a same-device convenience snapshot. We never show success
+// until the backend confirms the persisted id.
+// ============================================================================
+
+async function deliverLeadToBackend(
+  reqRef: RequestIdRef,
+  baseInput: Omit<LeadInput, 'requestId'>,
+  toast: ReturnType<typeof useToast>['toast'],
+): Promise<{ ok: boolean; backendId?: string }> {
+  const requestId = resolveRequestId(reqRef, baseInput);
+  const result = await submitLead({ ...baseInput, requestId });
+  if (!result.ok) {
+    toast({
+      title: "We couldn't send your request",
+      description: 'Please check your connection and try again.',
+      variant: 'destructive',
+    });
+    return { ok: false };
+  }
+  return { ok: true, backendId: result.id };
+}
+
+function selectionLeadFields(
+  selection: SelectionSummary,
+  pricingMode: PricingMode,
+  buyerFacingBreakdown?: BuyerFacingBreakdown,
+): Partial<LeadInput> {
+  return {
+    modelName: selection.modelName,
+    buildTypeRaw: selection.buildType,
+    developmentName: selection.developmentName,
+    lotLabel:
+      selection.lotLabel ?? (selection.lotId != null ? String(selection.lotId) : undefined),
+    packageName: selection.packageName,
+    garageDoorName: selection.garageDoorName,
+    servicePackageRaw: pricingMode,
+    totalEstimate: buyerFacingBreakdown?.allInTotal ?? null,
+  };
+}
 
 // ============================================================================
 // SHARED COMPONENTS
@@ -116,9 +162,12 @@ function ContactFields({ contact, onChange }: ContactFieldsProps) {
 interface ConfirmationScreenProps {
   quoteId: string;
   onClose: () => void;
+  // When false, the backend received the lead but the same-device snapshot could
+  // not be saved — omit the localStorage-dependent reference and selections link.
+  localSaved?: boolean;
 }
 
-function ConfirmationScreen({ quoteId, onClose }: ConfirmationScreenProps) {
+function ConfirmationScreen({ quoteId, onClose, localSaved = true }: ConfirmationScreenProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const shareableUrl = getQuoteShareableUrl(quoteId);
@@ -151,32 +200,41 @@ function ConfirmationScreen({ quoteId, onClose }: ConfirmationScreenProps) {
         </p>
       </div>
 
-      <div className="bg-muted rounded-lg p-4 space-y-3">
-        <p className="text-sm text-muted-foreground">Your quote reference:</p>
-        <p className="font-mono text-lg font-semibold text-foreground">{quoteId}</p>
-        
-        <div className="flex items-center gap-2 bg-background rounded-md border p-2">
-          <input
-            type="text"
-            value={shareableUrl}
-            readOnly
-            className="flex-1 text-xs bg-transparent border-none outline-none text-muted-foreground truncate"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopy}
-            className="shrink-0"
-          >
-            {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
+      {localSaved ? (
+        <>
+          <div className="bg-muted rounded-lg p-4 space-y-3">
+            <p className="text-sm text-muted-foreground">Your quote reference:</p>
+            <p className="font-mono text-lg font-semibold text-foreground">{quoteId}</p>
 
-      {/* Post-quote handoff: review/finalize the saved selections snapshot. */}
-      <Button asChild className="w-full">
-        <Link to={`/selections/${quoteId}`}>Review &amp; finalize your selections</Link>
-      </Button>
+            <div className="flex items-center gap-2 bg-background rounded-md border p-2">
+              <input
+                type="text"
+                value={shareableUrl}
+                readOnly
+                className="flex-1 text-xs bg-transparent border-none outline-none text-muted-foreground truncate"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopy}
+                className="shrink-0"
+              >
+                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Post-quote handoff: review/finalize the saved selections snapshot. */}
+          <Button asChild className="w-full">
+            <Link to={`/selections/${quoteId}`}>Review &amp; finalize your selections</Link>
+          </Button>
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          We couldn't save a copy on this device, but our team has your request and
+          will follow up within 1 business day.
+        </p>
+      )}
       <Button onClick={onClose} variant="outline" className="w-full">
         Done
       </Button>
@@ -209,7 +267,9 @@ export function BuildOnMyLandForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteId, setQuoteId] = useState('');
   const { toast } = useToast();
-  
+  const reqRef = useRef<{ sig: string; id: string } | null>(null);
+  const [localSaved, setLocalSaved] = useState(true);
+
   const [contact, setContact] = useState<ContactInfo>({ name: '', email: '', phone: '' });
   const [hasLand, setHasLand] = useState(true);
   const [details, setDetails] = useState<BuildOnMyLandDetails>({
@@ -226,9 +286,23 @@ export function BuildOnMyLandForm({
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate submission delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
+    const res = await deliverLeadToBackend(
+      reqRef,
+      {
+        source: 'build_quote',
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        message: details.notes,
+        address: details.address,
+        ...selectionLeadFields(selection, pricingMode, buyerFacingBreakdown),
+      },
+      toast,
+    );
+    setIsSubmitting(false);
+    if (!res.ok) return; // keep the buyer's data; reqRef preserves the id for retry
+
+    // Backend is the system of record; keep a same-device convenience snapshot.
     const id = generateQuoteId();
     const quote: QuoteRequest = {
       id,
@@ -242,22 +316,14 @@ export function BuildOnMyLandForm({
       pricingMode,
       status: 'pending',
     };
-    
+    // 4) Same-device snapshot (PR #1 boolean read-back gating). Backend already
+    //    confirmed above, so a snapshot failure must NOT re-submit the lead.
     const saved = saveQuoteRequest(quote);
-    if (!saved) {
-      // Local snapshot failed — do not show a confirmation or a selections link
-      // for an unsaved quote. Keep the buyer's entered selections/contact for retry.
-      toast({
-        title: "Couldn't save your selections",
-        description:
-          "We couldn't save your quote selections on this device. Please try again.",
-        variant: 'destructive',
-      });
-      setIsSubmitting(false);
-      return;
-    }
+    // 5/7) Both succeeded → confirmation + selections link. Backend confirmed but
+    //      local snapshot failed → still confirm receipt, omit the selections
+    //      link (it points at a snapshot that isn't on this device).
     setQuoteId(id);
-    setIsSubmitting(false);
+    setLocalSaved(saved);
     setStep('confirmation');
   };
 
@@ -285,7 +351,7 @@ export function BuildOnMyLandForm({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
         <AnimatePresence mode="wait">
           {step === 'confirmation' ? (
-            <ConfirmationScreen quoteId={quoteId} onClose={handleClose} />
+            <ConfirmationScreen quoteId={quoteId} onClose={handleClose} localSaved={localSaved} />
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
@@ -463,7 +529,9 @@ export function FindLandForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteId, setQuoteId] = useState('');
   const { toast } = useToast();
-  
+  const reqRef = useRef<{ sig: string; id: string } | null>(null);
+  const [localSaved, setLocalSaved] = useState(true);
+
   const [contact, setContact] = useState<ContactInfo>({ name: '', email: '', phone: '' });
   const [details, setDetails] = useState<FindLandDetails>({
     targetArea: '',
@@ -476,8 +544,30 @@ export function FindLandForm({
     e.preventDefault();
     setIsSubmitting(true);
     
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
+    const res = await deliverLeadToBackend(
+      reqRef,
+      {
+        source: 'land_quote',
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        message: [
+          details.targetArea ? `Target area: ${details.targetArea}` : null,
+          details.budgetRange && details.budgetRange !== 'unknown'
+            ? `Budget: ${details.budgetRange}`
+            : null,
+          details.notes || null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        timeline: details.timeline,
+        ...selectionLeadFields(selection, pricingMode, buyerFacingBreakdown),
+      },
+      toast,
+    );
+    setIsSubmitting(false);
+    if (!res.ok) return; // keep the buyer's data; reqRef preserves the id for retry
+
     const id = generateQuoteId();
     const quote: QuoteRequest = {
       id,
@@ -491,22 +581,14 @@ export function FindLandForm({
       pricingMode,
       status: 'pending',
     };
-    
+    // 4) Same-device snapshot (PR #1 boolean read-back gating). Backend already
+    //    confirmed above, so a snapshot failure must NOT re-submit the lead.
     const saved = saveQuoteRequest(quote);
-    if (!saved) {
-      // Local snapshot failed — do not show a confirmation or a selections link
-      // for an unsaved quote. Keep the buyer's entered selections/contact for retry.
-      toast({
-        title: "Couldn't save your selections",
-        description:
-          "We couldn't save your quote selections on this device. Please try again.",
-        variant: 'destructive',
-      });
-      setIsSubmitting(false);
-      return;
-    }
+    // 5/7) Both succeeded → confirmation + selections link. Backend confirmed but
+    //      local snapshot failed → still confirm receipt, omit the selections
+    //      link (it points at a snapshot that isn't on this device).
     setQuoteId(id);
-    setIsSubmitting(false);
+    setLocalSaved(saved);
     setStep('confirmation');
   };
 
@@ -529,7 +611,7 @@ export function FindLandForm({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
         <AnimatePresence mode="wait">
           {step === 'confirmation' ? (
-            <ConfirmationScreen quoteId={quoteId} onClose={handleClose} />
+            <ConfirmationScreen quoteId={quoteId} onClose={handleClose} localSaved={localSaved} />
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
@@ -833,7 +915,9 @@ export function CommunityQuoteForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteId, setQuoteId] = useState('');
   const { toast } = useToast();
-  
+  const reqRef = useRef<{ sig: string; id: string } | null>(null);
+  const [localSaved, setLocalSaved] = useState(true);
+
   const [contact, setContact] = useState<ContactInfo>({ name: '', email: '', phone: '' });
   const [timeline, setTimeline] = useState<TimelineType>('unknown');
   const [financingInterest, setFinancingInterest] = useState(true);
@@ -843,8 +927,24 @@ export function CommunityQuoteForm({
     e.preventDefault();
     setIsSubmitting(true);
     
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
+    const res = await deliverLeadToBackend(
+      reqRef,
+      {
+        source: 'community_quote',
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        message: [notes || null, `Financing interest: ${financingInterest ? 'yes' : 'no'}`]
+          .filter(Boolean)
+          .join(' · '),
+        timeline,
+        ...selectionLeadFields(selection, pricingMode, buyerFacingBreakdown),
+      },
+      toast,
+    );
+    setIsSubmitting(false);
+    if (!res.ok) return; // keep the buyer's data; reqRef preserves the id for retry
+
     const id = generateQuoteId();
     const quote: QuoteRequest = {
       id,
@@ -864,22 +964,14 @@ export function CommunityQuoteForm({
       pricingMode,
       status: 'pending',
     };
-    
+    // 4) Same-device snapshot (PR #1 boolean read-back gating). Backend already
+    //    confirmed above, so a snapshot failure must NOT re-submit the lead.
     const saved = saveQuoteRequest(quote);
-    if (!saved) {
-      // Local snapshot failed — do not show a confirmation or a selections link
-      // for an unsaved quote. Keep the buyer's entered selections/contact for retry.
-      toast({
-        title: "Couldn't save your selections",
-        description:
-          "We couldn't save your quote selections on this device. Please try again.",
-        variant: 'destructive',
-      });
-      setIsSubmitting(false);
-      return;
-    }
+    // 5/7) Both succeeded → confirmation + selections link. Backend confirmed but
+    //      local snapshot failed → still confirm receipt, omit the selections
+    //      link (it points at a snapshot that isn't on this device).
     setQuoteId(id);
-    setIsSubmitting(false);
+    setLocalSaved(saved);
     setStep('confirmation');
   };
 
@@ -899,7 +991,7 @@ export function CommunityQuoteForm({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
         <AnimatePresence mode="wait">
           {step === 'confirmation' ? (
-            <ConfirmationScreen quoteId={quoteId} onClose={handleClose} />
+            <ConfirmationScreen quoteId={quoteId} onClose={handleClose} localSaved={localSaved} />
           ) : (
             <motion.div
               initial={{ opacity: 0 }}

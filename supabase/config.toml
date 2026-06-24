@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.prequal-engine]
 verify_jwt = true
+
+[functions.submit-lead]
+verify_jwt = false

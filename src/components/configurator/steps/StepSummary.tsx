@@ -3,7 +3,7 @@
 // Uses canonical pricing function for consistent totals
 // ============================================================================
 
-import { useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronDown, ChevronUp, Check, Copy, Home, MapPin, 
@@ -21,6 +21,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Switch } from '@/components/ui/switch';
 import { WizardStickyFooter, WizardFooterSpacer } from '@/components/wizard/WizardStickyFooter';
 import { useToast } from '@/hooks/use-toast';
+import { submitLead, resolveRequestId } from '@/lib/leadDelivery';
+import type { LeadSource } from '@/lib/leadContract';
 import { type ModelConfig, type BuildIntent, type BuildType, exteriorConfig } from '@/data/pricing-config';
 import type { PriceBreakdown, ExteriorSelection } from '@/hooks/usePricingEngine';
 import { getExteriorPreviewInfo } from '@/lib/exterior-preview-utils';
@@ -611,11 +613,56 @@ function LeadFormDialog({
   model: ModelConfig;
 }) {
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
-  const handleSubmit = (e: React.FormEvent) => {
+  const reqRef = useRef<{ sig: string; id: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Integrate with backend
+    if (isSubmitting) return;
+    const form = e.currentTarget;
+    const val = (id: string) =>
+      ((form.elements.namedItem(id) as HTMLInputElement | null)?.value ?? '').trim();
+
+    const source: LeadSource =
+      intent === 'find-land'
+        ? 'land_quote'
+        : intent === 'basemod-community'
+          ? 'community_quote'
+          : 'build_quote';
+
+    const baseInput = {
+      source,
+      name: [val('firstName'), val('lastName')].filter(Boolean).join(' '),
+      email: val('email'),
+      phone: val('phone'),
+      address: val('address') || undefined,
+      message:
+        [
+          val('notes') || null,
+          val('targetArea') ? `Target area: ${val('targetArea')}` : null,
+          val('budget') ? `Land budget: ${val('budget')}` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ') || undefined,
+      modelName: model?.name,
+    };
+
+    setIsSubmitting(true);
+    const requestId = resolveRequestId(reqRef, baseInput);
+    const result = await submitLead({ ...baseInput, requestId });
+    setIsSubmitting(false);
+
+    if (!result.ok) {
+      // Do not claim submission. Keep the buyer's entries for retry.
+      toast({
+        title: "We couldn't submit your request",
+        description: "Please check your connection and try again.",
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSubmitted(true);
     toast({
       title: 'Request submitted!',
@@ -739,8 +786,8 @@ function LeadFormDialog({
             <Textarea id="notes" placeholder="Tell us more about your project..." />
           </div>
           
-          <Button type="submit" className="w-full">
-            Submit Request
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting…' : 'Submit Request'}
           </Button>
         </form>
       </DialogContent>
