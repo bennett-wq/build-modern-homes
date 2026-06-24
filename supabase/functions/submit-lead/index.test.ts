@@ -176,3 +176,106 @@ Deno.test('conflict but missing existing row → 500 (never blind success)', asy
   );
   assertEquals(res.status, 500);
 });
+
+// --- Idempotency precedes rate limiting (Gate 2) -----------------------------
+
+Deno.test('saturated limit + existing equivalent request → duplicate, no rate-limit, no insert', async () => {
+  let countCalled = false;
+  let insertCalled = false;
+  const existingRow = buildQuoteRow(baseInput());
+  const res = await handleSubmitLead(
+    makeReq(baseInput()),
+    mockDeps({
+      readQuoteById: () => Promise.resolve(existingRow as unknown as Record<string, unknown>),
+      countRecentByEmail: () => {
+        countCalled = true;
+        return Promise.resolve(99);
+      },
+      insertQuote: () => {
+        insertCalled = true;
+        return Promise.resolve({ errorCode: null });
+      },
+    }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { id: UUID_A, persisted: true, duplicate: true });
+  assertEquals(countCalled, false); // rate limiter not consulted
+  assertEquals(insertCalled, false); // no second insert
+});
+
+Deno.test('saturated limit + existing materially different request → 409, no rate-limit, no insert', async () => {
+  let countCalled = false;
+  let insertCalled = false;
+  const existingRow = buildQuoteRow(baseInput({ message: 'totally different' }));
+  const res = await handleSubmitLead(
+    makeReq(baseInput({ message: 'original' })),
+    mockDeps({
+      readQuoteById: () => Promise.resolve(existingRow as unknown as Record<string, unknown>),
+      countRecentByEmail: () => {
+        countCalled = true;
+        return Promise.resolve(99);
+      },
+      insertQuote: () => {
+        insertCalled = true;
+        return Promise.resolve({ errorCode: null });
+      },
+    }),
+  );
+  assertEquals(res.status, 409);
+  assertEquals(countCalled, false);
+  assertEquals(insertCalled, false);
+});
+
+Deno.test('no existing request + count at limit → 429, no insert', async () => {
+  let insertCalled = false;
+  const res = await handleSubmitLead(
+    makeReq(baseInput()),
+    mockDeps({
+      readQuoteById: () => Promise.resolve(null),
+      countRecentByEmail: () => Promise.resolve(5),
+      insertQuote: () => {
+        insertCalled = true;
+        return Promise.resolve({ errorCode: null });
+      },
+    }),
+  );
+  assertEquals(res.status, 429);
+  assertEquals(insertCalled, false);
+});
+
+Deno.test('concurrent race: null pre-check, insert 23505, equivalent row → duplicate=true', async () => {
+  let reads = 0;
+  const racedRow = buildQuoteRow(baseInput());
+  const res = await handleSubmitLead(
+    makeReq(baseInput()),
+    mockDeps({
+      readQuoteById: () => {
+        reads++;
+        return Promise.resolve(reads === 1 ? null : (racedRow as unknown as Record<string, unknown>));
+      },
+      countRecentByEmail: () => Promise.resolve(0),
+      insertQuote: () => Promise.resolve({ errorCode: '23505' }),
+    }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { id: UUID_A, persisted: true, duplicate: true });
+  assertEquals(reads, 2); // pre-check (null) + post-insert race read
+});
+
+Deno.test('concurrent race: null pre-check, insert 23505, materially different row → 409', async () => {
+  let reads = 0;
+  const racedRow = buildQuoteRow(baseInput({ message: 'different content' }));
+  const res = await handleSubmitLead(
+    makeReq(baseInput({ message: 'original content' })),
+    mockDeps({
+      readQuoteById: () => {
+        reads++;
+        return Promise.resolve(reads === 1 ? null : (racedRow as unknown as Record<string, unknown>));
+      },
+      countRecentByEmail: () => Promise.resolve(0),
+      insertQuote: () => Promise.resolve({ errorCode: '23505' }),
+    }),
+  );
+  assertEquals(res.status, 409);
+  assertEquals(reads, 2);
+});

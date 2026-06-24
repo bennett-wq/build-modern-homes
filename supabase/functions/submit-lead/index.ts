@@ -116,8 +116,20 @@ export async function handleSubmitLead(req: Request, deps: SubmitLeadDeps): Prom
 
   const incoming = buildQuoteRow(payload as LeadInput);
 
-  // Conservative recent-submission rate limit (per normalized email), excluding
-  // the current idempotency id so a retry of the SAME submission never counts.
+  // Compare an existing row (pre-insert check or post-insert race) against the
+  // incoming one: materially equivalent → idempotent duplicate; else 409 conflict.
+  const sameOrConflict = (row: Record<string, unknown>): Response =>
+    materialSignatureFromRow(row as unknown as QuoteRow) === materialSignatureFromRow(incoming)
+      ? json({ id: incoming.id, persisted: true, duplicate: true }, 200, corsHeaders)
+      : json({ error: 'This request id was already used for a different submission' }, 409, corsHeaders);
+
+  // Idempotency BEFORE rate limiting: an already-persisted requestId is always
+  // honored (duplicate) or 409'd, and is never blocked by the new-submission
+  // limit. The rate limiter only applies to genuinely new request UUIDs.
+  const existing = await deps.readQuoteById(incoming.id);
+  if (existing) return sameOrConflict(existing);
+
+  // New submission only — conservative recent-submission rate limit (per email).
   if (incoming.contact_email) {
     const since = new Date(Date.now() - RATE_WINDOW_MINUTES * 60_000).toISOString();
     const recent = await deps.countRecentByEmail(incoming.contact_email, incoming.id, since);
@@ -126,7 +138,7 @@ export async function handleSubmitLead(req: Request, deps: SubmitLeadDeps): Prom
     }
   }
 
-  // `source` is a carrier field (encoded into notes), not a quotes column.
+  // Insert. `source` is a carrier field (encoded into notes), not a quotes column.
   const { source: _source, ...quoteRow } = incoming;
   const { errorCode } = await deps.insertQuote({ ...quoteRow, user_id: userId });
 
@@ -134,19 +146,12 @@ export async function handleSubmitLead(req: Request, deps: SubmitLeadDeps): Prom
     return json({ id: incoming.id, persisted: true, duplicate: false }, 200, corsHeaders);
   }
 
-  // Unique violation on the primary key → an existing row with this id. Read it
-  // back and compare material fields: same submission → duplicate=true;
-  // materially different content reusing the id → 409 (never blind success).
+  // Concurrent race: another request inserted this UUID between the pre-check and
+  // this insert. Read it back and apply the same equivalent/different decision.
   if (errorCode === '23505') {
-    const existing = await deps.readQuoteById(incoming.id);
-    if (!existing) return json({ error: 'Could not verify existing submission' }, 500, corsHeaders);
-    if (
-      materialSignatureFromRow(existing as unknown as QuoteRow) ===
-      materialSignatureFromRow(incoming)
-    ) {
-      return json({ id: incoming.id, persisted: true, duplicate: true }, 200, corsHeaders);
-    }
-    return json({ error: 'This request id was already used for a different submission' }, 409, corsHeaders);
+    const raced = await deps.readQuoteById(incoming.id);
+    if (!raced) return json({ error: 'Could not verify existing submission' }, 500, corsHeaders);
+    return sameOrConflict(raced);
   }
 
   console.error('submit-lead insert error', errorCode);
