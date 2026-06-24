@@ -23,7 +23,8 @@ export function Footer() {
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Integrate with email service
+    // No email-list backend exists yet, so we do NOT claim a subscription.
+    // Show honest guidance toward the verified Contact path instead.
     setSubscribed(true);
     setEmail("");
   };
@@ -97,8 +98,15 @@ export function Footer() {
                 New communities, new models, and the work of making ownership possible again.
               </p>
               {subscribed ? (
-                <p className="text-accent text-sm font-medium">
-                  ✓ Thanks for subscribing!
+                <p className="text-primary-foreground/70 text-sm">
+                  Email signup isn't available yet. For updates,{" "}
+                  <Link
+                    to="/contact"
+                    className="text-accent font-medium hover:underline"
+                  >
+                    reach us through our Contact page
+                  </Link>
+                  .
                 </p>
               ) : (
                 <form onSubmit={handleSubscribe} className="flex gap-2">
