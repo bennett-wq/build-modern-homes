@@ -8,7 +8,13 @@ import type { BuildType } from '@/data/pricing-config';
 
 export interface BuildSelection {
   developmentSlug: string;
-  lotId: number | null;
+  /**
+   * Stable lot identity carried in the URL: the lot_number/label string
+   * (e.g. "Lot 15"). Works identically in image and Mapbox modes since both
+   * expose the same label. Legacy numeric links (?lot=15) are resolved via a
+   * fallback in BuildWizard, so old shared links keep working.
+   */
+  lotId: string | null;
   modelSlug: string | null;
   buildType: BuildType | null;
   packageId: string | null;
@@ -59,7 +65,8 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     const rawBuildType = buildTypeParam || (hasUrlParams ? storedSelection.buildType : null) || null;
     return {
       developmentSlug,
-      lotId: lotParam ? parseInt(lotParam, 10) : (hasUrlParams ? storedSelection.lotId ?? null : null),
+      // Carry the lot token verbatim (label string or legacy numeric string).
+      lotId: lotParam || (hasUrlParams ? storedSelection.lotId ?? null : null),
       modelSlug: normalizeModelSlug(rawModelSlug),
       buildType: (rawBuildType === 'xmod' || rawBuildType === 'mod') ? rawBuildType : null,
       packageId: packageParam || (hasUrlParams ? storedSelection.packageId : null) || null,
@@ -105,7 +112,7 @@ export function useBuildSelection({ developmentSlug }: UseBuildSelectionOptions)
     setSearchParams(newParams, { replace: true });
   }, [selection, setSearchParams]);
 
-  const setLot = useCallback((lotId: number | null) => {
+  const setLot = useCallback((lotId: string | null) => {
     setSelectionState(prev => ({ ...prev, lotId }));
     triggerSaveIndicator();
   }, [triggerSaveIndicator]);

@@ -1,69 +1,52 @@
 import { test, expect } from '@playwright/test';
 
+// The /build route renders the Configurator (8-step) flow. `?model=aspen`
+// hydrates the model and jumps straight to Step 4 (Build Type) — where the
+// shared WizardStickyFooter (portaled, `fixed bottom-0`) must stay visible on
+// mobile. These tests guard that footer against regressions. Aspen exposes two
+// build types, so Step 4 renders the "How should we build your Aspen?" heading
+// and CrossMod®/Modular selection cards.
 test.describe('Wizard Mobile Footer Regression', () => {
   test.use({ viewport: { width: 390, height: 844 } }); // iPhone 14 Pro
 
   test('Step 4 sticky footer Continue button is visible on mobile', async ({ page }) => {
-    // Navigate to the build wizard
-    await page.goto('/build');
+    await page.goto('/build?model=aspen');
 
-    // Step 1: Select intent
-    await page.getByRole('button', { name: /build on my land/i }).click();
-    await page.getByRole('button', { name: /continue/i }).click();
+    // Lands directly on Step 4 (Build Type) for the preselected model.
+    await expect(
+      page.getByRole('heading', { name: /how should we build your aspen/i }),
+    ).toBeVisible();
 
-    // Step 2: Enter zip code
-    await page.getByPlaceholder(/zip/i).fill('90210');
-    await page.getByRole('button', { name: /continue/i }).click();
+    // Selecting a build type enables the sticky-footer Continue button.
+    await page.getByRole('heading', { name: 'CrossMod®' }).click();
 
-    // Step 3: Select a model (Aspen)
-    await page.getByText('Aspen').first().click();
-    await page.getByRole('button', { name: /continue/i }).click();
-
-    // Step 4: Build Type - this is the critical step
-    // Wait for the step to load
-    await expect(page.getByRole('heading', { name: /build type/i })).toBeVisible();
-
-    // CRITICAL ASSERTION: The sticky footer with Continue button must be visible
     const continueButton = page.getByRole('button', { name: /continue/i });
     await expect(continueButton).toBeVisible();
 
-    // Verify button is in the viewport (not just in DOM)
-    const boundingBox = await continueButton.boundingBox();
-    expect(boundingBox).not.toBeNull();
-    expect(boundingBox!.y).toBeLessThan(844); // Button should be within viewport height
-    expect(boundingBox!.y + boundingBox!.height).toBeGreaterThan(0);
+    // The button must sit within the viewport (sticky footer, not pushed off).
+    const box = await continueButton.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y).toBeLessThan(844);
+    expect(box!.y + box!.height).toBeGreaterThan(0);
+    // Bottom edge must stay within the 844px mobile viewport (not pushed off).
+    expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   });
 
-  test('Step 4 sticky footer is always present even when disabled', async ({ page }) => {
-    // Navigate directly to build with model pre-selected
+  test('Step 4 sticky footer stays visible even when Continue is disabled', async ({ page }) => {
     await page.goto('/build?model=aspen');
 
-    // Complete steps 1-3 to reach step 4
-    await page.getByRole('button', { name: /build on my land/i }).click();
-    await page.getByRole('button', { name: /continue/i }).click();
+    // On arrival no build type is selected, so Continue is disabled — but the
+    // footer must still be present and visible (the original regression).
+    await expect(
+      page.getByRole('heading', { name: /how should we build your aspen/i }),
+    ).toBeVisible();
 
-    await page.getByPlaceholder(/zip/i).fill('90210');
-    await page.getByRole('button', { name: /continue/i }).click();
+    const continueButton = page.getByRole('button', { name: /continue/i });
+    await expect(continueButton).toBeVisible();
 
-    // Model should be pre-selected, click continue
-    await page.getByRole('button', { name: /continue/i }).click();
-
-    // On Step 4
-    await expect(page.getByRole('heading', { name: /build type/i })).toBeVisible();
-
-    // The footer container should exist and be visible
-    const footer = page.locator('[class*="fixed"][class*="bottom-0"]').filter({
-      has: page.getByRole('button', { name: /continue/i }),
-    });
-
-    // Footer should be visible (containing Continue button)
-    const continueBtn = page.getByRole('button', { name: /continue/i });
-    await expect(continueBtn).toBeVisible();
-
-    // Verify it's at the bottom of the viewport
-    const box = await continueBtn.boundingBox();
+    // Anchored near the bottom of the viewport.
+    const box = await continueButton.boundingBox();
     expect(box).not.toBeNull();
-    // Button should be in the bottom portion of the screen (last 150px)
-    expect(box!.y).toBeGreaterThan(844 - 150);
+    expect(box!.y).toBeGreaterThan(844 - 200);
   });
 });

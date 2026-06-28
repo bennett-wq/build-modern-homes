@@ -125,7 +125,13 @@ export default function BuildWizard() {
     return dbLots.map((dbLot, index) => mapDbLotToComponentLot(dbLot, index));
   }, [dbLots]);
 
-  const selectedLot = lots.find(l => l.id === selection.lotId) || null;
+  // Resolve the URL lot token to a component lot. Match the canonical
+  // lot_number/label first ("Lot 15"), then fall back to the legacy numeric id
+  // ("15") so old shared links keep resolving.
+  const selectedLot =
+    lots.find(l => l.label === selection.lotId) ??
+    lots.find(l => String(l.id) === String(selection.lotId)) ??
+    null;
   const normalizedModelSlug = normalizeModelSlug(selection.modelSlug);
   const selectedModel = normalizedModelSlug ? getModelBySlug(normalizedModelSlug) || null : null;
   const selectedModelConfig = normalizedModelSlug ? getModelConfigBySlug(normalizedModelSlug) : undefined;
@@ -178,7 +184,7 @@ export default function BuildWizard() {
   const selectionSummary = useMemo(() => ({
     developmentSlug: development?.slug,
     developmentName: development?.name,
-    lotId: selection.lotId ?? undefined,
+    lotId: selectedLot?.id ?? undefined,
     lotLabel: selectedLot?.label,
     modelSlug: normalizedModelSlug ?? undefined,
     modelName: selectedModel?.name,
@@ -193,6 +199,16 @@ export default function BuildWizard() {
       setCurrentStep(step);
     }
   }, [currentStep]);
+
+  // Step1Lot selects by the wizard-internal numeric id; translate it back to the
+  // canonical lot_number/label token that the URL + selection contract carry.
+  const handleSelectLotId = useCallback(
+    (lotNumericId: number) => {
+      const lot = lots.find((l) => l.id === lotNumericId);
+      setLot(lot ? lot.label : null);
+    },
+    [lots, setLot],
+  );
 
   if (!development) {
     return (
@@ -335,9 +351,9 @@ export default function BuildWizard() {
             >
               <Step1Lot
                 lots={lots}
-                selectedLotId={selection.lotId}
+                selectedLotId={selectedLot?.id ?? null}
                 sitePlanImagePath={development.sitePlanImagePath}
-                onSelectLot={setLot}
+                onSelectLot={handleSelectLotId}
                 onNext={() => setCurrentStep(2)}
                 isMobile={isMobile}
                 buyerFacingBreakdown={pricing.breakdown}
@@ -363,7 +379,7 @@ export default function BuildWizard() {
                 onBack={() => setCurrentStep(1)}
                 isMobile={isMobile}
                 developmentSlug={slug}
-                lotId={selection.lotId}
+                lotId={selectedLot?.id ?? null}
                 selectedLot={selectedLot}
                 buyerFacingBreakdown={pricing.breakdown}
                 pricingFlags={pricing.flags}
@@ -417,7 +433,7 @@ export default function BuildWizard() {
                 onBack={() => setCurrentStep(3)}
                 isMobile={isMobile}
                 developmentSlug={slug}
-                lotId={selection.lotId}
+                lotId={selectedLot?.id ?? null}
                 modelSlug={selection.modelSlug}
                 buyerFacingBreakdown={pricing.breakdown}
                 pricingFlags={pricing.flags}

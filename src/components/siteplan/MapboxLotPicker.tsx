@@ -12,6 +12,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 import type { Development, Lot, LotStatus } from '@/types/database';
+import { isValidMapboxLotPolygon } from '@/lib/mapGeometryGate';
 import { cn } from '@/lib/utils';
 
 export interface MapboxLotPickerProps {
@@ -26,38 +27,59 @@ export interface MapboxLotPickerProps {
 }
 
 // Status → fill color (hex; mapbox-gl paint props don't accept HSL vars).
-// Mirrors the charcoal/wood premium palette.
+// Cartographic visual hierarchy: AVAILABLE is the only saturated brand fill, so
+// buyable parcels are the clear focus; reserved/sold/pending recede into a
+// neutral warm-gray scale by "doneness". Keeps the calm charcoal/wood premium
+// palette while making status distinguishable (available pops, the rest mute) —
+// instead of three near-identical golds where reserved out-popped available.
 const STATUS_FILL: Record<LotStatus, string> = {
-  available: '#9A7B4F', // wood/gold
-  reserved: '#C8A063',
-  sold: '#6B6B6B',
-  pending: '#B89B6E',
+  available: '#9A7B4F', // brand wood/gold — the actionable, buyable state
+  reserved: '#9C968C',  // warm gray — on hold, recedes
+  sold: '#5F5F5F',      // dark gray — gone, recedes most
+  pending: '#B6B0A6',   // light warm gray — in process
+};
+
+// Human labels for the on-map status legend (data must not be decodable by
+// color alone — pairs the STATUS_FILL palette with text).
+const STATUS_LABEL: Record<LotStatus, string> = {
+  available: 'Available',
+  reserved: 'Reserved',
+  sold: 'Sold',
+  pending: 'Pending',
 };
 
 const SOURCE_ID = 'lots-source';
 const FILL_LAYER_ID = 'lots-fill';
 const OUTLINE_LAYER_ID = 'lots-outline';
+const LABEL_LAYER_ID = 'lots-label';
 
 interface LotFeatureProps {
   lotId: string;
   status: LotStatus;
+  label: string; // lot_number, rendered as the parcel label
   filtered: number; // 0/1 — mapbox feature-state friendly
 }
 
 function lotsToFeatureCollection(
   lots: Lot[],
-): GeoJSON.FeatureCollection<GeoJSON.Polygon, LotFeatureProps> {
-  const features: GeoJSON.Feature<GeoJSON.Polygon, LotFeatureProps>[] = [];
+): GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon, LotFeatureProps> {
+  const features: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon, LotFeatureProps>[] = [];
   for (const lot of lots) {
     const poly = lot.polygon_coordinates;
-    if (!poly || poly.type !== 'Polygon') continue;
+    // Share the gate's validity definition so the renderer never disagrees with
+    // the activation gate. Only complete Polygon/MultiPolygon geometry renders.
+    if (!isValidMapboxLotPolygon(poly)) continue;
     features.push({
       type: 'Feature',
       id: lot.id,
-      geometry: { type: 'Polygon', coordinates: poly.coordinates },
+      geometry:
+        poly.type === 'Polygon'
+          ? { type: 'Polygon', coordinates: poly.coordinates }
+          : { type: 'MultiPolygon', coordinates: poly.coordinates },
       properties: {
         lotId: lot.id,
         status: lot.status,
+        label: lot.lot_number,
         filtered: 1,
       },
     });
@@ -115,6 +137,13 @@ export function MapboxLotPicker({
     () => lotsToFeatureCollection(lots),
     [lots],
   );
+
+  // Statuses actually present in this community, ordered, for the legend.
+  const legendStatuses = useMemo<LotStatus[]>(() => {
+    const order: LotStatus[] = ['available', 'reserved', 'pending', 'sold'];
+    const present = new Set(featureCollection.features.map((f) => f.properties.status));
+    return order.filter((s) => present.has(s));
+  }, [featureCollection]);
 
   // ---------------------------------------------------------------------------
   // Init effect — runs once. StrictMode-safe via mapRef guard.
@@ -210,6 +239,26 @@ export function MapboxLotPicker({
           ['boolean', ['feature-state', 'hover'], false], 2,
           1.25,
         ],
+      },
+    });
+
+    // Lot-number labels with a white halo for readability over parcel fills
+    // (real-estate map pattern). Pre-ship: run a Mapbox DevKit validate_style_tool
+    // + check_color_contrast_tool pass before this map is enabled in production.
+    map.addLayer({
+      id: LABEL_LAYER_ID,
+      type: 'symbol',
+      source: SOURCE_ID,
+      layout: {
+        'text-field': ['get', 'label'],
+        // Hidden when zoomed out, scaling up for legibility as parcels grow.
+        'text-size': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, 11, 18, 15],
+        'text-allow-overlap': false,
+      },
+      paint: {
+        'text-color': '#1A1A1A',
+        'text-halo-color': '#FFFFFF',
+        'text-halo-width': 1.5,
       },
     });
 
@@ -348,6 +397,22 @@ export function MapboxLotPicker({
   return (
     <div className={wrapperClass}>
       <div ref={containerRef} className="absolute inset-0" aria-label="Site plan map" />
+      {hasGeoJsonLots && legendStatuses.length > 0 && (
+        <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-background/90 px-3 py-2 shadow ring-1 ring-border">
+          <ul className="space-y-1">
+            {legendStatuses.map((s) => (
+              <li key={s} className="flex items-center gap-2 text-xs text-foreground">
+                <span
+                  className="h-3 w-3 rounded-sm"
+                  style={{ backgroundColor: STATUS_FILL[s] }}
+                  aria-hidden
+                />
+                {STATUS_LABEL[s]}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {!hasGeoJsonLots && (
         <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-md bg-background/90 px-3 py-2 text-xs text-muted-foreground shadow">
           Map geometry is being prepared.

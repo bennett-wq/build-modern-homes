@@ -1,7 +1,9 @@
 // BuyerFinancialSummary - Lender-ready financial summary PDF and clipboard export
 // For buyers to share with lenders for MH Advantage, CHOICEHome, and other programs
 
-import { jsPDF } from "jspdf";
+// Type-only import is erased at build; the jsPDF value is loaded on demand in
+// generateBuyerPDF so jspdf stays out of the initial bundle.
+import type { jsPDF } from "jspdf";
 import { toast } from "sonner";
 
 interface FinancialData {
@@ -55,7 +57,8 @@ const formatCurrency = (amount: number | null) => {
   }).format(amount);
 };
 
-export function generateBuyerPDF(data: FinancialData): jsPDF {
+export async function generateBuyerPDF(data: FinancialData): Promise<jsPDF> {
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
@@ -346,9 +349,9 @@ Final approval subject to full underwriting.
 `.trim();
 }
 
-export function downloadBuyerPDF(data: FinancialData) {
+export async function downloadBuyerPDF(data: FinancialData) {
   try {
-    const doc = generateBuyerPDF(data);
+    const doc = await generateBuyerPDF(data);
     const filename = `financial-summary-${data.contactName.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.pdf`;
     doc.save(filename);
     toast.success("Financial summary downloaded!");

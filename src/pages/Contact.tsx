@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
+import { submitLead, resolveRequestId } from "@/lib/leadDelivery";
+import type { LeadInput } from "@/lib/leadContract";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Send, Phone, Mail, MapPin, CheckCircle, Home, MapPinned, Palette, DoorOpen, ShieldCheck, Calendar, DollarSign } from "lucide-react";
@@ -41,7 +43,8 @@ export default function Contact() {
   const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  
+  const reqRef = useRef<{ sig: string; id: string } | null>(null);
+
   // Get all query params for pre-fill
   const selections: SelectionSummary = {
     development: searchParams.get('development'),
@@ -119,13 +122,35 @@ export default function Contact() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission - will be replaced with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
+    const baseInput: Omit<LeadInput, 'requestId'> = {
+      source: 'contact',
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      message: formData.message,
+      modelName: selections.model ? displayNames.model : undefined,
+      developmentName: selections.development ? displayNames.development : undefined,
+      lotLabel: selections.lot ?? undefined,
+      packageName: selections.package ? displayNames.package : undefined,
+      garageDoorName: selections.garage ? displayNames.garage : undefined,
+    };
+    const requestId = resolveRequestId(reqRef, baseInput);
+    const result = await submitLead({ ...baseInput, requestId });
     setIsSubmitting(false);
+
+    if (!result.ok) {
+      // Do not claim delivery. Preserve the buyer's entered message for retry.
+      toast({
+        title: "We couldn't send your message",
+        description: "Please check your connection and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitted(true);
     toast({
-      title: "Message Sent!",
+      title: "Message sent!",
       description: "We'll be in touch within 1-2 business days.",
     });
   };

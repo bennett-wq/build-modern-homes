@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { usePricingConfig } from "@/state/usePricingConfig";
 import { SHOW_COMMUNITIES } from "@/config/featureFlags";
 import { RouteChangeScrollUnlock } from "@/components/RouteChangeScrollUnlock";
@@ -11,7 +11,8 @@ import Index from "./pages/Index";
 import Developments from "./pages/Developments";
 import DevelopmentDetail from "./pages/DevelopmentDetail";
 import Models from "./pages/Models";
-import ModelDetail from "./pages/ModelDetail";
+// Lazy: ModelDetail pulls react-pdf/pdf.js (~heavy) via FloorPlanViewer.
+const ModelDetail = lazy(() => import("./pages/ModelDetail"));
 import Communities from "./pages/Communities";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
@@ -24,11 +25,14 @@ import BuildWizard from "./pages/BuildWizard";
 import Mission from "./pages/Mission";
 import Configurator from "./pages/Configurator";
 import QuoteSummary from "./pages/QuoteSummary";
-import SecureBankConnect from "./pages/SecureBankConnect";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminPricing from "./pages/admin/AdminPricing";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminLeads from "./pages/admin/AdminLeads";
+import Selections from "./pages/Selections";
+// Lazy: non-funnel routes with heavy deps (Plaid, admin tooling, jspdf).
+const SecureBankConnect = lazy(() => import("./pages/SecureBankConnect"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminPricing = lazy(() => import("./pages/admin/AdminPricing"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
+const AdminQuoteLeads = lazy(() => import("./pages/admin/AdminQuoteLeads"));
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +57,7 @@ const App = () => (
       <PricingInitializer />
       <BrowserRouter>
         <RouteChangeScrollUnlock />
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Loading…</div>}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/build" element={<Configurator />} />
@@ -94,6 +99,11 @@ const App = () => (
           <Route path="/design-studio" element={<DesignStudio />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/quote/:quoteId" element={<QuoteSummary />} />
+          {/* Post-quote, quote-linked selections review. /selections/:quoteId
+              loads a SAVED quote snapshot; bare /selections is a non-conversion
+              empty state (never creates a quote). Not part of the funnel. */}
+          <Route path="/selections" element={<Selections />} />
+          <Route path="/selections/:quoteId" element={<Selections />} />
           {/* Secure bank connection (opens in popup/new tab) */}
           <Route path="/secure-bank-connect" element={<SecureBankConnect />} />
           {/* Admin routes (not in public nav) */}
@@ -101,9 +111,11 @@ const App = () => (
           <Route path="/admin/pricing" element={<AdminPricing />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/leads" element={<AdminLeads />} />
+          <Route path="/admin/quote-leads" element={<AdminQuoteLeads />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
